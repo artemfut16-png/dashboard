@@ -693,7 +693,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .pi-l svg{width:15px;height:15px;color:var(--pc)}
 .pi-l.off{color:var(--gray);border-style:dashed}
 .pi-l.off svg{color:var(--gray)}
-.pi-edit{margin-left:auto;border:0;background:none;color:var(--gray);font-size:12.5px;padding:4px 2px;text-decoration:underline;text-underline-offset:3px}
+.pi-edit{border:0;background:none;color:var(--gray);font-size:12.5px;padding:4px 2px;text-decoration:underline;text-underline-offset:3px}
 .pi-edit:hover{color:var(--ink)}
 .plinkform{display:flex;flex-direction:column;gap:6px;margin-top:10px}
 .plinkform input{height:34px;background:transparent;border:1px solid var(--input);border-radius:8px;padding:0 10px;color:var(--ink);font-size:13px;min-width:0}
@@ -1932,6 +1932,7 @@ function renderProjectsView(){
 let pLinksEdit = null;
 const ICON_FUNNEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/></svg>';
 const ICON_FOLDER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>';
+const ICON_UPLOAD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>';
 function projLinksHTML(p){
   const okUrl = u => /^https:\/\//i.test(u || '');
   const btn = (url, label, icon) => okUrl(url)
@@ -1940,9 +1941,10 @@ function projLinksHTML(p){
   if (pLinksEdit === p.id) return `<form class="plinkform" data-pid="${esc(p.id)}">
       <input class="pl-funnel" type="url" placeholder="Ссылка на воронку продаж (Google-таблица)" aria-label="Ссылка на воронку" value="${esc(p.funnelUrl || '')}">
       <input class="pl-folder" type="url" placeholder="Ссылка на папку проекта (Google Диск)" aria-label="Ссылка на папку" value="${esc(p.folderUrl || '')}">
+      <input class="pl-auto" type="url" placeholder="Ссылка на автозагрузку" aria-label="Ссылка на автозагрузку" value="${esc(p.autoUrl || '')}">
       <div class="irow"><button class="btn primary" type="submit">Сохранить</button><button class="btn" type="button" data-plinks-cancel>Отмена</button></div>
     </form>`;
-  return `<div class="pi-links">${btn(p.funnelUrl, 'Воронка', ICON_FUNNEL)}${btn(p.folderUrl, 'Папка', ICON_FOLDER)}<button class="pi-edit" type="button" data-plinks="${esc(p.id)}">ссылки</button></div>`;
+  return `<div class="pi-links">${btn(p.funnelUrl, 'Воронка', ICON_FUNNEL)}${btn(p.folderUrl, 'Папка', ICON_FOLDER)}${btn(p.autoUrl, 'Автозагрузка', ICON_UPLOAD)}<button class="pi-edit" type="button" data-plinks="${esc(p.id)}">ссылки</button></div>`;
 }
 document.addEventListener('click', e => {
   if (view !== 'projects') return;
@@ -1954,7 +1956,7 @@ document.addEventListener('submit', e => {
   const f = e.target; if (!f.classList || !f.classList.contains('plinkform')) return;
   e.preventDefault();
   const pid = f.dataset.pid, p = projects.get(pid); if (!p) return;
-  const vals = {funnelUrl: f.querySelector('.pl-funnel').value.trim(), folderUrl: f.querySelector('.pl-folder').value.trim()};
+  const vals = {funnelUrl: f.querySelector('.pl-funnel').value.trim(), folderUrl: f.querySelector('.pl-folder').value.trim(), autoUrl: f.querySelector('.pl-auto').value.trim()};
   for (const v of Object.values(vals)) if (v && !/^https:\/\//i.test(v)){ toast('Ссылка должна начинаться с https://', true); return; }
   projects.set(pid, {...p, ...vals}); pLinksEdit = null; renderProjectsView();
   write(pid, () => db.doc('projects/' + pid).update(vals)).then(() => toast('Ссылки сохранены'));
