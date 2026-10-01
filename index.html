@@ -715,6 +715,21 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .subtabs .tab[aria-selected="true"]{background:var(--orange);color:#000}
 .subtabs .tab .cnt{margin-left:7px;font-variant-numeric:tabular-nums;opacity:.85}
 
+/* funnel summary on project cards */
+.pinfo{grid-template-columns:repeat(auto-fill,minmax(min(400px,100%),1fr))}
+.fsum{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.fsum table{width:100%;border-collapse:collapse;font-size:12.5px}
+.fsum th,.fsum td{padding:4px 0 4px 8px;text-align:right;white-space:nowrap;border:0;font-variant-numeric:tabular-nums}
+.fsum th:first-child,.fsum td:first-child{text-align:left;padding-left:0;white-space:normal;color:var(--muted)}
+.fsum th{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.03em;text-transform:none}
+.fsum tr.conv td{color:var(--muted)}
+.fsum tr.conv td:first-child{padding-left:10px}
+.fsum tr.key td{font-weight:600}
+.fsum tr.key td:first-child{color:var(--ink)}
+.fsum .ffoot{display:flex;justify-content:space-between;gap:8px;margin-top:6px;font-size:11.5px;color:var(--gray)}
+.fsum .ffoot button{border:0;background:none;color:var(--gray);font-size:11.5px;padding:0;text-decoration:underline;text-underline-offset:3px}
+.fsum .ffoot button:hover{color:var(--ink)}
+
 /* login */
 #login{position:fixed;inset:0;z-index:100;background:#000;display:grid;place-items:center;padding:16px}
 #login form{width:min(380px,100%);display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:26px}
@@ -1979,12 +1994,81 @@ function renderProjectsView(){
   elP.innerHTML = `<div class="psec" style="margin-top:0">Проекты в работе <span class="num">${srcs.length - 1}</span></div>
     <div class="pinfo">${srcs.slice(1).map(x => { const p = projects.get(x.pid), st = projStats(p);
       return `<div class="pi" style="--pc:${x.color}"><div class="pi-h"><b title="${esc(p.name)}">${esc(p.name)}</b><button class="pill pst active" data-ptoggle="${esc(p.id)}" title="Перевести в «Ушёл»">В работе</button></div>
-        <div class="pc-meta"><span>Чек <b>${p.check ? rub(p.check) : '—'}</b></span><span>Оплачено <b>${st.total ? rub(st.total) : '—'}</b></span><span>Срок <b>${st.life || '—'}</b> мес.</span></div>${projLinksHTML(p)}</div>`; }).join('')}</div>`;
+        <div class="pc-meta"><span>Чек <b>${p.check ? rub(p.check) : '—'}</b></span><span>Оплачено <b>${st.total ? rub(st.total) : '—'}</b></span><span>Срок <b>${st.life || '—'}</b> мес.</span></div>${projLinksHTML(p)}${funnelHTML(p)}</div>`; }).join('')}</div>`;
 }
 let pLinksEdit = null;
 const ICON_FUNNEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/></svg>';
 const ICON_FOLDER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>';
 const ICON_UPLOAD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>';
+/* funnel summaries read from the project's Google Sheet (sheet «ИТОГО», shared by link) */
+const funnelStats = new Map();
+const F_ROWS = {budget: 'Бюджет', contacts: 'Контакты', kev: 'КЭВ (встреча)', deals: 'Сделки', rev: 'Выручка'};
+const fnum = s => { const n = parseFloat(String(s || '').replace(/[\s\u00a0]/g, '').replace(/руб\.?|₽|%/g, '').replace(',', '.')); return isNaN(n) ? 0 : n; };
+function parseCsv(text){
+  const rows = []; let row = [], c = '', q = false;
+  for (let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if (q){ if (ch === '"'){ if (text[i + 1] === '"'){ c += '"'; i++; } else q = false; } else c += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ','){ row.push(c); c = ''; }
+    else if (ch === '\n'){ row.push(c); rows.push(row); row = []; c = ''; }
+    else if (ch !== '\r') c += ch;
+  }
+  if (c !== '' || row.length){ row.push(c); rows.push(row); }
+  return rows;
+}
+// columns: 0 section, 1 metric, 2 year total, then 12 blocks of [month, week1..week4]
+function funnelFromCsv(text){
+  const by = {};
+  for (const r of parseCsv(text)){ const name = (r[1] || '').trim(); for (const k in F_ROWS) if (name === F_ROWS[k] && !by[k]) by[k] = r; }
+  if (!by.budget || !by.contacts) throw new Error('layout');
+  const col = (k, c) => by[k] ? fnum(by[k][c]) : 0;
+  const pick = c => ({budget: col('budget', c), contacts: col('contacts', c), kev: col('kev', c), deals: col('deals', c), rev: col('rev', c)});
+  let last = null;
+  for (let m = 0; m < 12; m++) for (let w = 0; w < 4; w++){ const c = 4 + 5 * m + w; if (col('budget', c) > 0 || col('contacts', c) > 0) last = {m, w, c}; }
+  return {total: pick(2), month: last ? pick(3 + 5 * last.m) : null, week: last ? pick(last.c) : null, last};
+}
+function loadFunnel(p, force){
+  const url = p.funnelUrl || '', m = url.match(/spreadsheets\/d\/([\w-]+)/); if (!m) return;
+  const cur = funnelStats.get(p.id); if (cur && cur.url === url && !force) return;
+  funnelStats.set(p.id, {url, state: 'loading'});
+  const gid = (url.match(/[#?&]gid=(\d+)/) || [])[1];
+  const src = 'https://docs.google.com/spreadsheets/d/' + m[1] + '/gviz/tq?tqx=out:csv&headers=0&' + (gid ? 'gid=' + gid : 'sheet=' + encodeURIComponent('ИТОГО'));
+  fetch(src).then(r => { if (!r.ok) throw new Error('http'); return r.text(); })
+    .then(t => { if (/^\s*</.test(t)) throw new Error('html'); funnelStats.set(p.id, {url, state: 'ok', d: funnelFromCsv(t), at: Date.now()}); })
+    .catch(() => funnelStats.set(p.id, {url, state: 'err'}))
+    .finally(() => dashRefresh());
+}
+const F_WEEKS = ['01–07', '08–14', '15–21', '22–30'];
+function funnelHTML(p){
+  if (!/spreadsheets\/d\//.test(p.funnelUrl || '')) return '';
+  loadFunnel(p);
+  const s = funnelStats.get(p.id), pid = esc(p.id);
+  if (!s || s.state === 'loading') return '<div class="fsum hint">Загружаем цифры из воронки…</div>';
+  if (s.state === 'err') return `<div class="fsum hint">Цифры из воронки недоступны. Откройте таблицу для всех, у кого есть ссылка (роль «Читатель»), и лист «ИТОГО» должен быть на месте. <div class="ffoot"><span></span><button type="button" data-frefresh="${pid}">Повторить</button></div></div>`;
+  const d = s.d, div = (a, b) => b ? a / b : null;
+  const defs = [
+    ['Бюджет', x => x.budget, 'rub', 'key'],
+    ['Контакты', x => x.contacts, 'n', 'key'],
+    ['Стоимость контакта', x => div(x.budget, x.contacts), 'rub', ''],
+    ['Конверсия контакт → КЭВ', x => div(x.kev, x.contacts), 'pct', 'conv'],
+    ['КЭВ (встреча)', x => x.kev, 'n', 'key'],
+    ['Стоимость КЭВа', x => div(x.budget, x.kev), 'rub', ''],
+    ['Конверсия КЭВ → сделка', x => div(x.deals, x.kev), 'pct', 'conv'],
+    ['Сделки', x => x.deals, 'n', 'key'],
+    ['Стоимость сделки', x => div(x.budget, x.deals), 'rub', ''],
+    ['Конверсия контакт → сделка', x => div(x.deals, x.contacts), 'pct', 'conv'],
+  ];
+  const fmt = (v, kind) => v == null ? '—' : kind === 'rub' ? nf.format(Math.round(v)) + ' ₽' : kind === 'pct' ? String(+(v * 100).toFixed(v < 0.1 ? 2 : 1)).replace('.', ',') + '%' : nf.format(Math.round(v));
+  const cols = [d.total, d.month, d.week];
+  const head = d.last ? `<th>Итого</th><th>${MON_FULL[d.last.m]}</th><th title="Последняя заполненная неделя">Нед. ${d.last.w + 1} (${F_WEEKS[d.last.w]})</th>` : '<th>Итого</th><th>Месяц</th><th>Неделя</th>';
+  return `<div class="fsum"><table><thead><tr><th>Воронка</th>${head}</tr></thead><tbody>${defs.map(([l, f, k, cls]) => `<tr class="${cls}"><td>${l}</td>${cols.map(c => `<td>${c ? fmt(f(c), k) : '—'}</td>`).join('')}</tr>`).join('')}</tbody></table>
+    <div class="ffoot"><span>из таблицы воронки, обновлено в ${pad(new Date(s.at).getHours())}:${pad(new Date(s.at).getMinutes())}</span><button type="button" data-frefresh="${pid}">Обновить</button></div></div>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-frefresh]'); if (!b) return;
+  const p = projects.get(b.dataset.frefresh); if (p){ loadFunnel(p, true); renderProjectsView(); }
+});
 function projLinksHTML(p){
   const okUrl = u => /^https:\/\//i.test(u || '');
   const btn = (url, label, icon) => okUrl(url)
