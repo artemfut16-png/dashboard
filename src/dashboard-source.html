@@ -1445,6 +1445,23 @@ function parseNum(s){
 }
 const months = () => { const a = Array.isArray(fin) ? fin.slice(0, 12) : []; while (a.length < 12) a.push(null); return a; };
 const getp = (m, path) => { const [g, k] = path.split('.'); const v = m && (k ? m[g] && m[g][k] : m[g]); return v == null ? null : v; };
+// Revenue comes from the projects table: payments of the month are the total,
+// and "База" is what remains after the channels' own revenue and sales.
+function projMonth(i){
+  let sum = 0, n = 0;
+  projects.forEach(p => { const v = (p.pay || [])[i]; if (v > 0){ sum += v; n++; } });
+  return {sum, n};
+}
+function effMonths(){
+  return months().map((m, i) => {
+    const pm = projMonth(i);
+    if (!m && !pm.sum) return m;
+    const mm = JSON.parse(JSON.stringify(m || {}));
+    const other = k => ['cold', 'ref', 'auto'].reduce((a, g) => a + ((mm[g] && mm[g][k]) || 0), 0);
+    mm.base = {...(mm.base || {}), rev: Math.max(0, pm.sum - other('rev')), sales: Math.max(0, pm.n - other('sales'))};
+    return mm;
+  });
+}
 function hasData(m){
   if (!m) return false;
   return ['cold','auto','ref','base'].some(g => m[g] && Object.values(m[g]).some(v => v != null)) || m.fot != null || m.other != null;
@@ -1468,7 +1485,7 @@ function renderDash(){
   const el = $('#v-dash');
   if (!db){ el.innerHTML = `<div class="empty-state"><strong>База недоступна</strong>Откройте страницу на claude.ai, войдя в аккаунт.</div>`; return; }
   if (!dashLoaded.fin || !dashLoaded.proj){ el.innerHTML = `<div class="empty-state">Загружаем показатели…</div>`; return; }
-  const ms = months(), cs = ms.map(calc);
+  const ms = effMonths(), cs = ms.map(calc);
   const nowM = new Date().getFullYear() === YEAR ? new Date().getMonth() : 11;
   const filled = cs.map((c, i) => c.has ? i : -1).filter(i => i >= 0);
   const sum = f => cs.reduce((a, c) => a + f(c), 0);
@@ -1539,7 +1556,7 @@ function renderDash(){
       </div>
     </div>
     <div class="card">
-      <div class="card-h"><h2>Проекты</h2><span class="hint">Нажмите на сумму, чтобы изменить. Статус переключается по клику.</span></div>
+      <div class="card-h"><h2>Проекты</h2><span class="hint">Оплаты из этой таблицы формируют выручку наверху. Нажмите на сумму, чтобы изменить. Статус переключается по клику.</span></div>
       <div class="scroll" style="margin-top:0">${projTable(pl, pst, nowM)}</div>
       <form class="addp" id="addProj">
         <input id="npName" placeholder="Название нового проекта" aria-label="Название проекта" required>
@@ -1589,7 +1606,7 @@ function revChart(ms, cs, nowM){
 }
 function showTip(i){
   const chart = $('#revChart'), tip = $('#revTip'); if (!chart || !tip) return;
-  const m = months()[i], c = calc(m);
+  const m = effMonths()[i], c = calc(m);
   chart.classList.add('hovering');
   chart.querySelectorAll('.col').forEach(g => g.classList.toggle('on', +g.dataset.m === i));
   tip.innerHTML = `<b>${MON_FULL[i]} ${YEAR}</b>` +
@@ -1667,8 +1684,8 @@ const FIN_ROWS = [
   {f:'ref.sales', l:'Продажи'},
   {f:'ref.rev', l:'Выручка', r:true},
   {g:'База'},
-  {f:'base.sales', l:'Продажи'},
-  {f:'base.rev', l:'Выручка', r:true},
+  {c:(m) => getp(m, 'base.sales'), l:'Продажи (из таблицы проектов)', t:(ms) => tot(ms, 'base.sales')},
+  {c:(m) => getp(m, 'base.rev'), l:'Выручка (из таблицы проектов)', t:(ms) => tot(ms, 'base.rev'), r:true},
   {f:'base.churn', l:'Отток проектов'},
   {g:'Итого'},
   {c:(m, c) => c.has ? c.rev : null, l:'Выручка', t:(ms, cs) => cs.reduce((a, c) => a + c.rev, 0), r:true, b:true},
