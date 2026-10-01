@@ -706,7 +706,6 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .subtabs .tab .cnt{margin-left:7px;font-variant-numeric:tabular-nums;opacity:.85}
 
 /* funnel summary on project cards */
-.pinfo{grid-template-columns:repeat(auto-fill,minmax(min(400px,100%),1fr))}
 .fsum{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
 .fsum table{width:100%;border-collapse:collapse;font-size:12.5px}
 .fsum th,.fsum td{padding:4px 0 4px 8px;text-align:right;white-space:nowrap;border:0;font-variant-numeric:tabular-nums}
@@ -1961,7 +1960,7 @@ function renderProjectsView(){
   elP.innerHTML = `<div class="psec" style="margin-top:0">Проекты в работе <span class="num">${srcs.length - 1}</span></div>
     <div class="pinfo">${srcs.slice(1).map(x => { const p = projects.get(x.pid), st = projStats(p);
       return `<div class="pi" style="--pc:${x.color}"><div class="pi-h"><b title="${esc(p.name)}">${esc(p.name)}</b><button class="pill pst active" data-ptoggle="${esc(p.id)}" title="Перевести в «Ушёл»">В работе</button></div>
-        <div class="pc-meta"><span>Чек <b>${p.check ? rub(p.check) : '—'}</b></span><span>Оплачено <b>${st.total ? rub(st.total) : '—'}</b></span><span>Срок <b>${st.life || '—'}</b> мес.</span></div>${projLinksHTML(p)}${funnelHTML(p)}</div>`; }).join('')}</div>`;
+        <div class="pc-meta"><span>Чек <b>${p.check ? rub(p.check) : '—'}</b></span><span>Оплачено <b>${st.total ? rub(st.total) : '—'}</b></span><span>Срок <b>${st.life || '—'}</b> мес.</span></div>${projLinksHTML(p)}</div>`; }).join('')}</div>`;
 }
 let pLinksEdit = null;
 const ICON_FUNNEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/></svg>';
