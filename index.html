@@ -709,6 +709,12 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .plinkform input{height:34px;background:transparent;border:1px solid var(--input);border-radius:8px;padding:0 10px;color:var(--ink);font-size:13px;min-width:0}
 .plinkform .irow{margin-top:2px}
 
+.subtabs{margin-bottom:16px}
+.subtabs .tabs{background:var(--surface);border:1px solid var(--line)}
+.subtabs .tab{padding:7px 16px;font-weight:600;color:var(--muted)}
+.subtabs .tab[aria-selected="true"]{background:var(--orange);color:#000}
+.subtabs .tab .cnt{margin-left:7px;font-variant-numeric:tabular-nums;opacity:.85}
+
 /* login */
 #login{position:fixed;inset:0;z-index:100;background:#000;display:grid;place-items:center;padding:16px}
 #login form{width:min(380px,100%);display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:26px}
@@ -738,7 +744,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
     <div class="navlbl">Разделы</div>
     <button class="sbtn" data-sect="crm" aria-current="page" title="CRM"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="lbl">CRM</span></button>
     <button class="sbtn" data-sect="tasks" title="Задачи"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="lbl">Задачи</span><span class="badge" id="cTasks" hidden></span></button>
-    <button class="sbtn" data-sect="projects" title="Проекты"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg><span class="lbl">Проекты</span><span class="badge" id="cPTasks" hidden></span></button>
+    <button class="sbtn" data-sect="projects" title="Проекты"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg><span class="lbl">Проекты</span></button>
     <button class="sbtn" data-sect="an" title="Аналитика"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span class="lbl">Аналитика</span></button>
     <button class="sbtn logout" id="logoutBtn" type="button" title="Выйти"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg><span class="lbl">Выйти</span></button>
   </aside>
@@ -786,7 +792,14 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
     </section>
 
 
+    <div class="subtabs" id="taskTabs" hidden>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" data-view="tasks" aria-selected="true">CRM<span class="cnt" id="stCrm"></span></button>
+        <button class="tab" role="tab" data-view="ptasks" aria-selected="false">Проекты<span class="cnt" id="stProj"></span></button>
+      </div>
+    </div>
     <section id="v-tasks" hidden></section>
+    <section id="v-ptasks" hidden></section>
 
     <section id="v-projects" hidden></section>
 
@@ -1215,10 +1228,17 @@ function buckets(){
   return {over, today, fresh};
 }
 
+function taskBadges(){
+  const crm = all().reduce((n, l) => n + (l.tasks || []).filter(t => !t.done).length, 0);
+  let proj = 0;
+  try { proj = allTasks().filter(it => !it.t.done).length; } catch {}
+  $('#cTasks').textContent = crm + proj; $('#cTasks').hidden = !(crm + proj);
+  $('#stCrm').textContent = crm || ''; $('#stProj').textContent = proj || '';
+}
 function renderStats(){
   const a = all();
   const nt = a.reduce((n, l) => n + (l.tasks || []).filter(t => !t.done).length, 0);
-  $('#cTasks').textContent = nt; $('#cTasks').hidden = !nt;
+  taskBadges();
 
   $('#sub').textContent = view === 'dash' ? 'Доходы, расходы и проекты агентства' : ''; $('#sub').hidden = view !== 'dash';
 }
@@ -1262,16 +1282,17 @@ function renderList(){
 }
 
 function renderView(){
-  for (const v of ['list','tasks','projects','dash']) $('#v-' + v).hidden = v !== view;
+  for (const v of ['list','tasks','ptasks','projects','dash']) $('#v-' + v).hidden = v !== view;
+  $('#taskTabs').hidden = !(view === 'tasks' || view === 'ptasks');
   document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.view === view));
   if (view === 'list') renderList();
   else if (view === 'dash') renderDash();
   else if (view === 'tasks') renderTasksView();
-  else if (view === 'projects') renderProjectsView();
-  const sect = view === 'dash' ? 'an' : view === 'tasks' ? 'tasks' : view === 'projects' ? 'projects' : 'crm';
+  else if (view === 'projects' || view === 'ptasks') renderProjectsView();
+  const sect = view === 'dash' ? 'an' : (view === 'tasks' || view === 'ptasks') ? 'tasks' : view === 'projects' ? 'projects' : 'crm';
   document.querySelectorAll('.sbtn').forEach(b => b.toggleAttribute('aria-current', b.dataset.sect === sect));
   $('#crumbCur').textContent = {an: 'Аналитика', tasks: 'Задачи', projects: 'Проекты', crm: 'CRM'}[sect];
-  $('#pageTitle').innerHTML = {an: 'Аналитика <span class="dim">агентства</span>', tasks: 'Задачи <span class="dim">по лидам</span>', projects: 'Проекты <span class="dim">и задачи</span>', crm: 'CRM <span class="dim">лиды и сделки</span>'}[sect];
+  $('#pageTitle').innerHTML = {an: 'Аналитика <span class="dim">агентства</span>', tasks: 'Задачи <span class="dim">CRM и проекты</span>', projects: 'Проекты <span class="dim">в работе</span>', crm: 'CRM <span class="dim">лиды и сделки</span>'}[sect];
   $('#app').classList.remove('mopen');
   $('#sub').textContent = view === 'dash' ? 'Доходы, расходы и проекты агентства' : ''; $('#sub').hidden = view !== 'dash';
 }
@@ -1442,7 +1463,7 @@ document.addEventListener('drop', e => { const col = e.target.closest('.col'); i
 document.addEventListener('dragend', () => { dragId = null; document.querySelectorAll('.col.drop').forEach(x => x.classList.remove('drop')); });
 
 /* clocks tick every minute */
-setInterval(() => { renderStats(); if (view !== 'import' && view !== 'dash' && view !== 'projects' && !document.querySelector('select:focus')) renderView(); if (openId && !$('#drawer').contains(document.activeElement)) renderDrawer(); }, 60e3);
+setInterval(() => { renderStats(); if (view !== 'import' && view !== 'dash' && view !== 'projects' && view !== 'ptasks' && !document.querySelector('select:focus')) renderView(); if (openId && !$('#drawer').contains(document.activeElement)) renderDrawer(); }, 60e3);
 
 
 /* ---------- agency dashboard ---------- */
@@ -1801,16 +1822,14 @@ function commitEdit(raw){
   }
   renderDash();
 }
-function projBadge(){
-  const n = [...projects.values()].filter(p => p.status !== 'gone').reduce((a, p) => a + (p.tasks || []).filter(t => !t.done).length, 0) + (typeof generalTasks === 'undefined' ? 0 : generalTasks.filter(t => !t.done).length);
-  $('#cPTasks').textContent = n; $('#cPTasks').hidden = !n;
-}
+function projBadge(){ taskBadges(); }
+const inProj = () => view === 'projects' || view === 'ptasks';
 function dashRefresh(){
   projBadge();
   if (typeof editT !== 'undefined' && editT) renderTaskEditor();
-  if (view === 'projects'){
+  if (inProj()){
     const ae = document.activeElement;
-    if (!(ae && $('#v-projects').contains(ae) && (ae.tagName === 'SELECT' || (ae.tagName === 'INPUT' && ae.type !== 'checkbox')))) renderProjectsView();
+    if (!(ae && ($('#v-projects').contains(ae) || $('#v-ptasks').contains(ae)) && (ae.tagName === 'SELECT' || (ae.tagName === 'INPUT' && ae.type !== 'checkbox')))) renderProjectsView();
     return;
   }
   if (view !== 'dash' || editing) return;
@@ -1920,9 +1939,9 @@ function taskRow(it, bucket){
   </li>`;
 }
 function renderProjectsView(){
-  const el = $('#v-projects');
-  if (!db){ el.innerHTML = '<div class="empty-state"><strong>База недоступна</strong>Обновите страницу и войдите заново.</div>'; return; }
-  if (!dashLoaded.proj){ el.innerHTML = '<div class="empty-state">Загружаем задачи…</div>'; return; }
+  const el = $('#v-ptasks'), elP = $('#v-projects');
+  if (!db){ el.innerHTML = '<div class="empty-state"><strong>База недоступна</strong>Обновите страницу и войдите заново.</div>'; elP.innerHTML = el.innerHTML; return; }
+  if (!dashLoaded.proj){ el.innerHTML = '<div class="empty-state">Загружаем задачи…</div>'; elP.innerHTML = el.innerHTML; return; }
   const srcs = sources();
   if (pFilter !== 'all' && !srcs.some(x => x.pid === pFilter)) pFilter = 'all';
   const every = allTasks();
@@ -1956,8 +1975,8 @@ function renderProjectsView(){
       <div class="rb-h"><h2>Потом</h2><span class="rcount">${later.length}</span></div>
       ${list(later, 'later', 'Здесь задачи, которые не на сегодня.')}
     </section>
-    ${done.length ? `<details class="rdone"><summary>Выполнено · ${done.length}</summary><ul class="rlist">${done.map(it => taskRow(it, 'done')).join('')}</ul></details>` : ''}
-    <div class="psec">Проекты в работе <span class="num">${srcs.length - 1}</span></div>
+    ${done.length ? `<details class="rdone"><summary>Выполнено · ${done.length}</summary><ul class="rlist">${done.map(it => taskRow(it, 'done')).join('')}</ul></details>` : ''}`;
+  elP.innerHTML = `<div class="psec" style="margin-top:0">Проекты в работе <span class="num">${srcs.length - 1}</span></div>
     <div class="pinfo">${srcs.slice(1).map(x => { const p = projects.get(x.pid), st = projStats(p);
       return `<div class="pi" style="--pc:${x.color}"><div class="pi-h"><b title="${esc(p.name)}">${esc(p.name)}</b><button class="pill pst active" data-ptoggle="${esc(p.id)}" title="Перевести в «Ушёл»">В работе</button></div>
         <div class="pc-meta"><span>Чек <b>${p.check ? rub(p.check) : '—'}</b></span><span>Оплачено <b>${st.total ? rub(st.total) : '—'}</b></span><span>Срок <b>${st.life || '—'}</b> мес.</span></div>${projLinksHTML(p)}</div>`; }).join('')}</div>`;
@@ -1980,7 +1999,7 @@ function projLinksHTML(p){
   return `<div class="pi-links">${btn(p.funnelUrl, 'Воронка', ICON_FUNNEL)}${btn(p.folderUrl, 'Папка', ICON_FOLDER)}${btn(p.autoUrl, 'Автозагрузка', ICON_UPLOAD)}<button class="pi-edit" type="button" data-plinks="${esc(p.id)}">ссылки</button></div>`;
 }
 document.addEventListener('click', e => {
-  if (view !== 'projects') return;
+  if (!inProj()) return;
   const ed = e.target.closest('[data-plinks]');
   if (ed){ pLinksEdit = ed.dataset.plinks; renderProjectsView(); const f = document.querySelector('.plinkform .pl-funnel'); if (f) f.focus(); return; }
   if (e.target.closest('[data-plinks-cancel]')){ pLinksEdit = null; renderProjectsView(); }
@@ -2047,7 +2066,7 @@ document.addEventListener('change', e => {
   renderProjectsView();
 });
 document.addEventListener('click', e => {
-  if (view !== 'projects') return;
+  if (!inProj()) return;
   const fc = e.target.closest('[data-pfilter]');
   if (fc){ pFilter = fc.dataset.pfilter; renderProjectsView(); return; }
   const mv = e.target.closest('[data-pmove]');
@@ -2107,33 +2126,33 @@ document.addEventListener('change', e => {
     saveProjTasks(to, ts => ts.concat({...t}));
     editT = {pid: to, tid};
   } else return;
-  if (view === 'projects') renderProjectsView();
+  if (inProj()) renderProjectsView();
   renderTaskEditor();
 });
 document.addEventListener('click', e => {
   if (e.target.id === 'tScrim' || e.target.id === 'tClose' || e.target.id === 'tOk'){ closeTask(); return; }
   if (e.target.id === 'tDelete' && editT){
     const {pid, tid} = editT; closeTask();
-    saveProjTasks(pid, ts => ts.filter(x => x.id !== tid)); if (view === 'projects') renderProjectsView(); toast('Задача удалена'); return;
+    saveProjTasks(pid, ts => ts.filter(x => x.id !== tid)); if (inProj()) renderProjectsView(); toast('Задача удалена'); return;
   }
-  if (view !== 'projects') return;
-  const body = e.target.closest('#v-projects li[data-tid] .rbody');
+  if (!inProj()) return;
+  const body = e.target.closest('#v-ptasks li[data-tid] .rbody');
   if (body && !e.target.closest('a')){ const li = body.closest('li'); openTask(li.dataset.pid, li.dataset.tid); }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && editT) closeTask(); });
 
 /* drag to reorder inside and between «Сегодня» and «Потом» */
 let dragT = null;
-const clearDropMarks = () => document.querySelectorAll('#v-projects .dropbefore, #v-projects .dropafter, #v-projects .dropzone').forEach(x => x.classList.remove('dropbefore', 'dropafter', 'dropzone'));
+const clearDropMarks = () => document.querySelectorAll('#v-ptasks .dropbefore, #v-ptasks .dropafter, #v-ptasks .dropzone').forEach(x => x.classList.remove('dropbefore', 'dropafter', 'dropzone'));
 document.addEventListener('dragstart', e => {
-  const li = e.target.closest && e.target.closest('#v-projects li[data-tid]'); if (!li) return;
+  const li = e.target.closest && e.target.closest('#v-ptasks li[data-tid]'); if (!li) return;
   dragT = {pid: li.dataset.pid, tid: li.dataset.tid};
   e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragT.tid);
   setTimeout(() => li.classList.add('dragging'), 0);
 });
 document.addEventListener('dragover', e => {
   if (!dragT) return;
-  const ul = e.target.closest && e.target.closest('#v-projects ul[data-bucket]'); if (!ul) return;
+  const ul = e.target.closest && e.target.closest('#v-ptasks ul[data-bucket]'); if (!ul) return;
   e.preventDefault(); clearDropMarks();
   const li = e.target.closest('li[data-tid]');
   if (li && li.dataset.tid !== dragT.tid){ const r = li.getBoundingClientRect(); li.classList.add(e.clientY < r.top + r.height / 2 ? 'dropbefore' : 'dropafter'); }
@@ -2141,7 +2160,7 @@ document.addEventListener('dragover', e => {
 });
 document.addEventListener('drop', e => {
   if (!dragT) return;
-  const ul = e.target.closest && e.target.closest('#v-projects ul[data-bucket]'); if (!ul) return;
+  const ul = e.target.closest && e.target.closest('#v-ptasks ul[data-bucket]'); if (!ul) return;
   e.preventDefault();
   const rows = [...ul.querySelectorAll('li[data-tid]')].filter(x => x.dataset.tid !== dragT.tid);
   const li = e.target.closest('li[data-tid]');
@@ -2153,7 +2172,7 @@ document.addEventListener('drop', e => {
   patchTask(dragT.pid, dragT.tid, {ord, bucket: ul.dataset.bucket, bucketDay: todayISO()});
   dragT = null; renderProjectsView();
 });
-document.addEventListener('dragend', () => { dragT = null; clearDropMarks(); document.querySelectorAll('#v-projects .dragging').forEach(x => x.classList.remove('dragging')); });
+document.addEventListener('dragend', () => { dragT = null; clearDropMarks(); document.querySelectorAll('#v-ptasks .dragging').forEach(x => x.classList.remove('dragging')); });
 
 
 /* ---------- Supabase data layer ---------- */
