@@ -785,6 +785,10 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .tl-bar .btn{height:32px;padding:0 12px;font-size:13px}
 .tl-hint{margin-top:10px;font-size:12.5px;color:var(--gray)}
 
+#pdrawer{position:fixed;inset:0;z-index:20}
+.pay-big{font-size:30px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin-top:4px}
+.sh-foot .grow{flex:1}
+
 /* login */
 #login{position:fixed;inset:0;z-index:100;background:#000;display:grid;place-items:center;padding:16px}
 #login form{width:min(380px,100%);display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:26px}
@@ -978,6 +982,32 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
     <div class="sh-foot">
       <button class="btn danger" id="tDelete" type="button">Удалить задачу</button>
       <button class="btn primary" id="tOk" type="button">Готово</button>
+    </div>
+  </div>
+</aside>
+
+<aside id="pdrawer" hidden>
+  <div class="scrim" id="pScrim"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pTitle">
+    <div class="sh-head">
+      <div style="min-width:0">
+        <div class="tsrc" id="pSrc"></div>
+        <div class="pay-big" id="pTitle"></div>
+        <div class="sh-meta" id="pMeta"></div>
+      </div>
+      <button class="x" id="pClose" aria-label="Закрыть" type="button">×</button>
+    </div>
+    <div class="sh-body">
+      <div class="tfields">
+        <label>Дата оплаты<input type="date" id="pDate"></label>
+        <label>Сумма, ₽<input id="pSum" inputmode="numeric" autocomplete="off" placeholder="Например, 55000"></label>
+      </div>
+      <div class="hint">Дата сохраняется сразу. Кнопка «Оплачено» записывает сумму в таблицу оплат проекта за этот месяц и переносит дату на месяц вперёд. Сумму можно поправить перед записью: чек проекта от этого не изменится.</div>
+    </div>
+    <div class="sh-foot">
+      <button class="btn danger" id="pClear" type="button">Убрать дату</button>
+      <span class="grow"></span>
+      <button class="btn primary" id="pPaid" type="button">Оплачено</button>
     </div>
   </div>
 </aside>
@@ -2181,10 +2211,54 @@ function payPlanHTML(srcs){
       ${rows || '<div class="tl-row"><div class="tl-col"><span>Нет проектов в работе</span></div><div class="tl-track"></div></div>'}
       <div class="tl-now" style="--f:${frac(new Date(t0)).toFixed(5)}"><i>Сегодня: ${now.getDate()} ${MON_GEN[now.getMonth()]}</i></div>
     </div></div>
-    ${bar}
-    <div class="tl-hint">Перетащите карточку по шкале, чтобы перенести дату. Нажмите на карточку, чтобы отметить оплату или поменять дату вручную. «Оплачено» записывает чек в таблицу оплат и переносит дату на месяц вперёд.</div>
+    <div class="tl-hint">Перетащите карточку по шкале, чтобы перенести дату. Нажмите на карточку, чтобы открыть редактор: поменять дату или отметить оплату.</div>
   </section>`;
 }
+function openPay(pid){
+  const p = projects.get(pid); if (!p || !p.payDate) return;
+  paySel = pid; $('#pdrawer').hidden = false;
+  $('#pSum').value = p.check || '';
+  renderPayEditor(true); rerenderPay();
+  setTimeout(() => $('#pClose').focus(), 0);
+}
+function closePay(){
+  if ($('#pdrawer').contains(document.activeElement)) document.activeElement.blur();
+  paySel = null; $('#pdrawer').hidden = true; rerenderPay();
+}
+function renderPayEditor(force){
+  if (!paySel) return;
+  const p = projects.get(paySel);
+  if (!p || !p.payDate){ closePay(); return; }
+  const src = sources().find(x => x.pid === paySel) || {color: '#A7A7A7'};
+  const d = isoDate(p.payDate), days = Math.round((d.getTime() - dayStart(0)) / 864e5);
+  $('#pSrc').innerHTML = `<i style="--pc:${src.color}"></i><span style="color:${src.color}">${esc(p.name)}</span>`;
+  $('#pTitle').textContent = p.check ? rub(p.check) : 'Оплата';
+  $('#pMeta').textContent = d.getDate() + ' ' + MON_GEN[d.getMonth()] + ' ' + d.getFullYear() + ', ' + WD[d.getDay()] + ' · ' + (days < 0 ? 'просрочено на ' + (-days) + ' дн.' : days === 0 ? 'сегодня' : days === 1 ? 'завтра' : 'через ' + days + ' дн.');
+  if (force || document.activeElement !== $('#pDate')) $('#pDate').value = p.payDate;
+}
+document.addEventListener('change', e => {
+  if (e.target.id !== 'pDate' || !paySel) return;
+  const v = e.target.value || '';
+  if (!v || +v.slice(0, 4) < 2020) return;
+  setPayDate(paySel, v); renderPayEditor();
+});
+document.addEventListener('click', e => {
+  const id = e.target.id;
+  if (id === 'pScrim' || id === 'pClose'){ closePay(); return; }
+  if (id === 'pClear' && paySel){ const pid = paySel; closePay(); setPayDate(pid, '', 'Дата оплаты убрана'); return; }
+  if (id === 'pPaid' && paySel){
+    const p = projects.get(paySel); if (!p || !p.payDate) return;
+    const amount = parseNum($('#pSum').value);
+    if (amount === undefined || !amount){ toast('Укажите сумму оплаты числом', true); $('#pSum').focus(); return; }
+    const [y, m] = p.payDate.split('-').map(Number);
+    const patch = {payDate: addMonthISO(p.payDate)};
+    if (y === YEAR){ const pay = Array.from({length: 12}, (_, i) => (p.pay || [])[i] ?? null); pay[m - 1] = (pay[m - 1] || 0) + amount; patch.pay = pay; }
+    projects.set(p.id, {...p, ...patch});
+    closePay();
+    write(p.id, () => db.doc('projects/' + p.id).update(patch)).then(() => toast('Записано ' + rub(amount) + ' за ' + MON_FULL[m - 1].toLowerCase() + '. Следующая оплата: ' + dueInfo(patch.payDate).label));
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && paySel && !$('#pdrawer').hidden) closePay(); });
 function setPayDate(pid, payDate, msg){
   const p = projects.get(pid); if (!p) return;
   projects.set(pid, {...p, payDate}); rerenderPay();
@@ -2212,7 +2286,7 @@ document.addEventListener('pointermove', e => {
 });
 document.addEventListener('pointerup', () => {
   const d = payDrag; payDrag = null; if (!d) return;
-  if (!d.moved){ paySel = paySel === d.pid ? null : d.pid; rerenderPay(); return; }
+  if (!d.moved){ openPay(d.pid); return; }
   const p = projects.get(d.pid);
   if (!p || !d.days){ rerenderPay(); return; }
   const nd = isoDate(p.payDate); nd.setDate(nd.getDate() + d.days);
@@ -2226,7 +2300,7 @@ document.addEventListener('click', e => {
   if (tr){
     const r = tr.getBoundingClientRect(), nd = new Date(payR.start.getTime());
     nd.setDate(nd.getDate() + Math.max(0, Math.min(payR.n - 1, Math.round((e.clientX - r.left) / r.width * payR.n))));
-    paySel = tr.dataset.paytrack; setPayDate(tr.dataset.paytrack, dateISO(nd), 'Дата оплаты: ' + nd.getDate() + ' ' + MON_GEN[nd.getMonth()]);
+    setPayDate(tr.dataset.paytrack, dateISO(nd), 'Дата оплаты: ' + nd.getDate() + ' ' + MON_GEN[nd.getMonth()]);
   }
 });
 function addMonthISO(iso){
