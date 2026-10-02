@@ -2019,12 +2019,12 @@ $('#sideToggle').addEventListener('click', () => {
 $('#sideScrim').addEventListener('click', () => $('#app').classList.remove('mopen'));
 
 /* ---------- projects section ---------- */
-const GEN = '__general', AG = '__agency';
-let agencyTasks = [];
+const GEN = '__general', AG = '__agency', TD = '__td';
+let agencyTasks = [], tdTasks = [];
 let generalTasks = [], pFilter = 'all';
 const REPEAT = {daily: 'ежедневно', weekly: 'еженедельно', monthly: 'ежемесячно'};
 const PCOLORS = ['#E85002', '#D9C3AB', '#F9F9F9', '#F16001', '#ff9a5c', '#c9b8a6'];
-const tasksOf = pid => pid === GEN ? generalTasks : pid === AG ? agencyTasks : ((projects.get(pid) || {}).tasks || []);
+const tasksOf = pid => pid === GEN ? generalTasks : pid === AG ? agencyTasks : pid === TD ? tdTasks : ((projects.get(pid) || {}).tasks || []);
 function linkify(text){
   return esc(text).replace(/https?:\/\/[^\s<]+/g, u => `<a href="${u}" target="_blank" rel="noopener">${u.length > 46 ? u.slice(0, 43) + '…' : u}</a>`);
 }
@@ -2037,7 +2037,7 @@ function nextDue(due, rep){
   return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate());
 }
 function sources(){
-  return [{pid: GEN, name: 'Общие', color: '#A7A7A7'}, {pid: AG, name: 'Агентство', color: '#ff9a5c'}].concat(
+  return [{pid: GEN, name: 'Общие задачи по проектам', color: '#A7A7A7'}, {pid: AG, name: 'Агентство', color: '#ff9a5c'}, {pid: TD, name: 'Тест-драйвы', color: '#c9b8a6'}].concat(
     projList().filter(p => p.status !== 'gone').map((p, i) => ({pid: p.id, name: p.name, color: PCOLORS[i % PCOLORS.length]})));
 }
 // a task sits in "today" or "later"; a later task with a due date comes up by itself when the day arrives
@@ -2106,7 +2106,7 @@ function renderProjectsView(){
   el.innerHTML = `<form class="radd2 ptaskform">
       <span class="rplus" aria-hidden="true">+</span>
       <input class="pt-text" placeholder="Новая задача" aria-label="Текст задачи" autocomplete="off">
-      <select class="pt-src" aria-label="К чему относится">${srcs.map(x => `<option value="${esc(x.pid)}"${x.pid === pFilter ? ' selected' : ''}>${esc(x.pid === GEN ? 'Общая задача' : x.name)}</option>`).join('')}</select>
+      <select class="pt-src" aria-label="К чему относится">${srcs.map(x => `<option value="${esc(x.pid)}"${x.pid === pFilter ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select>
       <select class="pt-when" aria-label="Когда"><option value="today">Сегодня</option><option value="tomorrow">Завтра</option><option value="none">Без срока</option></select>
       <select class="pt-rep" aria-label="Повтор"><option value="">Без повтора</option><option value="daily">Ежедневно</option><option value="weekly">Еженедельно</option><option value="monthly">Ежемесячно</option></select>
       <input class="pt-due" type="date" aria-label="Другая дата" title="Другая дата (если нужна не сегодня и не завтра)">
@@ -2405,10 +2405,12 @@ document.addEventListener('submit', e => {
   write(pid, () => db.doc('projects/' + pid).update(vals)).then(() => toast('Ссылки сохранены'));
 });
 function saveProjTasks(pid, fn){
-  if (pid === GEN || pid === AG){
-    if (pid === GEN) generalTasks = fn(generalTasks.map(t => ({...t}))); else agencyTasks = fn(agencyTasks.map(t => ({...t})));
+  if (pid === GEN || pid === AG || pid === TD){
+    if (pid === GEN) generalTasks = fn(generalTasks.map(t => ({...t})));
+    else if (pid === AG) agencyTasks = fn(agencyTasks.map(t => ({...t})));
+    else tdTasks = fn(tdTasks.map(t => ({...t})));
     projBadge();
-    const data = {tasks: generalTasks, agency: agencyTasks};
+    const data = {tasks: generalTasks, agency: agencyTasks, td: tdTasks};
     return write('__gen', () => db.doc('dash/tasks').set(data));
   }
   const p = projects.get(pid); if (!p) return Promise.resolve();
@@ -2496,7 +2498,7 @@ function renderTaskEditor(force){
   const d = t.due ? dueInfo(t.due, t.done) : null;
   $('#tMeta').textContent = [d ? d.label + (t.time ? ' в ' + t.time : '') : (t.time ? 'в ' + t.time : 'без срока'), t.repeat ? REPEAT[t.repeat] : '', t.done ? 'выполнена' : ''].filter(Boolean).join(' · ');
   const opts = srcs.some(x => x.pid === editT.pid) ? srcs : srcs.concat([{pid: editT.pid, name: src.name}]);
-  $('#eSrc').innerHTML = opts.map(x => `<option value="${esc(x.pid)}">${esc(x.pid === GEN ? 'Общая задача' : x.name)}</option>`).join('');
+  $('#eSrc').innerHTML = opts.map(x => `<option value="${esc(x.pid)}">${esc(x.name)}</option>`).join('');
   $('#eSrc').value = editT.pid;
   set('#eText', t.text); set('#eDue', t.due || ''); set('#eTime', t.time || ''); set('#eRep', t.repeat || '');
   { const g = groupOf(t); $('#eWhen').value = g === 'today' ? 'today' : g === 'none' ? 'none' : g === isoPlus(1) ? 'tomorrow' : 'date'; } $('#eKey').checked = !!t.key; $('#eDone').checked = !!t.done;
@@ -2641,7 +2643,7 @@ renderAll();
   }
   db.doc('dash/y' + YEAR).onSnapshot(s => { fin = s.exists ? (s.data().months || null) : null; dashLoaded.fin = true; dashRefresh(); }, () => {});
   db.doc('dash/settings').onSnapshot(s => { appSettings = s.exists ? (s.data() || {}) : {}; applyDriveLink(); }, () => {});
-  db.doc('dash/tasks').onSnapshot(s => { const d = s.exists ? (s.data() || {}) : {}; generalTasks = d.tasks || []; agencyTasks = d.agency || []; dashRefresh(); }, () => {});
+  db.doc('dash/tasks').onSnapshot(s => { const d = s.exists ? (s.data() || {}) : {}; generalTasks = d.tasks || []; agencyTasks = d.agency || []; tdTasks = d.td || []; dashRefresh(); }, () => {});
   db.collection('projects').onSnapshot(s => {
     const m = new Map(); s.docs.forEach(d => { const v = d.data(); if (v) m.set(d.id, {...v, id: d.id}); });
     projects = m; dashLoaded.proj = true; dashRefresh();
