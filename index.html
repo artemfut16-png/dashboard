@@ -818,6 +818,10 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .side #linkList{gap:2px}
 .side #linkList:empty{display:none}
 
+.rblock.bk.day{padding:16px 22px 8px}
+.rblock.bk.day .rb-h h2{font-size:18px}
+.rblock.bk.none .rb-h h2{color:var(--muted)}
+
 /* login */
 #login{position:fixed;inset:0;z-index:100;background:#000;display:grid;place-items:center;padding:16px}
 #login form{width:min(380px,100%);display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:26px}
@@ -1005,7 +1009,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
         <label class="full">К чему относится<select id="eSrc"></select></label>
         <label>Дата<input type="date" id="eDue"></label>
         <label>Время<input type="time" id="eTime"></label>
-        <label>Когда делать<select id="eWhen"><option value="today">Сегодня</option><option value="later">Потом</option></select></label>
+        <label>Когда делать<select id="eWhen"><option value="today">Сегодня</option><option value="tomorrow">Завтра</option><option value="date">В выбранную дату</option><option value="none">Без срока</option></select></label>
         <label>Повтор<select id="eRep"><option value="">Без повтора</option><option value="daily">Ежедневно</option><option value="weekly">Еженедельно</option><option value="monthly">Ежемесячно</option></select></label>
         <label class="full tcheck"><input type="checkbox" id="eKey">Ключевая задача</label>
         <label class="full tcheck"><input type="checkbox" id="eDone">Выполнена</label>
@@ -2075,6 +2079,21 @@ function bucketOf(t){
   if (t.bucket === 'later') return t.due && t.due <= today && (t.bucketDay || '') < t.due ? 'today' : 'later';
   return t.due && t.due <= today ? 'today' : 'later';
 }
+const isoPlus = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+// group key of a task: 'today' (due today, overdue, or pinned), a future date, or 'none'
+function groupOf(t){
+  const today = todayISO();
+  if (t.due) return t.due <= today ? 'today' : t.due;
+  return t.bucket === 'today' ? 'today' : 'none';
+}
+// what changes on a task when it is moved into a group
+function groupPatch(t, key){
+  const today = todayISO();
+  if (key === 'none') return {due: '', bucket: 'later'};
+  if (key === 'today') return {due: t.due && t.due < today ? t.due : today, bucket: 'later'};
+  return {due: key, bucket: 'later'};
+}
+function dayTitle(iso){ const [y, m, d] = iso.split('-').map(Number), dt = new Date(y, m - 1, d); return d + ' ' + MON_GEN[m - 1] + ', ' + WD[dt.getDay()]; }
 const ordOf = t => t.ord != null ? t.ord : (t.at || 0);
 function allTasks(){
   const out = [];
@@ -2093,7 +2112,7 @@ function taskRow(it, bucket){
     ${t.done ? '' : '<span class="grip" title="Перетащите, чтобы изменить порядок" aria-hidden="true"></span>'}
     <input type="checkbox" class="rc" style="--pc:${it.color}" data-ptask="${esc(t.id)}" data-pid="${esc(it.pid)}" ${t.done ? 'checked' : ''} aria-label="Выполнено">
     <div class="rbody"><div class="rt">${linkify(t.text)}</div><div class="rs">${sub}</div></div>
-    ${t.done ? '' : `<button class="rmove" data-pmove="${esc(t.id)}" data-pid="${esc(it.pid)}" data-to="${bucket === 'today' ? 'later' : 'today'}" type="button">${bucket === 'today' ? 'На потом' : 'На сегодня'}</button>`}
+    ${t.done ? '' : `<button class="rmove" data-pmove="${esc(t.id)}" data-pid="${esc(it.pid)}" data-to="${bucket === 'today' ? isoPlus(1) : 'today'}" type="button">${bucket === 'today' ? 'На завтра' : 'На сегодня'}</button>`}
     <button class="rflag${t.key ? ' on' : ''}" data-pkey="${esc(t.id)}" data-pid="${esc(it.pid)}" type="button" title="Ключевая задача" aria-label="Отметить ключевой" aria-pressed="${!!t.key}">★</button>
     <button class="tdel" data-ptask-del="${esc(t.id)}" data-pid="${esc(it.pid)}" type="button" aria-label="Удалить задачу">×</button>
   </li>`;
@@ -2107,7 +2126,9 @@ function renderProjectsView(){
   const every = allTasks();
   const shown = every.filter(it => pFilter === 'all' || it.pid === pFilter);
   const open = shown.filter(it => !it.t.done).sort((a, b) => ordOf(a.t) - ordOf(b.t));
-  const today = open.filter(it => bucketOf(it.t) === 'today'), later = open.filter(it => bucketOf(it.t) === 'later');
+  const tomI = isoPlus(1), t0ms = dayStart(0);
+  const dayKeys = [...new Set(open.map(it => groupOf(it.t)).filter(k => k !== 'today' && k !== 'none' && k !== tomI))].sort();
+  const inDays = iso => { const [y, m, d] = iso.split('-').map(Number); return Math.round((new Date(y, m - 1, d).getTime() - t0ms) / 864e5); };
   const done = shown.filter(it => it.t.done).sort((a, b) => (b.t.doneAt || 0) - (a.t.doneAt || 0)).slice(0, 30);
   const cnt = pid => every.filter(it => !it.t.done && (pid === 'all' || it.pid === pid)).length;
   const dateStr = new Date().toLocaleDateString('ru-RU', {day: 'numeric', month: 'long', weekday: 'long'});
@@ -2118,23 +2139,22 @@ function renderProjectsView(){
       <span class="rplus" aria-hidden="true">+</span>
       <input class="pt-text" placeholder="Новая задача" aria-label="Текст задачи" autocomplete="off">
       <select class="pt-src" aria-label="К чему относится">${srcs.map(x => `<option value="${esc(x.pid)}"${x.pid === pFilter ? ' selected' : ''}>${esc(x.pid === GEN ? 'Общая задача' : x.name)}</option>`).join('')}</select>
-      <select class="pt-when" aria-label="Когда"><option value="today">Сегодня</option><option value="later">Потом</option></select>
+      <select class="pt-when" aria-label="Когда"><option value="today">Сегодня</option><option value="tomorrow">Завтра</option><option value="none">Без срока</option></select>
       <select class="pt-rep" aria-label="Повтор"><option value="">Без повтора</option><option value="daily">Ежедневно</option><option value="weekly">Еженедельно</option><option value="monthly">Ежемесячно</option></select>
-      <input class="pt-due" type="date" aria-label="Срок, если есть" title="Срок, если есть">
+      <input class="pt-due" type="date" aria-label="Другая дата" title="Другая дата (если нужна не сегодня и не завтра)">
       <button class="btn primary" type="submit">Добавить</button>
     </form>
     <div class="pfilter">
       <button class="fchip" data-pfilter="all" aria-pressed="${pFilter === 'all'}">Все <b>${cnt('all')}</b></button>
       ${srcs.map(x => `<button class="fchip" style="--pc:${x.color}" data-pfilter="${esc(x.pid)}" aria-pressed="${pFilter === x.pid}"><i></i>${esc(x.name)} <b>${cnt(x.pid)}</b></button>`).join('')}
     </div>
-    <section class="rblock bk today">
-      <div class="rb-h"><h2>Сегодня</h2><span class="rcount">${dateStr} · ${today.length}</span></div>
-      ${list(today, 'today', 'На сегодня пусто. Перетащите сюда задачу из «Потом» или добавьте новую.')}
-    </section>
-    <section class="rblock bk">
-      <div class="rb-h"><h2>Потом</h2><span class="rcount">${later.length}</span></div>
-      ${list(later, 'later', 'Здесь задачи, которые не на сегодня.')}
-    </section>
+    ${[
+      {k: 'today', title: 'Сегодня', note: dateStr, cls: 'today', empty: 'На сегодня пусто. Перетащите сюда задачу или добавьте новую.'},
+      {k: tomI, title: 'Завтра', note: dayTitle(tomI), cls: 'day', empty: 'На завтра пока ничего. Сюда можно перетащить задачу.'},
+      ...dayKeys.map(k => ({k, title: dayTitle(k), note: 'через ' + inDays(k) + ' дн.', cls: 'day', empty: ''})),
+      {k: 'none', title: 'Без срока', note: '', cls: 'day none', empty: 'Задач без срока нет. Сюда можно перетащить задачу, чтобы убрать у неё дату.'},
+    ].map(g => { const items = open.filter(it => groupOf(it.t) === g.k);
+      return `<section class="rblock bk ${g.cls}"><div class="rb-h"><h2>${g.title}</h2><span class="rcount">${g.note ? g.note + ' · ' : ''}${items.length}</span></div>${list(items, g.k, g.empty)}</section>`; }).join('')}
     ${done.length ? `<details class="rdone"><summary>Выполнено · ${done.length}</summary><ul class="rlist">${done.map(it => taskRow(it, 'done')).join('')}</ul></details>` : ''}`;
   elP.innerHTML = `<div class="psec" style="margin-top:0">Проекты в работе <span class="num">${srcs.length - 1}</span></div>
     <div class="pinfo">${srcs.slice(1).map(x => { const p = projects.get(x.pid), st = projStats(p);
@@ -2434,9 +2454,9 @@ document.addEventListener('submit', e => {
     e.preventDefault();
     const text = f.querySelector('.pt-text').value.trim(); if (!text){ f.querySelector('.pt-text').focus(); return; }
     const pid = f.querySelector('.pt-src').value, when = f.querySelector('.pt-when').value, repeat = f.querySelector('.pt-rep').value || '';
-    const due = f.querySelector('.pt-due').value || (repeat ? todayISO() : '');
+    const due = f.querySelector('.pt-due').value || (when === 'today' ? todayISO() : when === 'tomorrow' ? isoPlus(1) : (repeat ? todayISO() : ''));
     const keep = {when, repeat};
-    saveProjTasks(pid, ts => ts.concat({id: 't' + Date.now().toString(36), text, due, repeat, key: false, done: false, at: Date.now(), ord: Date.now(), bucket: when, bucketDay: todayISO()}));
+    saveProjTasks(pid, ts => ts.concat({id: 't' + Date.now().toString(36), text, due, repeat, key: false, done: false, at: Date.now(), ord: Date.now(), bucket: 'later'}));
     renderProjectsView();
     const nf2 = document.querySelector('.ptaskform');
     if (nf2){ nf2.querySelector('.pt-src').value = pid; nf2.querySelector('.pt-when').value = keep.when; nf2.querySelector('.pt-text').focus(); }
@@ -2473,7 +2493,7 @@ document.addEventListener('click', e => {
   const fc = e.target.closest('[data-pfilter]');
   if (fc){ pFilter = fc.dataset.pfilter; renderProjectsView(); return; }
   const mv = e.target.closest('[data-pmove]');
-  if (mv){ patchTask(mv.dataset.pid, mv.dataset.pmove, {bucket: mv.dataset.to, bucketDay: todayISO(), ord: Date.now()}); renderProjectsView(); return; }
+  if (mv){ const t = tasksOf(mv.dataset.pid).find(x => x.id === mv.dataset.pmove); if (t) patchTask(mv.dataset.pid, mv.dataset.pmove, {...groupPatch(t, mv.dataset.to), ord: Date.now()}); renderProjectsView(); return; }
   const del = e.target.closest('[data-ptask-del]');
   if (del){ const tid = del.dataset.ptaskDel; saveProjTasks(del.dataset.pid, ts => ts.filter(x => x.id !== tid)); renderProjectsView(); return; }
   const key = e.target.closest('[data-pkey]');
@@ -2510,17 +2530,17 @@ function renderTaskEditor(force){
   $('#eSrc').innerHTML = opts.map(x => `<option value="${esc(x.pid)}">${esc(x.pid === GEN ? 'Общая задача' : x.name)}</option>`).join('');
   $('#eSrc').value = editT.pid;
   set('#eText', t.text); set('#eDue', t.due || ''); set('#eTime', t.time || ''); set('#eRep', t.repeat || '');
-  $('#eWhen').value = bucketOf(t); $('#eKey').checked = !!t.key; $('#eDone').checked = !!t.done;
+  { const g = groupOf(t); $('#eWhen').value = g === 'today' ? 'today' : g === 'none' ? 'none' : g === isoPlus(1) ? 'tomorrow' : 'date'; } $('#eKey').checked = !!t.key; $('#eDone').checked = !!t.done;
 }
 document.addEventListener('change', e => {
   if (!editT || !$('#tdrawer').contains(e.target)) return;
   const {pid, tid} = editT, id = e.target.id, today = todayISO();
   const t = tasksOf(pid).find(x => x.id === tid); if (!t) return;
   if (id === 'eText'){ const v = e.target.value.trim(); if (!v){ e.target.value = t.text; return; } patchTask(pid, tid, {text: v}); }
-  else if (id === 'eDue'){ const due = e.target.value || ''; patchTask(pid, tid, due ? {due, bucket: due <= today ? 'today' : 'later', bucketDay: today} : {due}); }
+  else if (id === 'eDue'){ const due = e.target.value || ''; patchTask(pid, tid, {due, bucket: 'later'}); }
   else if (id === 'eTime') patchTask(pid, tid, {time: e.target.value || ''});
   else if (id === 'eRep'){ const repeat = e.target.value || ''; patchTask(pid, tid, {repeat, due: t.due || (repeat ? today : '')}); }
-  else if (id === 'eWhen') patchTask(pid, tid, {bucket: e.target.value, bucketDay: today, ord: Date.now()});
+  else if (id === 'eWhen'){ const v = e.target.value; if (v === 'date'){ $('#eDue').focus(); return; } patchTask(pid, tid, groupPatch(t, v === 'tomorrow' ? isoPlus(1) : v)); }
   else if (id === 'eKey') patchTask(pid, tid, {key: e.target.checked});
   else if (id === 'eDone') patchTask(pid, tid, {done: e.target.checked, doneAt: e.target.checked ? Date.now() : null});
   else if (id === 'eSrc'){
@@ -2572,7 +2592,7 @@ document.addEventListener('drop', e => {
   else if (li) { dragT = null; clearDropMarks(); return; }
   const prev = rows[idx - 1] ? +rows[idx - 1].dataset.ord : null, next = rows[idx] ? +rows[idx].dataset.ord : null;
   const ord = prev != null && next != null ? (prev + next) / 2 : prev != null ? prev + 1000 : next != null ? next - 1000 : Date.now();
-  patchTask(dragT.pid, dragT.tid, {ord, bucket: ul.dataset.bucket, bucketDay: todayISO()});
+  { const t = tasksOf(dragT.pid).find(x => x.id === dragT.tid); if (t) patchTask(dragT.pid, dragT.tid, {ord, ...groupPatch(t, ul.dataset.bucket)}); }
   dragT = null; renderProjectsView();
 });
 document.addEventListener('dragend', () => { dragT = null; clearDropMarks(); document.querySelectorAll('#v-ptasks .dragging').forEach(x => x.classList.remove('dragging')); });
