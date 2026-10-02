@@ -2052,11 +2052,12 @@ $('#sideToggle').addEventListener('click', () => {
 $('#sideScrim').addEventListener('click', () => $('#app').classList.remove('mopen'));
 
 /* ---------- projects section ---------- */
-const GEN = '__general';
+const GEN = '__general', AG = '__agency';
+let agencyTasks = [];
 let generalTasks = [], pFilter = 'all';
 const REPEAT = {daily: 'ежедневно', weekly: 'еженедельно', monthly: 'ежемесячно'};
 const PCOLORS = ['#E85002', '#D9C3AB', '#F9F9F9', '#F16001', '#ff9a5c', '#c9b8a6'];
-const tasksOf = pid => pid === GEN ? generalTasks : ((projects.get(pid) || {}).tasks || []);
+const tasksOf = pid => pid === GEN ? generalTasks : pid === AG ? agencyTasks : ((projects.get(pid) || {}).tasks || []);
 function linkify(text){
   return esc(text).replace(/https?:\/\/[^\s<]+/g, u => `<a href="${u}" target="_blank" rel="noopener">${u.length > 46 ? u.slice(0, 43) + '…' : u}</a>`);
 }
@@ -2069,7 +2070,7 @@ function nextDue(due, rep){
   return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate());
 }
 function sources(){
-  return [{pid: GEN, name: 'Общие', color: '#A7A7A7'}].concat(
+  return [{pid: GEN, name: 'Общие', color: '#A7A7A7'}, {pid: AG, name: 'Агентство', color: '#ff9a5c'}].concat(
     projList().filter(p => p.status !== 'gone').map((p, i) => ({pid: p.id, name: p.name, color: PCOLORS[i % PCOLORS.length]})));
 }
 // a task sits in "today" or "later"; a later task with a due date comes up by itself when the day arrives
@@ -2156,8 +2157,8 @@ function renderProjectsView(){
     ].map(g => { const items = open.filter(it => groupOf(it.t) === g.k);
       return `<section class="rblock bk ${g.cls}"><div class="rb-h"><h2>${g.title}</h2><span class="rcount">${g.note ? g.note + ' · ' : ''}${items.length}</span></div>${list(items, g.k, g.empty)}</section>`; }).join('')}
     ${done.length ? `<details class="rdone"><summary>Выполнено · ${done.length}</summary><ul class="rlist">${done.map(it => taskRow(it, 'done')).join('')}</ul></details>` : ''}`;
-  elP.innerHTML = `<div class="psec" style="margin-top:0">Проекты в работе <span class="num">${srcs.length - 1}</span></div>
-    <div class="pinfo">${srcs.slice(1).map(x => { const p = projects.get(x.pid), st = projStats(p);
+  elP.innerHTML = `<div class="psec" style="margin-top:0">Проекты в работе <span class="num">${srcs.filter(x => projects.has(x.pid)).length}</span></div>
+    <div class="pinfo">${srcs.filter(x => projects.has(x.pid)).map(x => { const p = projects.get(x.pid), st = projStats(p);
       return `<div class="pi" style="--pc:${x.color}"><div class="pi-h"><b title="${esc(p.name)}">${esc(p.name)}</b><button class="pill pst active" data-ptoggle="${esc(p.id)}" title="Перевести в «Ушёл»">В работе</button></div>
         <div class="pc-meta"><span>Чек <b>${p.check ? rub(p.check) : '—'}</b></span><span>Оплачено <b>${st.total ? rub(st.total) : '—'}</b></span><span>Срок <b>${st.life || '—'}</b> мес.</span>${p.payDate ? `<span>Оплата <b>${dueInfo(p.payDate).label}</b></span>` : ''}</div>${projLinksHTML(p)}</div>`; }).join('')}</div>`;
 }
@@ -2242,7 +2243,7 @@ const isoDate = v => { const [y, m, d] = v.split('-').map(Number); return new Da
 const dateISO = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 let paySel = null, payR = {start: new Date(), n: 120};
 function payPlanHTML(srcs){
-  const items = srcs.slice(1).map(x => ({...x, p: projects.get(x.pid)})).filter(x => x.p);
+  const items = srcs.filter(x => projects.has(x.pid)).map(x => ({...x, p: projects.get(x.pid)}));
   const dated = items.filter(x => x.p.payDate);
   const now = new Date(), t0 = dayStart(0);
   let start = new Date(now.getFullYear(), now.getMonth(), 1), end = new Date(now.getFullYear(), now.getMonth() + 4, 1);
@@ -2437,10 +2438,11 @@ document.addEventListener('submit', e => {
   write(pid, () => db.doc('projects/' + pid).update(vals)).then(() => toast('Ссылки сохранены'));
 });
 function saveProjTasks(pid, fn){
-  if (pid === GEN){
-    generalTasks = fn(generalTasks.map(t => ({...t}))); projBadge();
-    const tasks = generalTasks;
-    return write('__gen', () => db.doc('dash/tasks').set({tasks}));
+  if (pid === GEN || pid === AG){
+    if (pid === GEN) generalTasks = fn(generalTasks.map(t => ({...t}))); else agencyTasks = fn(agencyTasks.map(t => ({...t})));
+    projBadge();
+    const data = {tasks: generalTasks, agency: agencyTasks};
+    return write('__gen', () => db.doc('dash/tasks').set(data));
   }
   const p = projects.get(pid); if (!p) return Promise.resolve();
   const tasks = fn((p.tasks || []).map(t => ({...t})));
@@ -2756,7 +2758,7 @@ $('#logoutBtn').addEventListener('click', async () => { await sb.auth.signOut();
   db = makeDb();
   db.doc('dash/y' + YEAR).onSnapshot(s => { fin = s.exists ? (s.data().months || null) : null; dashLoaded.fin = true; dashRefresh(); }, () => {});
   db.doc('dash/settings').onSnapshot(s => { appSettings = s.exists ? (s.data() || {}) : {}; applyDriveLink(); }, () => {});
-  db.doc('dash/tasks').onSnapshot(s => { generalTasks = s.exists ? ((s.data().tasks) || []) : []; dashRefresh(); }, () => {});
+  db.doc('dash/tasks').onSnapshot(s => { const d = s.exists ? (s.data() || {}) : {}; generalTasks = d.tasks || []; agencyTasks = d.agency || []; dashRefresh(); }, () => {});
   db.collection('projects').onSnapshot(s => {
     const m = new Map(); s.docs.forEach(d => { const v = d.data(); if (v) m.set(d.id, {...v, id: d.id}); });
     projects = m; dashLoaded.proj = true; dashRefresh();
