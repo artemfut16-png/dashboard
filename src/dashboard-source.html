@@ -2546,10 +2546,21 @@ document.addEventListener('dragend', () => { dragT = null; clearDropMarks(); doc
 
 /* agency folder link in the sidebar */
 let appSettings = {};
-const driveOk = () => /^https:\/\//i.test(appSettings.driveUrl || '');
+// defaults; anything saved in the database (dash/settings) takes precedence
+const DEFAULT_DRIVE = 'https://drive.google.com/drive/folders/1a0mawPgUQqlYs4w_Zng_4Em_-Fil6PVQ';
+const DEFAULT_LINKS = [
+  {name: 'Договоры',  url: 'https://drive.google.com/drive/folders/1zhgDstNILogfuL6TJkbekB1_deIpI5is'},
+  {name: 'Команда',   url: 'https://drive.google.com/drive/folders/1tWqoTtic5ZYZFftGvZv8zGpDRo2X8zJU'},
+  {name: 'Материалы', url: 'https://drive.google.com/drive/folders/1Cg2m59J6EyhjOSU0Rqkako3IEftpattr'},
+  {name: 'Продажи',   url: 'https://drive.google.com/drive/folders/1EZZKi2ceU_NGqKELUMaPvc_yrJRk9TrF'},
+  {name: 'Проекты',   url: 'https://drive.google.com/drive/folders/14bwOFR4w6st8WCgkPMU7TCdpOr7d-3yp'},
+];
+const sideLinks = () => Array.isArray(appSettings.links) ? appSettings.links : DEFAULT_LINKS;
+const driveUrl = () => appSettings.driveUrl != null ? appSettings.driveUrl : DEFAULT_DRIVE;
+const driveOk = () => /^https:\/\//i.test(driveUrl() || '');
 const ICON_SIDE_FOLDER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>';
 function renderSideLinks(){
-  const links = Array.isArray(appSettings.links) ? appSettings.links : [];
+  const links = sideLinks();
   $('#linkList').innerHTML = links.map((l, i) => /^https:\/\//i.test(l.url || '')
     ? `<a class="sbtn" href="${esc(l.url)}" target="_blank" rel="noopener" title="${esc(l.name)}">${ICON_SIDE_FOLDER}<span class="lbl">${esc(l.name)}</span><button class="sedit lbl" type="button" data-link-edit="${i}" title="Изменить или удалить" aria-label="Изменить ссылку">✎</button></a>` : '').join('');
 }
@@ -2559,7 +2570,7 @@ function saveSettings(msg){
 }
 function editSideLink(i){
   if (!db){ toast('Сначала войдите в дашборд', true); return; }
-  const links = (Array.isArray(appSettings.links) ? appSettings.links : []).map(l => ({...l}));
+  const links = sideLinks().map(l => ({...l}));
   const cur = i == null ? {name: '', url: ''} : links[i];
   const name = prompt(i == null ? 'Название ссылки, например «Договоры»' : 'Название ссылки (сотрите, чтобы удалить ссылку)', cur.name);
   if (name == null) return;
@@ -2580,11 +2591,11 @@ function applyDriveLink(){
   renderSideLinks();
   const a = $('#driveLink'), ok = driveOk();
   a.classList.toggle('unset', !ok);
-  if (ok){ a.href = appSettings.driveUrl; a.target = '_blank'; } else { a.href = '#'; a.removeAttribute('target'); }
+  if (ok){ a.href = driveUrl(); a.target = '_blank'; } else { a.href = '#'; a.removeAttribute('target'); }
 }
 function askDriveLink(){
   if (!db){ toast('Сначала войдите в дашборд', true); return; }
-  const v = prompt('Вставьте ссылку на папку агентства в Google Диске', appSettings.driveUrl || '');
+  const v = prompt('Вставьте ссылку на папку агентства в Google Диске', driveUrl() || '');
   if (v == null) return;
   const url = v.trim();
   if (url && !/^https:\/\//i.test(url)){ toast('Ссылка должна начинаться с https://', true); return; }
