@@ -814,6 +814,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .side .sedit:hover{color:var(--ink)}
 .side a.sbtn.unset{color:var(--gray)}
 @media (hover:none){.side .sedit{opacity:1}}
+.side .addlink{color:var(--gray);font-weight:500}
+.side #linkList{gap:2px}
+.side #linkList:empty{display:none}
 
 /* login */
 #login{position:fixed;inset:0;z-index:100;background:#000;display:grid;place-items:center;padding:16px}
@@ -848,6 +851,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
     <button class="sbtn" data-sect="an" title="Аналитика"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span class="lbl">Аналитика</span></button>
     <div class="navlbl" id="linksLbl">Ссылки</div>
     <a class="sbtn" id="driveLink" href="#" target="_blank" rel="noopener" title="Папка агентства на Google Диске"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.2 3h7.6l6.7 11.6-3.8 6.4H5.3L1.5 14.6z"/><path d="M8.2 3l6.7 11.6h7.6"/><path d="M15.8 3 5.3 21"/><path d="M1.5 14.6h7"/></svg><span class="lbl">Папка агентства</span><button class="sedit lbl" id="driveEdit" type="button" title="Изменить ссылку" aria-label="Изменить ссылку на папку">✎</button></a>
+    <div id="linkList" class="navg"></div>
+    <button class="sbtn addlink" id="linkAdd" type="button" title="Добавить ссылку"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span class="lbl">Добавить ссылку</span></button>
     <button class="sbtn logout" id="logoutBtn" type="button" title="Выйти"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg><span class="lbl">Выйти</span></button>
   </aside>
   <div class="sidescrim" id="sideScrim"></div>
@@ -2575,7 +2580,37 @@ document.addEventListener('dragend', () => { dragT = null; clearDropMarks(); doc
 /* agency folder link in the sidebar */
 let appSettings = {};
 const driveOk = () => /^https:\/\//i.test(appSettings.driveUrl || '');
+const ICON_SIDE_FOLDER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>';
+function renderSideLinks(){
+  const links = Array.isArray(appSettings.links) ? appSettings.links : [];
+  $('#linkList').innerHTML = links.map((l, i) => /^https:\/\//i.test(l.url || '')
+    ? `<a class="sbtn" href="${esc(l.url)}" target="_blank" rel="noopener" title="${esc(l.name)}">${ICON_SIDE_FOLDER}<span class="lbl">${esc(l.name)}</span><button class="sedit lbl" type="button" data-link-edit="${i}" title="Изменить или удалить" aria-label="Изменить ссылку">✎</button></a>` : '').join('');
+}
+function saveSettings(msg){
+  const data = appSettings;
+  return write('__settings', () => db.doc('dash/settings').set(data)).then(() => toast(msg));
+}
+function editSideLink(i){
+  if (!db){ toast('Сначала войдите в дашборд', true); return; }
+  const links = (Array.isArray(appSettings.links) ? appSettings.links : []).map(l => ({...l}));
+  const cur = i == null ? {name: '', url: ''} : links[i];
+  const name = prompt(i == null ? 'Название ссылки, например «Договоры»' : 'Название ссылки (сотрите, чтобы удалить ссылку)', cur.name);
+  if (name == null) return;
+  if (!name.trim()){ if (i != null){ links.splice(i, 1); appSettings = {...appSettings, links}; renderSideLinks(); saveSettings('Ссылка удалена'); } return; }
+  const url = prompt('Адрес ссылки', cur.url);
+  if (url == null) return;
+  if (!/^https:\/\//i.test(url.trim())){ toast('Ссылка должна начинаться с https://', true); return; }
+  const item = {name: name.trim(), url: url.trim()};
+  if (i == null) links.push(item); else links[i] = item;
+  appSettings = {...appSettings, links}; renderSideLinks(); saveSettings('Ссылка сохранена');
+}
+$('#linkAdd').addEventListener('click', () => editSideLink(null));
+$('#linkList').addEventListener('click', e => {
+  const b = e.target.closest('[data-link-edit]');
+  if (b){ e.preventDefault(); editSideLink(+b.dataset.linkEdit); }
+});
 function applyDriveLink(){
+  renderSideLinks();
   const a = $('#driveLink'), ok = driveOk();
   a.classList.toggle('unset', !ok);
   if (ok){ a.href = appSettings.driveUrl; a.target = '_blank'; } else { a.href = '#'; a.removeAttribute('target'); }
