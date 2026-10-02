@@ -778,6 +778,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 #pdrawer{position:fixed;inset:0;z-index:20}
 .pay-big{font-size:30px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin-top:4px}
 .sh-foot .grow{flex:1}
+.tl{scrollbar-width:none}
+.tl::-webkit-scrollbar{display:none}
+.tl-in{min-width:calc(var(--col) + var(--n) * 4px);overflow:hidden}
 </style>
 
 <div class="app" id="app">
@@ -2178,7 +2181,6 @@ function payPlanHTML(srcs){
       ${rows || '<div class="tl-row"><div class="tl-col"><span>Нет проектов в работе</span></div><div class="tl-track"></div></div>'}
       <div class="tl-now" style="--f:${frac(new Date(t0)).toFixed(5)}"><i>Сегодня: ${now.getDate()} ${MON_GEN[now.getMonth()]}</i></div>
     </div></div>
-    <div class="tl-hint">Перетащите карточку по шкале, чтобы перенести дату. Нажмите на карточку, чтобы открыть редактор: поменять дату или отметить оплату.</div>
   </section>`;
 }
 function openPay(pid){
