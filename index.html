@@ -730,6 +730,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .fsum .ffoot button:hover{color:var(--ink)}
 
 /* payment timeplan */
+.dash .payplan{margin-bottom:0}
 .payplan{background:linear-gradient(180deg, rgba(232,80,2,.10), transparent 140px), var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 22px 14px;margin-bottom:22px}
 .payplan .rb-h h2{font-size:22px}
 .pp-month{margin-top:16px}
@@ -1631,6 +1632,7 @@ function renderDash(){
       ${kpi('Отток за год', churn, `проектов ушло · ${pct(pl.length ? churn / pl.length : null)} клиентов`)}
       ${lm != null ? kpi('Выручка за ' + MON_FULL[lm].toLowerCase(), short(cs[lm].rev), lmSub || '&nbsp;') : ''}
     </div>
+    ${payPlanHTML(sources())}
     <div class="dgrid">
       <div class="card wide">
         <div class="card-h"><h2>Выручка по месяцам</h2><div class="legend">${CH.map(c => `<span><i style="background:${c.c}"></i>${c.name}</span>`).join('')}</div></div>
@@ -2011,7 +2013,7 @@ function renderProjectsView(){
       ${list(later, 'later', 'Здесь задачи, которые не на сегодня.')}
     </section>
     ${done.length ? `<details class="rdone"><summary>Выполнено · ${done.length}</summary><ul class="rlist">${done.map(it => taskRow(it, 'done')).join('')}</ul></details>` : ''}`;
-  elP.innerHTML = payPlanHTML(srcs) + `<div class="psec" style="margin-top:0">Проекты в работе <span class="num">${srcs.length - 1}</span></div>
+  elP.innerHTML = `<div class="psec" style="margin-top:0">Проекты в работе <span class="num">${srcs.length - 1}</span></div>
     <div class="pinfo">${srcs.slice(1).map(x => { const p = projects.get(x.pid), st = projStats(p);
       return `<div class="pi" style="--pc:${x.color}"><div class="pi-h"><b title="${esc(p.name)}">${esc(p.name)}</b><button class="pill pst active" data-ptoggle="${esc(p.id)}" title="Перевести в «Ушёл»">В работе</button></div>
         <div class="pc-meta"><span>Чек <b>${p.check ? rub(p.check) : '—'}</b></span><span>Оплачено <b>${st.total ? rub(st.total) : '—'}</b></span><span>Срок <b>${st.life || '—'}</b> мес.</span>${p.payDate ? `<span>Оплата <b>${dueInfo(p.payDate).label}</b></span>` : ''}</div>${projLinksHTML(p)}</div>`; }).join('')}</div>`;
@@ -2123,6 +2125,7 @@ function payPlanHTML(srcs){
     ${none.length ? `<div class="pp-none">Дата оплаты не назначена:${none.map(x => `<div class="pp-row" style="--pc:${x.color}"><div class="pp-name">${esc(x.p.name)}</div><div class="pp-act"><input type="date" data-paydate="${esc(x.p.id)}" aria-label="Дата оплаты"></div></div>`).join('')}</div>` : ''}
   </section>`;
 }
+const rerenderPay = () => { if (view === 'dash') renderDash(); else if (inProj()) renderProjectsView(); };
 function addMonthISO(iso){
   const [y, m, d] = iso.split('-').map(Number), last = new Date(y, m + 1, 0).getDate(), dt = new Date(y, m, Math.min(d, last));
   return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate());
@@ -2132,21 +2135,21 @@ document.addEventListener('change', e => {
   const p = projects.get(el.dataset.paydate); if (!p) return;
   const payDate = el.value || '';
   if (payDate && +payDate.slice(0, 4) < 2020) return;
-  projects.set(p.id, {...p, payDate}); el.blur(); renderProjectsView();
+  projects.set(p.id, {...p, payDate}); el.blur(); rerenderPay();
   write(p.id, () => db.doc('projects/' + p.id).update({payDate})).then(() => toast(payDate ? 'Дата оплаты сохранена' : 'Дата оплаты убрана'));
 });
 document.addEventListener('click', e => {
-  if (!inProj()) return;
+  if (view !== 'dash' && !inProj()) return;
   const ask = e.target.closest('[data-paid]');
-  if (ask){ payAsk = ask.dataset.paid; renderProjectsView(); return; }
-  if (e.target.closest('[data-paid-no]')){ payAsk = null; renderProjectsView(); return; }
+  if (ask){ payAsk = ask.dataset.paid; rerenderPay(); return; }
+  if (e.target.closest('[data-paid-no]')){ payAsk = null; rerenderPay(); return; }
   const yes = e.target.closest('[data-paid-yes]');
   if (yes){
-    const p = projects.get(yes.dataset.paidYes); payAsk = null; if (!p || !p.payDate){ renderProjectsView(); return; }
+    const p = projects.get(yes.dataset.paidYes); payAsk = null; if (!p || !p.payDate){ rerenderPay(); return; }
     const [y, m] = p.payDate.split('-').map(Number);
     const patch = {payDate: addMonthISO(p.payDate)};
     if (y === YEAR && p.check){ const pay = Array.from({length: 12}, (_, i) => (p.pay || [])[i] ?? null); pay[m - 1] = (pay[m - 1] || 0) + p.check; patch.pay = pay; }
-    projects.set(p.id, {...p, ...patch}); renderProjectsView();
+    projects.set(p.id, {...p, ...patch}); rerenderPay();
     write(p.id, () => db.doc('projects/' + p.id).update(patch)).then(() => toast('Оплата записана. Следующая: ' + dueInfo(patch.payDate).label));
   }
 });
