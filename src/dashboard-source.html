@@ -811,6 +811,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .rblock.bk.day{padding:16px 22px 8px}
 .rblock.bk.day .rb-h h2{font-size:18px}
 .rblock.bk.none .rb-h h2{color:var(--muted)}
+.tpill{font-size:11px;padding:1px 8px}
+.rs .tpill{align-self:center}
 </style>
 
 <div class="app" id="app">
@@ -876,8 +878,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
         <button class="tab" role="tab" data-view="ptasks" aria-selected="false">Проекты<span class="cnt" id="stProj"></span></button>
       </div>
     </div>
-    <section id="v-tasks" hidden></section>
-    <section id="v-ptasks" hidden></section>
+    <section id="v-tasks" class="tboard" hidden></section>
+    <section id="v-ptasks" class="tboard" hidden></section>
 
     <section id="v-projects" hidden></section>
 
@@ -973,7 +975,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
     <div class="sh-body">
       <div class="tfields">
         <label class="full">Что нужно сделать<textarea id="eText" rows="3"></textarea></label>
-        <label class="full">К чему относится<select id="eSrc"></select></label>
+        <label class="full"><span id="eSrcLbl">К чему относится</span><select id="eSrc"></select></label>
         <label>Дата<input type="date" id="eDue"></label>
         <label>Время<input type="time" id="eTime"></label>
         <label>Когда делать<select id="eWhen"><option value="today">Сегодня</option><option value="tomorrow">Завтра</option><option value="date">В выбранную дату</option><option value="none">Без срока</option></select></label>
@@ -985,6 +987,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
     </div>
     <div class="sh-foot">
       <button class="btn danger" id="tDelete" type="button">Удалить задачу</button>
+      <button class="btn" id="tLead" type="button" hidden>Карточка лида</button>
       <button class="btn primary" id="tOk" type="button">Готово</button>
     </div>
   </div>
@@ -1392,7 +1395,7 @@ function renderView(){
   document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.view === view));
   if (view === 'list') renderList();
   else if (view === 'dash') renderDash();
-  else if (view === 'tasks') renderTasksView();
+  else if (view === 'tasks') renderProjectsView();
   else if (view === 'projects' || view === 'ptasks') renderProjectsView();
   const sect = view === 'dash' ? 'an' : (view === 'tasks' || view === 'ptasks') ? 'tasks' : view === 'projects' ? 'projects' : 'crm';
   document.querySelectorAll('.sbtn').forEach(b => b.toggleAttribute('aria-current', b.dataset.sect === sect));
@@ -1954,13 +1957,13 @@ function commitEdit(raw){
   renderDash();
 }
 function projBadge(){ taskBadges(); }
-const inProj = () => view === 'projects' || view === 'ptasks';
+const inProj = () => view === 'projects' || view === 'ptasks' || view === 'tasks';
 function dashRefresh(){
   projBadge();
   if (typeof editT !== 'undefined' && editT) renderTaskEditor();
   if (inProj()){
     const ae = document.activeElement;
-    if (!(ae && ($('#v-projects').contains(ae) || $('#v-ptasks').contains(ae)) && (ae.tagName === 'SELECT' || (ae.tagName === 'INPUT' && ae.type !== 'checkbox')))) renderProjectsView();
+    if (!(ae && ($('#v-projects').contains(ae) || $('#v-ptasks').contains(ae) || $('#v-tasks').contains(ae)) && (ae.tagName === 'SELECT' || (ae.tagName === 'INPUT' && ae.type !== 'checkbox')))) renderProjectsView();
     return;
   }
   if (view !== 'dash' || editing) return;
@@ -2024,7 +2027,8 @@ let agencyTasks = [], tdTasks = [];
 let generalTasks = [], pFilter = 'all';
 const REPEAT = {daily: 'ежедневно', weekly: 'еженедельно', monthly: 'ежемесячно'};
 const PCOLORS = ['#E85002', '#D9C3AB', '#F9F9F9', '#F16001', '#ff9a5c', '#c9b8a6'];
-const tasksOf = pid => pid === GEN ? generalTasks : pid === AG ? agencyTasks : pid === TD ? tdTasks : ((projects.get(pid) || {}).tasks || []);
+const isLead = pid => leads.has(pid);
+const tasksOf = pid => isLead(pid) ? (leads.get(pid).tasks || []) : pid === GEN ? generalTasks : pid === AG ? agencyTasks : pid === TD ? tdTasks : ((projects.get(pid) || {}).tasks || []);
 function linkify(text){
   return esc(text).replace(/https?:\/\/[^\s<]+/g, u => `<a href="${u}" target="_blank" rel="noopener">${u.length > 46 ? u.slice(0, 43) + '…' : u}</a>`);
 }
@@ -2071,7 +2075,7 @@ function allTasks(){
 function taskRow(it, bucket){
   const t = it.t, d = t.due ? dueInfo(t.due, t.done) : null;
   const sub = [
-    `<span class="src" style="color:${it.color}">${esc(it.name)}</span>`,
+    `<span class="src" style="color:${it.color}">${esc(it.name)}</span>${it.pill || ''}`,
     d ? `<span class="${d.cls === 'over' ? 'over' : ''}">${d.cls === 'over' ? 'срок был ' : ''}${d.label}${t.time ? ' в ' + esc(t.time) : ''}</span>` : (t.time ? `<span>в ${esc(t.time)}</span>` : ''),
     t.repeat ? `<span>${REPEAT[t.repeat]}</span>` : '',
     t.key ? '<span class="rkey">ключевая задача</span>' : '',
@@ -2085,37 +2089,26 @@ function taskRow(it, bucket){
     <button class="tdel" data-ptask-del="${esc(t.id)}" data-pid="${esc(it.pid)}" type="button" aria-label="Удалить задачу">×</button>
   </li>`;
 }
-function renderProjectsView(){
-  const el = $('#v-ptasks'), elP = $('#v-projects');
-  if (!db){ el.innerHTML = '<div class="empty-state"><strong>База недоступна</strong>Откройте страницу на claude.ai, войдя в аккаунт.</div>'; elP.innerHTML = el.innerHTML; return; }
-  if (!dashLoaded.proj){ el.innerHTML = '<div class="empty-state">Загружаем задачи…</div>'; elP.innerHTML = el.innerHTML; return; }
-  const srcs = sources();
-  if (pFilter !== 'all' && !srcs.some(x => x.pid === pFilter)) pFilter = 'all';
-  const every = allTasks();
-  const shown = every.filter(it => pFilter === 'all' || it.pid === pFilter);
+let cFilter = 'all';
+function boardHTML(o){
+  const shown = o.every.filter(o.pass);
   const open = shown.filter(it => !it.t.done).sort((a, b) => ordOf(a.t) - ordOf(b.t));
   const tomI = isoPlus(1), t0ms = dayStart(0);
   const dayKeys = [...new Set(open.map(it => groupOf(it.t)).filter(k => k !== 'today' && k !== 'none' && k !== tomI))].sort();
   const inDays = iso => { const [y, m, d] = iso.split('-').map(Number); return Math.round((new Date(y, m - 1, d).getTime() - t0ms) / 864e5); };
   const done = shown.filter(it => it.t.done).sort((a, b) => (b.t.doneAt || 0) - (a.t.doneAt || 0)).slice(0, 30);
-  const cnt = pid => every.filter(it => !it.t.done && (pid === 'all' || it.pid === pid)).length;
   const dateStr = new Date().toLocaleDateString('ru-RU', {day: 'numeric', month: 'long', weekday: 'long'});
-  const pl = projList(), gone = pl.filter(p => p.status === 'gone');
   const list = (items, bucket, emptyText) => `<ul class="rlist" data-bucket="${bucket}">${items.length ? items.map(it => taskRow(it, bucket)).join('') : `<li class="empty">${emptyText}</li>`}</ul>`;
-
-  el.innerHTML = `<form class="radd2 ptaskform">
+  return `<form class="radd2 ptaskform">
       <span class="rplus" aria-hidden="true">+</span>
       <input class="pt-text" placeholder="Новая задача" aria-label="Текст задачи" autocomplete="off">
-      <select class="pt-src" aria-label="К чему относится">${srcs.map(x => `<option value="${esc(x.pid)}"${x.pid === pFilter ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select>
+      <select class="pt-src" aria-label="${o.srcLabel}" title="${o.srcLabel}">${o.options}</select>
       <select class="pt-when" aria-label="Когда"><option value="today">Сегодня</option><option value="tomorrow">Завтра</option><option value="none">Без срока</option></select>
       <select class="pt-rep" aria-label="Повтор"><option value="">Без повтора</option><option value="daily">Ежедневно</option><option value="weekly">Еженедельно</option><option value="monthly">Ежемесячно</option></select>
       <input class="pt-due" type="date" aria-label="Другая дата" title="Другая дата (если нужна не сегодня и не завтра)">
       <button class="btn primary" type="submit">Добавить</button>
     </form>
-    <div class="pfilter">
-      <button class="fchip" data-pfilter="all" aria-pressed="${pFilter === 'all'}">Все <b>${cnt('all')}</b></button>
-      ${srcs.map(x => `<button class="fchip" style="--pc:${x.color}" data-pfilter="${esc(x.pid)}" aria-pressed="${pFilter === x.pid}"><i></i>${esc(x.name)} <b>${cnt(x.pid)}</b></button>`).join('')}
-    </div>
+    <div class="pfilter">${o.chips}</div>
     ${[
       {k: 'today', title: 'Сегодня', note: dateStr, cls: 'today', empty: 'На сегодня пусто. Перетащите сюда задачу или добавьте новую.'},
       {k: tomI, title: 'Завтра', note: dayTitle(tomI), cls: 'day', empty: 'На завтра пока ничего. Сюда можно перетащить задачу.'},
@@ -2124,6 +2117,41 @@ function renderProjectsView(){
     ].map(g => { const items = open.filter(it => groupOf(it.t) === g.k);
       return `<section class="rblock bk ${g.cls}"><div class="rb-h"><h2>${g.title}</h2><span class="rcount">${g.note ? g.note + ' · ' : ''}${items.length}</span></div>${list(items, g.k, g.empty)}</section>`; }).join('')}
     ${done.length ? `<details class="rdone"><summary>Выполнено · ${done.length}</summary><ul class="rlist">${done.map(it => taskRow(it, 'done')).join('')}</ul></details>` : ''}`;
+}
+/* CRM tasks: the same board, sources are leads, filters are lead statuses */
+function crmSrcs(){
+  return all().sort((a, b) => String(a.name || 'яяя').localeCompare(String(b.name || 'яяя'), 'ru') || sortNew(a, b))
+    .map(l => ({pid: l.id, name: (l.name || 'Без имени') + (l.phone ? ' · ' + l.phone : ''), color: '#E85002', status: l.status}));
+}
+function renderCrmBoard(){
+  const el = $('#v-tasks'), srcs = crmSrcs();
+  if (!srcs.length){ el.innerHTML = '<div class="empty-state"><strong>Лидов пока нет</strong>Задачи по CRM ставятся на лидов. Добавьте лида в разделе CRM.</div>'; return; }
+  const every = [];
+  srcs.forEach(x => (leads.get(x.pid).tasks || []).forEach(t => every.push({...x, pill: `<span class="pill s-${x.status} tpill">${esc(S[x.status].name)}</span>`, t})));
+  const openBy = k => every.filter(it => !it.t.done && (k === 'all' || it.status === k)).length;
+  if (cFilter !== 'all' && !openBy(cFilter)) cFilter = 'all';
+  el.innerHTML = boardHTML({
+    every, pass: it => cFilter === 'all' || it.status === cFilter, srcLabel: 'Лид',
+    options: srcs.map(x => `<option value="${esc(x.pid)}">${esc(x.name)}</option>`).join(''),
+    chips: `<button class="fchip" data-cfilter="all" aria-pressed="${cFilter === 'all'}">Все <b>${openBy('all')}</b></button>` +
+      STATUSES.filter(st => openBy(st.k)).map(st => `<button class="fchip" data-cfilter="${st.k}" aria-pressed="${cFilter === st.k}">${st.name} <b>${openBy(st.k)}</b></button>`).join(''),
+  });
+}
+function renderProjectsView(){
+  const el = $('#v-ptasks'), elP = $('#v-projects');
+  if (!db){ el.innerHTML = '<div class="empty-state"><strong>База недоступна</strong>Откройте страницу на claude.ai, войдя в аккаунт.</div>'; elP.innerHTML = el.innerHTML; return; }
+  if (!dashLoaded.proj){ el.innerHTML = '<div class="empty-state">Загружаем задачи…</div>'; elP.innerHTML = el.innerHTML; renderCrmBoard(); return; }
+  const srcs = sources();
+  if (pFilter !== 'all' && !srcs.some(x => x.pid === pFilter)) pFilter = 'all';
+  const every = allTasks();
+  const cnt = pid => every.filter(it => !it.t.done && (pid === 'all' || it.pid === pid)).length;
+  el.innerHTML = boardHTML({
+    every, pass: it => pFilter === 'all' || it.pid === pFilter, srcLabel: 'К чему относится',
+    options: srcs.map(x => `<option value="${esc(x.pid)}"${x.pid === pFilter ? ' selected' : ''}>${esc(x.name)}</option>`).join(''),
+    chips: `<button class="fchip" data-pfilter="all" aria-pressed="${pFilter === 'all'}">Все <b>${cnt('all')}</b></button>` +
+      srcs.map(x => `<button class="fchip" style="--pc:${x.color}" data-pfilter="${esc(x.pid)}" aria-pressed="${pFilter === x.pid}"><i></i>${esc(x.name)} <b>${cnt(x.pid)}</b></button>`).join(''),
+  });
+  renderCrmBoard();
   elP.innerHTML = `<div class="psec" style="margin-top:0">Проекты в работе <span class="num">${srcs.filter(x => projects.has(x.pid)).length}</span></div>
     <div class="pinfo">${srcs.filter(x => projects.has(x.pid)).map(x => { const p = projects.get(x.pid), st = projStats(p);
       return `<div class="pi" style="--pc:${x.color}"><div class="pi-h"><b title="${esc(p.name)}">${esc(p.name)}</b><button class="pill pst active" data-ptoggle="${esc(p.id)}" title="Перевести в «Ушёл»">В работе</button></div>
@@ -2405,6 +2433,11 @@ document.addEventListener('submit', e => {
   write(pid, () => db.doc('projects/' + pid).update(vals)).then(() => toast('Ссылки сохранены'));
 });
 function saveProjTasks(pid, fn){
+  if (isLead(pid)){
+    const l = leads.get(pid), tasks = fn((l.tasks || []).map(t => ({...t})));
+    leads.set(pid, {...l, tasks}); taskBadges();
+    return write(pid, () => ref(pid).update({tasks, updatedAt: Date.now()}));
+  }
   if (pid === GEN || pid === AG || pid === TD){
     if (pid === GEN) generalTasks = fn(generalTasks.map(t => ({...t})));
     else if (pid === AG) agencyTasks = fn(agencyTasks.map(t => ({...t})));
@@ -2424,12 +2457,14 @@ document.addEventListener('submit', e => {
   if (f.classList && f.classList.contains('ptaskform')){
     e.preventDefault();
     const text = f.querySelector('.pt-text').value.trim(); if (!text){ f.querySelector('.pt-text').focus(); return; }
+    const secId = (f.closest('section') || {}).id;
+    if (!f.querySelector('.pt-src').value){ toast('Сначала выберите, к чему относится задача', true); return; }
     const pid = f.querySelector('.pt-src').value, when = f.querySelector('.pt-when').value, repeat = f.querySelector('.pt-rep').value || '';
     const due = f.querySelector('.pt-due').value || (when === 'today' ? todayISO() : when === 'tomorrow' ? isoPlus(1) : (repeat ? todayISO() : ''));
     const keep = {when, repeat};
     saveProjTasks(pid, ts => ts.concat({id: 't' + Date.now().toString(36), text, due, repeat, key: false, done: false, at: Date.now(), ord: Date.now(), bucket: 'later'}));
     renderProjectsView();
-    const nf2 = document.querySelector('.ptaskform');
+    const nf2 = document.querySelector((secId ? '#' + secId + ' ' : '') + '.ptaskform');
     if (nf2){ nf2.querySelector('.pt-src').value = pid; nf2.querySelector('.pt-when').value = keep.when; nf2.querySelector('.pt-text').focus(); }
     return;
   }
@@ -2456,11 +2491,14 @@ document.addEventListener('change', e => {
     toast('Сделано. Вернётся в «Сегодня»: ' + dueInfo(nd).label);
   } else {
     patchTask(pid, tid, {done, doneAt: done ? Date.now() : null});
+    if (done && t && isLead(pid)) write(pid, () => ref(pid).update({history: pushHist(leads.get(pid), {kind: 'task', text: t.text})}));
   }
   renderProjectsView();
 });
 document.addEventListener('click', e => {
   if (!inProj()) return;
+  const cf = e.target.closest('[data-cfilter]');
+  if (cf){ cFilter = cf.dataset.cfilter; renderProjectsView(); return; }
   const fc = e.target.closest('[data-pfilter]');
   if (fc){ pFilter = fc.dataset.pfilter; renderProjectsView(); return; }
   const mv = e.target.closest('[data-pmove]');
@@ -2491,7 +2529,7 @@ function renderTaskEditor(force){
   if (!editT) return;
   const t = tasksOf(editT.pid).find(x => x.id === editT.tid);
   if (!t){ closeTask(); return; }
-  const srcs = sources(), src = srcs.find(x => x.pid === editT.pid) || {name: (projects.get(editT.pid) || {}).name || 'Проект', color: '#A7A7A7'};
+  const srcs = isLead(editT.pid) ? crmSrcs() : sources(), src = srcs.find(x => x.pid === editT.pid) || {name: (projects.get(editT.pid) || {}).name || 'Проект', color: '#A7A7A7'};
   const set = (id, v) => { const el = $(id); if (force || document.activeElement !== el) el.value = v; };
   $('#tSrcLabel').innerHTML = `<i style="--pc:${src.color}"></i><span style="color:${src.color}">${esc(src.name)}</span>`;
   $('#tTitle').textContent = t.text;
@@ -2500,6 +2538,8 @@ function renderTaskEditor(force){
   const opts = srcs.some(x => x.pid === editT.pid) ? srcs : srcs.concat([{pid: editT.pid, name: src.name}]);
   $('#eSrc').innerHTML = opts.map(x => `<option value="${esc(x.pid)}">${esc(x.name)}</option>`).join('');
   $('#eSrc').value = editT.pid;
+  $('#eSrcLbl').textContent = isLead(editT.pid) ? 'Лид' : 'К чему относится';
+  $('#tLead').hidden = !isLead(editT.pid);
   set('#eText', t.text); set('#eDue', t.due || ''); set('#eTime', t.time || ''); set('#eRep', t.repeat || '');
   { const g = groupOf(t); $('#eWhen').value = g === 'today' ? 'today' : g === 'none' ? 'none' : g === isoPlus(1) ? 'tomorrow' : 'date'; } $('#eKey').checked = !!t.key; $('#eDone').checked = !!t.done;
 }
@@ -2525,28 +2565,29 @@ document.addEventListener('change', e => {
 });
 document.addEventListener('click', e => {
   if (e.target.id === 'tScrim' || e.target.id === 'tClose' || e.target.id === 'tOk'){ closeTask(); return; }
+  if (e.target.id === 'tLead' && editT){ const pid = editT.pid; closeTask(); if (isLead(pid)) openLead(pid); return; }
   if (e.target.id === 'tDelete' && editT){
     const {pid, tid} = editT; closeTask();
     saveProjTasks(pid, ts => ts.filter(x => x.id !== tid)); if (inProj()) renderProjectsView(); toast('Задача удалена'); return;
   }
   if (!inProj()) return;
-  const body = e.target.closest('#v-ptasks li[data-tid] .rbody');
+  const body = e.target.closest('.tboard li[data-tid] .rbody');
   if (body && !e.target.closest('a')){ const li = body.closest('li'); openTask(li.dataset.pid, li.dataset.tid); }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && editT) closeTask(); });
 
 /* drag to reorder inside and between «Сегодня» and «Потом» */
 let dragT = null;
-const clearDropMarks = () => document.querySelectorAll('#v-ptasks .dropbefore, #v-ptasks .dropafter, #v-ptasks .dropzone').forEach(x => x.classList.remove('dropbefore', 'dropafter', 'dropzone'));
+const clearDropMarks = () => document.querySelectorAll('.tboard .dropbefore, .tboard .dropafter, .tboard .dropzone').forEach(x => x.classList.remove('dropbefore', 'dropafter', 'dropzone'));
 document.addEventListener('dragstart', e => {
-  const li = e.target.closest && e.target.closest('#v-ptasks li[data-tid]'); if (!li) return;
+  const li = e.target.closest && e.target.closest('.tboard li[data-tid]'); if (!li) return;
   dragT = {pid: li.dataset.pid, tid: li.dataset.tid};
   e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragT.tid);
   setTimeout(() => li.classList.add('dragging'), 0);
 });
 document.addEventListener('dragover', e => {
   if (!dragT) return;
-  const ul = e.target.closest && e.target.closest('#v-ptasks ul[data-bucket]'); if (!ul) return;
+  const ul = e.target.closest && e.target.closest('.tboard ul[data-bucket]'); if (!ul) return;
   e.preventDefault(); clearDropMarks();
   const li = e.target.closest('li[data-tid]');
   if (li && li.dataset.tid !== dragT.tid){ const r = li.getBoundingClientRect(); li.classList.add(e.clientY < r.top + r.height / 2 ? 'dropbefore' : 'dropafter'); }
@@ -2554,7 +2595,7 @@ document.addEventListener('dragover', e => {
 });
 document.addEventListener('drop', e => {
   if (!dragT) return;
-  const ul = e.target.closest && e.target.closest('#v-ptasks ul[data-bucket]'); if (!ul) return;
+  const ul = e.target.closest && e.target.closest('.tboard ul[data-bucket]'); if (!ul) return;
   e.preventDefault();
   const rows = [...ul.querySelectorAll('li[data-tid]')].filter(x => x.dataset.tid !== dragT.tid);
   const li = e.target.closest('li[data-tid]');
@@ -2566,7 +2607,7 @@ document.addEventListener('drop', e => {
   { const t = tasksOf(dragT.pid).find(x => x.id === dragT.tid); if (t) patchTask(dragT.pid, dragT.tid, {ord, ...groupPatch(t, ul.dataset.bucket)}); }
   dragT = null; renderProjectsView();
 });
-document.addEventListener('dragend', () => { dragT = null; clearDropMarks(); document.querySelectorAll('#v-ptasks .dragging').forEach(x => x.classList.remove('dragging')); });
+document.addEventListener('dragend', () => { dragT = null; clearDropMarks(); document.querySelectorAll('.tboard .dragging').forEach(x => x.classList.remove('dragging')); });
 
 /* agency folder link in the sidebar */
 let appSettings = {};
