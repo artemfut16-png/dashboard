@@ -792,6 +792,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .tl::-webkit-scrollbar{display:none}
 .tl-in{min-width:calc(var(--col) + var(--n) * 4px);overflow:hidden}
 .s-tdok{background:rgba(232,80,2,.42);color:#F9F9F9}
+.side a.sbtn{text-decoration:none;box-sizing:border-box}
 
 /* login */
 #login{position:fixed;inset:0;z-index:100;background:#000;display:grid;place-items:center;padding:16px}
@@ -824,6 +825,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
     <button class="sbtn" data-sect="tasks" title="Задачи"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="lbl">Задачи</span><span class="badge" id="cTasks" hidden></span></button>
     <button class="sbtn" data-sect="projects" title="Проекты"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg><span class="lbl">Проекты</span></button>
     <button class="sbtn" data-sect="an" title="Аналитика"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span class="lbl">Аналитика</span></button>
+    <div class="navlbl" id="linksLbl" hidden>Ссылки</div>
+    <a class="sbtn" id="driveLink" href="#" target="_blank" rel="noopener" title="Папка агентства на Google Диске" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.2 3h7.6l6.7 11.6-3.8 6.4H5.3L1.5 14.6z"/><path d="M8.2 3l6.7 11.6h7.6"/><path d="M15.8 3 5.3 21"/><path d="M1.5 14.6h7"/></svg><span class="lbl">Папка агентства</span></a>
     <button class="sbtn logout" id="logoutBtn" type="button" title="Выйти"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg><span class="lbl">Выйти</span></button>
   </aside>
   <div class="sidescrim" id="sideScrim"></div>
@@ -1505,7 +1508,7 @@ function toast(msg, err){
 /* ---------- events ---------- */
 document.addEventListener('click', e => {
   const tab = e.target.closest('.tab'); if (tab){ view = tab.dataset.view; if (view !== 'dash') crmView = view; renderView(); return; }
-  const sb = e.target.closest('.sbtn'); if (sb){ view = sb.dataset.sect === 'an' ? 'dash' : sb.dataset.sect === 'tasks' ? 'tasks' : sb.dataset.sect === 'projects' ? 'projects' : 'list'; renderView(); return; }
+  const sb = e.target.closest('.sbtn[data-sect]'); if (sb){ view = sb.dataset.sect === 'an' ? 'dash' : sb.dataset.sect === 'tasks' ? 'tasks' : sb.dataset.sect === 'projects' ? 'projects' : 'list'; renderView(); return; }
   const go = e.target.closest('[data-go], #importOpen'); if (go){ $('#importBox').hidden = false; $('#importText').focus(); return; }
   if (e.target.id === 'importClose'){ $('#importBox').hidden = true; return; }
   const chip = e.target.closest('[data-chip]'); if (chip){ filt.status = chip.dataset.chip; listLimit = 200; renderList(); return; }
@@ -2616,6 +2619,10 @@ $('#logoutBtn').addEventListener('click', async () => { await sb.auth.signOut();
   if (!session){ $('#login').hidden = false; $('#lgEmail').focus(); return; }
   db = makeDb();
   db.doc('dash/y' + YEAR).onSnapshot(s => { fin = s.exists ? (s.data().months || null) : null; dashLoaded.fin = true; dashRefresh(); }, () => {});
+  db.doc('dash/settings').onSnapshot(s => {
+    const url = s.exists ? (s.data().driveUrl || '') : '', ok = /^https:\/\//i.test(url);
+    $('#driveLink').hidden = !ok; $('#linksLbl').hidden = !ok; if (ok) $('#driveLink').href = url;
+  }, () => {});
   db.doc('dash/tasks').onSnapshot(s => { generalTasks = s.exists ? ((s.data().tasks) || []) : []; dashRefresh(); }, () => {});
   db.collection('projects').onSnapshot(s => {
     const m = new Map(); s.docs.forEach(d => { const v = d.data(); if (v) m.set(d.id, {...v, id: d.id}); });
