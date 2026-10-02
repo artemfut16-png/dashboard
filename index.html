@@ -751,6 +751,40 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .pp-none .pp-row{grid-template-columns:minmax(0,1fr) auto}
 @media (max-width:640px){.pp-row{grid-template-columns:48px minmax(0,1fr);row-gap:8px}.pp-sum,.pp-act{grid-column:2}}
 
+/* payment timeline: project rows, date axis, slots, "today" line */
+.payplan .pp-chips{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.pp-chip{border:1px solid var(--input);border-radius:999px;padding:3px 11px;font-size:12.5px;color:var(--muted)}
+.pp-chip b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;margin-left:5px}
+.tl{--col:176px;overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.tl-in{position:relative;min-width:calc(var(--col) + var(--n) * 9px)}
+.tl-head{display:flex;height:42px;border-bottom:1px solid var(--line)}
+.tl-row{display:flex;height:62px;border-bottom:1px solid var(--line)}
+.tl-row:last-of-type{border-bottom:0}
+.tl-col{flex:none;width:var(--col);position:sticky;left:0;z-index:6;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;justify-content:center;gap:2px;padding:0 14px;min-width:0}
+.tl-head .tl-col{font-size:12.5px;font-weight:600;color:var(--muted)}
+.tl-col b{font-size:14px;font-weight:600;color:var(--pc);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-col span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tl-axis,.tl-track{position:relative;flex:1;min-width:0}
+.tl-m{position:absolute;top:0;bottom:0;display:flex;align-items:center;padding-left:9px;font-size:12px;font-weight:600;color:var(--muted);border-left:1px solid var(--line);white-space:nowrap}
+.tl-g{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.tl-g.w{opacity:.4}
+.tl-track.empty{cursor:copy}
+.tl-track.empty::after{content:"нажмите на шкалу, чтобы назначить дату";position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--gray);pointer-events:none}
+.tl-slot{position:absolute;top:7px;bottom:7px;width:150px;border-radius:8px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--pc);padding:5px 9px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;box-shadow:0 4px 14px rgba(0,0,0,.45);z-index:2;overflow:hidden;text-align:left;color:var(--ink);font:inherit}
+.tl-slot:hover{border-color:var(--gray);border-left-color:var(--pc)}
+.tl-slot.sel{outline:2px solid var(--orange);outline-offset:1px}
+.tl-slot.drag{cursor:grabbing;opacity:.9;z-index:5}
+.tl-slot b{display:block;font-size:13px;font-weight:700;color:var(--pc);white-space:nowrap}
+.tl-slot span{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap}
+.tl-slot.over span{color:var(--bad)}
+.tl-now{position:absolute;top:0;bottom:0;width:2px;background:var(--orange);z-index:5;pointer-events:none;left:calc(var(--col) + (100% - var(--col)) * var(--f))}
+.tl-now i{position:absolute;top:9px;left:50%;transform:translateX(-50%);background:var(--orange);color:#000;font-style:normal;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;white-space:nowrap}
+.tl-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:13.5px}
+.tl-bar b{color:var(--pc)}
+.tl-bar input[type=date]{height:32px;background:transparent;border:1px solid var(--input);border-radius:8px;padding:0 8px;color:var(--ink);font-size:13px}
+.tl-bar .btn{height:32px;padding:0 12px;font-size:13px}
+.tl-hint{margin-top:10px;font-size:12.5px;color:var(--gray)}
+
 /* login */
 #login{position:fixed;inset:0;z-index:100;background:#000;display:grid;place-items:center;padding:16px}
 #login form{width:min(380px,100%);display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:26px}
@@ -2095,37 +2129,106 @@ document.addEventListener('click', e => {
 let payAsk = null;
 const MON_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 const WD = ['вс','пн','вт','ср','чт','пт','сб'];
+const isoDate = v => { const [y, m, d] = v.split('-').map(Number); return new Date(y, m - 1, d); };
+const dateISO = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+let paySel = null, payR = {start: new Date(), n: 120};
 function payPlanHTML(srcs){
   const items = srcs.slice(1).map(x => ({...x, p: projects.get(x.pid)})).filter(x => x.p);
-  const dated = items.filter(x => x.p.payDate).sort((a, b) => a.p.payDate < b.p.payDate ? -1 : a.p.payDate > b.p.payDate ? 1 : 0);
-  const none = items.filter(x => !x.p.payDate);
-  const today = todayISO(), t0 = dayStart(0);
-  const row = x => {
-    const p = x.p, [y, m, d] = p.payDate.split('-').map(Number), dt = new Date(y, m - 1, d);
-    const days = Math.round((dt.getTime() - t0) / 864e5);
-    const when = days < 0 ? 'просрочено на ' + (-days) + ' дн.' : days === 0 ? 'сегодня' : days === 1 ? 'завтра' : 'через ' + days + ' дн.';
-    const cls = days < 0 ? 'over' : days <= 3 ? 'soon' : '';
-    const act = payAsk === p.id
-      ? `<span class="confirm">Записать ${p.check ? rub(p.check) : 'оплату'} за ${MON_FULL[m - 1].toLowerCase()}? <button class="btn primary" type="button" data-paid-yes="${esc(p.id)}">Да</button><button class="btn" type="button" data-paid-no>Нет</button></span>`
-      : `<input type="date" value="${esc(p.payDate)}" data-paydate="${esc(p.id)}" aria-label="Дата оплаты"><button class="btn" type="button" data-paid="${esc(p.id)}">Оплачено</button>`;
-    return `<div class="pp-row" style="--pc:${x.color}">
-      <div class="pp-day">${d}<small>${WD[dt.getDay()]}</small></div>
-      <div style="min-width:0"><div class="pp-name">${esc(p.name)}</div><div class="pp-when ${cls}">${when}</div></div>
-      <div class="pp-sum">${p.check ? rub(p.check) : '—'}</div>
-      <div class="pp-act">${act}</div>
-    </div>`;
-  };
-  const groups = [];
-  dated.forEach(x => { const k = x.p.payDate.slice(0, 7); let g = groups.find(q => q.k === k); if (!g){ g = {k, items: []}; groups.push(g); } g.items.push(x); });
+  const dated = items.filter(x => x.p.payDate);
+  const now = new Date(), t0 = dayStart(0);
+  let start = new Date(now.getFullYear(), now.getMonth(), 1), end = new Date(now.getFullYear(), now.getMonth() + 4, 1);
+  dated.forEach(x => {
+    const d = isoDate(x.p.payDate);
+    if (d < start) start = new Date(d.getFullYear(), d.getMonth(), 1);
+    if (d.getTime() + 25 * 864e5 > end.getTime()) end = new Date(d.getFullYear(), d.getMonth() + 2, 1);
+  });
+  const n = Math.round((end - start) / 864e5);
+  payR = {start, n};
+  const frac = d => Math.round((d - start) / 864e5) / n;
+  const pct = f => (f * 100).toFixed(3) + '%';
+  // month markers and week lines
+  let axis = '', grid = '';
+  for (let m = new Date(start); m < end; m = new Date(m.getFullYear(), m.getMonth() + 1, 1)){
+    axis += `<div class="tl-m" style="left:${pct(frac(m))}">${MON_FULL[m.getMonth()]}${m.getFullYear() !== now.getFullYear() ? ' ' + m.getFullYear() : ''}</div>`;
+    grid += `<div class="tl-g" style="left:${pct(frac(m))}"></div>`;
+    for (const day of [8, 15, 22]){ const w = new Date(m.getFullYear(), m.getMonth(), day); if (w < end) grid += `<div class="tl-g w" style="left:${pct(frac(w))}"></div>`; }
+  }
+  const rows = items.map(x => {
+    const p = x.p;
+    let slot = '';
+    if (p.payDate){
+      const d = isoDate(p.payDate), days = Math.round((d.getTime() - t0) / 864e5);
+      const when = days < 0 ? 'просрочено ' + (-days) + ' дн.' : days === 0 ? 'сегодня' : days === 1 ? 'завтра' : 'через ' + days + ' дн.';
+      slot = `<button type="button" class="tl-slot${paySel === p.id ? ' sel' : ''}${days < 0 ? ' over' : ''}" data-payslot="${esc(p.id)}" style="left:${pct(frac(d))}" title="Перетащите, чтобы перенести дату. Нажмите, чтобы отметить оплату."><b>${p.check ? rub(p.check) : 'Оплата'}</b><span class="tl-d">${d.getDate()} ${MON_GEN[d.getMonth()]} · ${when}</span></button>`;
+    }
+    return `<div class="tl-row" style="--pc:${x.color}"><div class="tl-col"><b title="${esc(p.name)}">${esc(p.name)}</b><span>чек ${p.check ? rub(p.check) : '—'}</span></div><div class="tl-track${p.payDate ? '' : ' empty'}" data-paytrack="${esc(p.id)}">${grid}${slot}</div></div>`;
+  }).join('');
   const total = dated.reduce((a, x) => a + (x.p.check || 0), 0);
+  const byMonth = {};
+  dated.forEach(x => { const k = x.p.payDate.slice(0, 7); byMonth[k] = (byMonth[k] || 0) + (x.p.check || 0); });
+  const chips = Object.keys(byMonth).sort().map(k => `<span class="pp-chip">${MON_FULL[+k.slice(5) - 1]}<b>${rub(byMonth[k])}</b></span>`).join('');
+  const sel = paySel && items.find(x => x.pid === paySel && x.p.payDate);
+  const bar = sel ? (() => { const p = sel.p, d = isoDate(p.payDate);
+    return `<div class="tl-bar" style="--pc:${sel.color}"><span><b>${esc(p.name)}</b> · ${d.getDate()} ${MON_GEN[d.getMonth()]} · ${p.check ? rub(p.check) : 'сумма не указана'}</span>
+      <input type="date" value="${esc(p.payDate)}" data-paydate="${esc(p.id)}" aria-label="Дата оплаты">
+      <button class="btn primary" type="button" data-paid-yes="${esc(p.id)}">Оплачено</button>
+      <button class="btn" type="button" data-payclear="${esc(p.id)}">Убрать дату</button></div>`; })() : '';
   return `<section class="payplan">
     <div class="rb-h"><h2>График оплат</h2><span class="rcount">${dated.length ? 'ожидается ' + rub(total) : 'даты не назначены'}</span></div>
-    <p class="rb-sub">Когда ждать следующую оплату по каждому проекту. «Оплачено» записывает сумму чека в таблицу оплат и переносит дату на месяц вперёд.</p>
-    ${groups.map(g => { const [y, m] = g.k.split('-').map(Number); return `<div class="pp-month"><div class="pp-mh"><span>${MON_FULL[m - 1]} ${y}</span><b>${rub(g.items.reduce((a, x) => a + (x.p.check || 0), 0))}</b></div>${g.items.map(row).join('')}</div>`; }).join('')}
-    ${none.length ? `<div class="pp-none">Дата оплаты не назначена:${none.map(x => `<div class="pp-row" style="--pc:${x.color}"><div class="pp-name">${esc(x.p.name)}</div><div class="pp-act"><input type="date" data-paydate="${esc(x.p.id)}" aria-label="Дата оплаты"></div></div>`).join('')}</div>` : ''}
+    ${chips ? `<div class="pp-chips">${chips}</div>` : '<p class="rb-sub">Назначьте дату следующей оплаты по каждому проекту.</p>'}
+    <div class="tl" style="--n:${n}"><div class="tl-in">
+      <div class="tl-head"><div class="tl-col">Проекты</div><div class="tl-axis">${axis}</div></div>
+      ${rows || '<div class="tl-row"><div class="tl-col"><span>Нет проектов в работе</span></div><div class="tl-track"></div></div>'}
+      <div class="tl-now" style="--f:${frac(new Date(t0)).toFixed(5)}"><i>Сегодня: ${now.getDate()} ${MON_GEN[now.getMonth()]}</i></div>
+    </div></div>
+    ${bar}
+    <div class="tl-hint">Перетащите карточку по шкале, чтобы перенести дату. Нажмите на карточку, чтобы отметить оплату или поменять дату вручную. «Оплачено» записывает чек в таблицу оплат и переносит дату на месяц вперёд.</div>
   </section>`;
 }
-const rerenderPay = () => { if (view === 'dash') renderDash(); else if (inProj()) renderProjectsView(); };
+function setPayDate(pid, payDate, msg){
+  const p = projects.get(pid); if (!p) return;
+  projects.set(pid, {...p, payDate}); rerenderPay();
+  write(pid, () => db.doc('projects/' + pid).update({payDate})).then(() => toast(msg || 'Дата оплаты сохранена'));
+}
+/* drag a slot along the date axis; a short press selects it */
+let payDrag = null;
+document.addEventListener('pointerdown', e => {
+  const el = e.target.closest && e.target.closest('.tl-slot'); if (!el || e.button > 0) return;
+  payDrag = {el, pid: el.dataset.payslot, x: e.clientX, w: el.parentElement.getBoundingClientRect().width, moved: false, days: 0, label: el.querySelector('.tl-d').textContent};
+  try { el.setPointerCapture(e.pointerId); } catch {}
+});
+document.addEventListener('pointermove', e => {
+  if (!payDrag) return;
+  const dx = e.clientX - payDrag.x;
+  if (Math.abs(dx) > 4) payDrag.moved = true;
+  if (!payDrag.moved) return;
+  const p = projects.get(payDrag.pid); if (!p) return;
+  const days = Math.round(dx / payDrag.w * payR.n);
+  payDrag.days = days;
+  payDrag.el.classList.add('drag');
+  payDrag.el.style.transform = 'translateX(' + (days / payR.n * payDrag.w) + 'px)';
+  const nd = new Date(isoDate(p.payDate).getTime()); nd.setDate(nd.getDate() + days);
+  payDrag.el.querySelector('.tl-d').textContent = nd.getDate() + ' ' + MON_GEN[nd.getMonth()] + ' · ' + WD[nd.getDay()];
+});
+document.addEventListener('pointerup', () => {
+  const d = payDrag; payDrag = null; if (!d) return;
+  if (!d.moved){ paySel = paySel === d.pid ? null : d.pid; rerenderPay(); return; }
+  const p = projects.get(d.pid);
+  if (!p || !d.days){ rerenderPay(); return; }
+  const nd = isoDate(p.payDate); nd.setDate(nd.getDate() + d.days);
+  setPayDate(d.pid, dateISO(nd), 'Оплата перенесена на ' + nd.getDate() + ' ' + MON_GEN[nd.getMonth()]);
+});
+document.addEventListener('pointercancel', () => { if (payDrag){ payDrag = null; rerenderPay(); } });
+document.addEventListener('click', e => {
+  const clr = e.target.closest && e.target.closest('[data-payclear]');
+  if (clr){ paySel = null; setPayDate(clr.dataset.payclear, '', 'Дата оплаты убрана'); return; }
+  const tr = e.target.closest && e.target.closest('.tl-track.empty');
+  if (tr){
+    const r = tr.getBoundingClientRect(), nd = new Date(payR.start.getTime());
+    nd.setDate(nd.getDate() + Math.max(0, Math.min(payR.n - 1, Math.round((e.clientX - r.left) / r.width * payR.n))));
+    paySel = tr.dataset.paytrack; setPayDate(tr.dataset.paytrack, dateISO(nd), 'Дата оплаты: ' + nd.getDate() + ' ' + MON_GEN[nd.getMonth()]);
+  }
+});
 function addMonthISO(iso){
   const [y, m, d] = iso.split('-').map(Number), last = new Date(y, m + 1, 0).getDate(), dt = new Date(y, m, Math.min(d, last));
   return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate());
