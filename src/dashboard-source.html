@@ -814,6 +814,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .tpill{font-size:11px;padding:1px 8px}
 .rs .tpill{align-self:center}
 .s-unq{background:#262626;color:#A7A7A7}
+.lc-co{font-weight:500;color:var(--muted)}
+.lc-name:not(.none) .lc-co:first-child{color:var(--ink);font-weight:600}
 </style>
 
 <div class="app" id="app">
@@ -908,6 +910,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
       <div class="sec"><h3>Клиент</h3>
         <div class="fields">
           <label>Имя клиента<input id="fName" autocomplete="off" placeholder="Например, Иван"></label>
+          <label class="full">Компания<input id="fCompany" autocomplete="off" placeholder="Название компании"></label>
           <label>Контакт<input id="fPhone" type="tel" autocomplete="off" placeholder="+7 900 000-00-00"></label>
           <label>Регион<input id="fRegion" list="regionList" autocomplete="off" placeholder="Например, Ленинградская область"></label>
           <datalist id="regionList"></datalist>
@@ -1273,7 +1276,8 @@ document.addEventListener('click', e => {
 function saveClient(id, field){
   const l = leads.get(id); if (!l) return;
   let patch;
-  if (field === 'fName'){ const v = $('#fName').value.trim(); if (v === (l.name || '')) return; patch = {name: v}; }
+  if (field === 'fCompany'){ const v = $('#fCompany').value.trim(); if (v === (l.company || '')) return; patch = {company: v}; }
+  else if (field === 'fName'){ const v = $('#fName').value.trim(); if (v === (l.name || '')) return; patch = {name: v}; }
   else if (field === 'fRegion'){ const v = $('#fRegion').value.trim().replace(/\s+/g, ' '); if (v === (l.region || '')) return; patch = {region: v}; }
   else if (field === 'fRes'){
     let v = $('#fRes').value.trim();
@@ -1364,7 +1368,7 @@ function filtered(){
     if (filt.region !== 'all' && l.region !== filt.region) return false;
     if (!q) return true;
     if (qd.length >= 3 && (phoneDigits(l.phone).includes(qd) || String(l.id).includes(qd))) return true;
-    const hay = [l.name, l.product, l.region, ...(l.tasks||[]).map(t => t.text), ...(l.history||[]).map(h => h.text || '')].join(' ').toLowerCase();
+    const hay = [l.name, l.company, l.product, l.region, ...(l.tasks||[]).map(t => t.text), ...(l.history||[]).map(h => h.text || '')].join(' ').toLowerCase();
     return hay.includes(q);
   });
   if (filt.sort === 'next') arr.sort((a,b) => (a.nextCall || Infinity) - (b.nextCall || Infinity) || sortNew(a,b));
@@ -1381,7 +1385,7 @@ function renderList(){
     return `<div class="col" data-col="${s.k}">
       <header><span class="pill s-${s.k}">${s.name}</span><span class="num">${items.length}</span></header>
       <div class="cards">${items.slice(0, 200).map(l => `<div class="lcard" draggable="true" data-id="${esc(l.id)}" tabindex="0">
-        <div class="lc-top"><div class="lc-name${l.name ? '' : ' none'}">${esc(l.name || 'Без имени')}</div>${taskChip(l)}</div>
+        <div class="lc-top"><div class="lc-name${l.name || l.company ? '' : ' none'}">${esc(l.name || (l.company ? '' : 'Без имени'))}${l.company ? `<span class="lc-co">${l.name ? ' · ' : ''}${esc(l.company)}</span>` : ''}</div>${taskChip(l)}</div>
         <div class="phone">${esc(l.phone || '—')}</div>
         <div class="lc-meta">${esc(l.region || 'Регион не указан')}</div>
         ${l.createdAt ? `<div class="lc-date">Создан ${createdLabel(l.createdAt)}</div>` : ''}
@@ -1425,7 +1429,8 @@ function renderDrawer(){
   if (!l){ closeLead(); return; }
   $('#dPhone').textContent = l.phone || '—';
   $('#dMeta').textContent = [l.region, tzLabel(l.tz), l.createdAt ? 'создан ' + createdLabel(l.createdAt, true) : ''].filter(Boolean).join(' · ');
-  $('#dName').textContent = l.name || ''; $('#dName').hidden = !l.name;
+  $('#dName').textContent = [l.name, l.company].filter(Boolean).join(' · '); $('#dName').hidden = !(l.name || l.company);
+  if (document.activeElement !== $('#fCompany')) $('#fCompany').value = l.company || '';
   if (document.activeElement !== $('#fName')) $('#fName').value = l.name || '';
   if (document.activeElement !== $('#fPhone')) $('#fPhone').value = l.phone || '';
   if (document.activeElement !== $('#fProduct')) $('#fProduct').value = l.product || '';
@@ -1550,7 +1555,7 @@ function submitNote(){
 document.addEventListener('change', e => {
   const sel = e.target.closest('[data-status-for]');
   if (sel){ setStatus(sel.dataset.statusFor, sel.value); return; }
-  if (['fName','fPhone','fProduct','fRegion','fSales','fAvito','fRes'].includes(e.target.id) && openId){ saveClient(openId, e.target.id); return; }
+  if (['fName','fCompany','fPhone','fProduct','fRegion','fSales','fAvito','fRes'].includes(e.target.id) && openId){ saveClient(openId, e.target.id); return; }
   if (e.target.id === 'dNextInput'){ const v = e.target.value; setNext(openId, v ? new Date(v).getTime() : null); e.target.blur(); return; }
   if (e.target.id === 'fSort'){ filt.sort = e.target.value; renderList(); return; }
   if (e.target.id === 'importFile'){
@@ -2123,7 +2128,7 @@ function boardHTML(o){
 /* CRM tasks: the same board, sources are leads, filters are lead statuses */
 function crmSrcs(){
   return all().sort((a, b) => String(a.name || 'яяя').localeCompare(String(b.name || 'яяя'), 'ru') || sortNew(a, b))
-    .map(l => ({pid: l.id, name: (l.name || 'Без имени') + (l.phone ? ' · ' + l.phone : ''), color: '#E85002', status: l.status}));
+    .map(l => ({pid: l.id, name: [l.name || (l.company ? '' : 'Без имени'), l.company, l.phone].filter(Boolean).join(' · '), color: '#E85002', status: l.status}));
 }
 function renderCrmBoard(){
   const el = $('#v-tasks'), srcs = crmSrcs();
