@@ -865,6 +865,12 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .pt-datebtn.set{color:var(--ink);border-color:var(--orange)}
 .tfields .pt-datebtn{height:38px;width:100%;justify-content:flex-start;font-size:14.5px}
 
+#kdrawer{position:fixed;inset:0;z-index:20}
+.keyrow{display:flex;gap:6px;min-width:0}
+.keyrow input{flex:1;min-width:0;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13.5px !important}
+.keyrow .btn{flex:none;height:38px;padding:0 10px;font-size:12.5px}
+.pi-l.keys.set svg{color:var(--sand)}
+
 /* login */
 #login{position:fixed;inset:0;z-index:100;background:#000;display:grid;place-items:center;padding:16px}
 #login form{width:min(380px,100%);display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:26px}
@@ -1064,6 +1070,32 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
       <button class="btn danger" id="tDelete" type="button">Удалить задачу</button>
       <button class="btn" id="tLead" type="button" hidden>Карточка лида</button>
       <button class="btn primary" id="tOk" type="button">Готово</button>
+    </div>
+  </div>
+</aside>
+
+<aside id="kdrawer" hidden>
+  <div class="scrim" id="kScrim"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="kTitle">
+    <div class="sh-head">
+      <div style="min-width:0">
+        <div class="tsrc" id="kSrc"></div>
+        <div class="big-phone" id="kTitle" style="font-size:20px;margin-top:4px">API ключи</div>
+        <div class="sh-meta">Ключи доступа проекта, например к API Авито</div>
+      </div>
+      <button class="x" id="kClose" aria-label="Закрыть" type="button">×</button>
+    </div>
+    <div class="sh-body">
+      <div class="tfields">
+        <label class="full">Client ID<span class="keyrow"><input id="kId" autocomplete="off" spellcheck="false" placeholder="Вставьте Client ID"><button class="btn" type="button" data-kcopy="kId">Копировать</button></span></label>
+        <label class="full">Client secret<span class="keyrow"><input id="kSecret" type="password" autocomplete="new-password" spellcheck="false" placeholder="Вставьте Client secret"><button class="btn" type="button" id="kShow">Показать</button><button class="btn" type="button" data-kcopy="kSecret">Копировать</button></span></label>
+      </div>
+      <div class="hint">Ключи хранятся в базе дашборда и видны только после входа. Не пересылайте их в мессенджерах и не вставляйте в общие таблицы.</div>
+    </div>
+    <div class="sh-foot">
+      <button class="btn danger" id="kClear" type="button">Удалить ключи</button>
+      <span class="grow"></span>
+      <button class="btn primary" id="kSave" type="button">Сохранить</button>
     </div>
   </div>
 </aside>
@@ -2502,6 +2534,43 @@ document.addEventListener('click', e => {
     write(p.id, () => db.doc('projects/' + p.id).update(patch)).then(() => toast('Оплата записана. Следующая: ' + dueInfo(patch.payDate).label));
   }
 });
+const ICON_KEY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/></svg>';
+let keysPid = null;
+function openKeys(pid){
+  const p = projects.get(pid); if (!p) return;
+  keysPid = pid;
+  const src = sources().find(x => x.pid === pid) || {color: '#A7A7A7'};
+  $('#kSrc').innerHTML = `<i style="--pc:${src.color}"></i><span style="color:${src.color}">${esc(p.name)}</span>`;
+  $('#kId').value = p.apiClientId || ''; $('#kSecret').value = p.apiClientSecret || '';
+  $('#kSecret').type = 'password'; $('#kShow').textContent = 'Показать';
+  $('#kdrawer').hidden = false; setTimeout(() => $('#kId').focus(), 0);
+}
+function closeKeys(){
+  $('#kId').value = ''; $('#kSecret').value = '';
+  keysPid = null; $('#kdrawer').hidden = true;
+}
+function saveKeys(patch, msg){
+  const pid = keysPid, p = projects.get(pid); if (!p) return;
+  projects.set(pid, {...p, ...patch}); closeKeys(); if (inProj()) renderProjectsView();
+  write(pid, () => db.doc('projects/' + pid).update(patch)).then(() => toast(msg));
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-pkeys]');
+  if (b){ openKeys(b.dataset.pkeys); return; }
+  if (!keysPid) return;
+  const id = e.target.id;
+  if (id === 'kScrim' || id === 'kClose'){ closeKeys(); return; }
+  if (id === 'kShow'){ const s = $('#kSecret'), show = s.type === 'password'; s.type = show ? 'text' : 'password'; e.target.textContent = show ? 'Скрыть' : 'Показать'; return; }
+  const cp = e.target.closest('[data-kcopy]');
+  if (cp){
+    const v = $('#' + cp.dataset.kcopy).value; if (!v){ toast('Поле пустое', true); return; }
+    navigator.clipboard.writeText(v).then(() => toast('Скопировано'), () => toast('Не удалось скопировать, выделите вручную', true));
+    return;
+  }
+  if (id === 'kSave') saveKeys({apiClientId: $('#kId').value.trim(), apiClientSecret: $('#kSecret').value.trim()}, 'Ключи сохранены');
+  if (id === 'kClear') saveKeys({apiClientId: '', apiClientSecret: ''}, 'Ключи удалены');
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && keysPid) closeKeys(); });
 function projLinksHTML(p){
   const okUrl = u => /^https:\/\//i.test(u || '');
   const btn = (url, label, icon) => okUrl(url)
@@ -2513,7 +2582,7 @@ function projLinksHTML(p){
       <input class="pl-auto" type="url" placeholder="Ссылка на автозагрузку" aria-label="Ссылка на автозагрузку" value="${esc(p.autoUrl || '')}">
       <div class="irow"><button class="btn primary" type="submit">Сохранить</button><button class="btn" type="button" data-plinks-cancel>Отмена</button></div>
     </form>`;
-  return `<div class="pi-links">${btn(p.funnelUrl, 'Воронка', ICON_FUNNEL)}${btn(p.folderUrl, 'Папка', ICON_FOLDER)}${btn(p.autoUrl, 'Автозагрузка', ICON_UPLOAD)}<button class="pi-edit" type="button" data-plinks="${esc(p.id)}">ссылки</button></div>`;
+  return `<div class="pi-links">${btn(p.funnelUrl, 'Воронка', ICON_FUNNEL)}${btn(p.folderUrl, 'Папка', ICON_FOLDER)}${btn(p.autoUrl, 'Автозагрузка', ICON_UPLOAD)}<button class="btn pi-l keys${p.apiClientId || p.apiClientSecret ? ' set' : ' off'}" type="button" data-pkeys="${esc(p.id)}" title="Client ID и Client secret">${ICON_KEY}API ключи</button><button class="pi-edit" type="button" data-plinks="${esc(p.id)}">ссылки</button></div>`;
 }
 document.addEventListener('click', e => {
   if (!inProj()) return;
