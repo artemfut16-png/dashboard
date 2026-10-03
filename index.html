@@ -212,7 +212,7 @@ select.pill option{background:var(--surface);color:var(--ink)}
 .taskadd{display:flex;flex-wrap:wrap;gap:6px}
 .taskadd input{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-width:0;color:var(--ink)}
 .taskadd #tText{flex:1 1 200px}
-.taskadd #tDue{flex:0 0 150px}
+.taskadd .pt-datebtn{flex:0 0 auto;height:36px}
 .lc-prod{align-self:flex-start;margin-top:4px;font-size:11.5px;font-weight:500;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
 .col .empty{font-size:12px;color:var(--muted);padding:6px 4px}
 
@@ -1018,7 +1018,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
         <ul class="tasks" id="dTasks"></ul>
         <form class="taskadd" id="taskForm">
           <input id="tText" placeholder="Что сделать, например: отправить КП" aria-label="Текст задачи" autocomplete="off">
-          <input type="date" id="tDue" aria-label="Дата задачи">
+          <input type="hidden" id="tDue"><input type="hidden" id="tTime">
+          <button type="button" class="pt-datebtn" data-gc-field="tDue" data-gc-time="tTime" data-gc-empty="Без даты" title="Дата и время задачи"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg><span>Дата и время</span></button>
           <button class="btn primary" type="submit">Добавить задачу</button>
         </form>
       </div>
@@ -1080,7 +1081,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
     </div>
     <div class="sh-body">
       <div class="tfields">
-        <label>Дата оплаты<input type="date" id="pDate"></label>
+        <label>Дата оплаты<input type="hidden" id="pDate"><button type="button" class="pt-datebtn" data-gc-field="pDate" data-gc-empty="Без даты" title="Дата оплаты"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg><span>Дата оплаты</span></button></label>
         <label>Сумма, ₽<input id="pSum" inputmode="numeric" autocomplete="off" placeholder="Например, 55000"></label>
       </div>
       <div class="hint">Дата сохраняется сразу. Кнопка «Оплачено» записывает сумму в таблицу оплат проекта за этот месяц и переносит дату на месяц вперёд. Сумму можно поправить перед записью: чек проекта от этого не изменится.</div>
@@ -1309,10 +1310,10 @@ document.addEventListener('submit', e => {
   if (e.target.id !== 'taskForm') return;
   e.preventDefault();
   const text = $('#tText').value.trim(); if (!text || !openId) { $('#tText').focus(); return; }
-  const due = $('#tDue').value || '';
-  const task = {id: 't' + Date.now().toString(36), text, due, done: false, at: Date.now()};
+  const due = $('#tDue').value || '', time = $('#tTime').value || '';
+  const task = {id: 't' + Date.now().toString(36), text, due, time, done: false, at: Date.now()};
   saveTasks(openId, ts => ts.concat(task)).then(() => toast('Задача добавлена'));
-  $('#tText').value = ''; $('#tDue').value = todayISO();
+  $('#tText').value = ''; $('#tDue').value = todayISO(); $('#tTime').value = ''; gcSyncAll();
 });
 document.addEventListener('change', e => {
   const tg = e.target.closest && e.target.closest('[data-task-toggle]'); if (!tg) return;
@@ -1505,7 +1506,7 @@ function renderAll(){
 
 /* ---------- drawer ---------- */
 function openLead(id){
-  openId = id; $('#dNote').value = ''; $('#tText').value = ''; $('#tDue').value = todayISO(); resetDel();
+  openId = id; $('#dNote').value = ''; $('#tText').value = ''; $('#tDue').value = todayISO(); $('#tTime').value = ''; gcSyncAll(); resetDel();
   $('#drawer').hidden = false; renderDrawer(true);
   setTimeout(() => $('#dClose').focus(), 0);
 }
@@ -2404,12 +2405,13 @@ function renderPayEditor(force){
   $('#pSrc').innerHTML = `<i style="--pc:${src.color}"></i><span style="color:${src.color}">${esc(p.name)}</span>`;
   $('#pTitle').textContent = p.check ? rub(p.check) : 'Оплата';
   $('#pMeta').textContent = d.getDate() + ' ' + MON_GEN[d.getMonth()] + ' ' + d.getFullYear() + ', ' + WD[d.getDay()] + ' · ' + (days < 0 ? 'просрочено на ' + (-days) + ' дн.' : days === 0 ? 'сегодня' : days === 1 ? 'завтра' : 'через ' + days + ' дн.');
-  if (force || document.activeElement !== $('#pDate')) $('#pDate').value = p.payDate;
+  $('#pDate').value = p.payDate; gcSyncAll();
 }
 document.addEventListener('change', e => {
   if (e.target.id !== 'pDate' || !paySel) return;
   const v = e.target.value || '';
-  if (!v || +v.slice(0, 4) < 2020) return;
+  if (!v){ const pid = paySel; closePay(); setPayDate(pid, '', 'Дата оплаты убрана'); return; }
+  if (+v.slice(0, 4) < 2020) return;
   setPayDate(paySel, v); renderPayEditor();
 });
 document.addEventListener('click', e => {
@@ -2785,10 +2787,17 @@ function gcLabel(btn, iso, time, empty){
   sp.textContent = s + (time ? (s ? ', ' : '') + time : '');
   btn.classList.add('set');
 }
-function openCal(anchor, iso, time, onDone){
+function gcSyncAll(){
+  document.querySelectorAll('[data-gc-field]').forEach(b => {
+    const d = document.getElementById(b.dataset.gcField), t = b.dataset.gcTime ? document.getElementById(b.dataset.gcTime) : null;
+    gcLabel(b, d ? d.value : '', t ? t.value : '', b.dataset.gcEmpty);
+  });
+}
+function openCal(anchor, iso, time, onDone, noTime){
   const base = iso ? isoDate(iso) : new Date();
   gc = {anchor, date: iso || '', time: time || '', month: new Date(base.getFullYear(), base.getMonth(), 1), onDone};
   $('#gcTime').value = gc.time;
+  $('#gcal').querySelector('.gc-time').hidden = !!noTime;
   $('#gcal').hidden = false;
   renderCal(true); placeCal();
 }
@@ -2823,6 +2832,15 @@ document.addEventListener('click', e => {
     openCal(fb, f.querySelector('.pt-due').value, f.querySelector('.pt-time').value, (iso, time) => {
       f.querySelector('.pt-due').value = iso; f.querySelector('.pt-time').value = time; gcLabel(fb, iso, time);
     });
+    return;
+  }
+  const gf = e.target.closest && e.target.closest('[data-gc-field]');
+  if (gf){
+    const d = document.getElementById(gf.dataset.gcField), t = gf.dataset.gcTime ? document.getElementById(gf.dataset.gcTime) : null;
+    openCal(gf, d.value, t ? t.value : '', (iso, time) => {
+      const fire = (el, v) => { if (!el || el.value === v) return; el.value = v; el.dispatchEvent(new Event('change', {bubbles: true})); };
+      fire(d, iso); fire(t, time); gcLabel(gf, iso, t ? time : '', gf.dataset.gcEmpty);
+    }, !t);
     return;
   }
   const eb = e.target.closest && e.target.closest('[data-gc-edit]');
