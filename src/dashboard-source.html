@@ -860,6 +860,15 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .keyrow input{flex:1;min-width:0;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13.5px !important}
 .keyrow .btn{flex:none;height:38px;padding:0 10px;font-size:12.5px}
 .pi-l.keys.set svg{color:var(--sand)}
+
+.wallet{display:flex;align-items:center;gap:10px;margin-top:10px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02);cursor:pointer;width:100%;text-align:left;color:var(--ink);font:inherit}
+.wallet:hover{border-color:var(--gray)}
+.wallet svg{width:18px;height:18px;flex:none;color:var(--pc)}
+.wallet .wl{flex:1;min-width:0}
+.wallet .wl small{display:block;font-size:11.5px;color:var(--muted)}
+.wallet .wv{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.wallet .wv.low{color:var(--bad)}
+.wallet .wv.none{color:var(--gray);font-size:13px;font-weight:500}
 </style>
 
 <div class="app" id="app">
@@ -2251,7 +2260,7 @@ function renderProjectsView(){
   elP.innerHTML = `<div class="psec" style="margin-top:0">Проекты в работе <span class="num">${srcs.filter(x => projects.has(x.pid)).length}</span></div>
     <div class="pinfo">${srcs.filter(x => projects.has(x.pid)).map(x => { const p = projects.get(x.pid), st = projStats(p);
       return `<div class="pi" style="--pc:${x.color}"><div class="pi-h"><b title="${esc(p.name)}">${esc(p.name)}</b><button class="pill pst active" data-ptoggle="${esc(p.id)}" title="Перевести в «Ушёл»">В работе</button></div>
-        <div class="pc-meta"><span>Чек <b>${p.check ? rub(p.check) : '—'}</b></span><span>Оплачено <b>${st.total ? rub(st.total) : '—'}</b></span><span>Срок <b>${st.life || '—'}</b> мес.</span>${p.payDate ? `<span>Оплата <b>${dueInfo(p.payDate).label}</b></span>` : ''}</div>${projLinksHTML(p)}</div>`; }).join('')}</div>`;
+        <div class="pc-meta"><span>Чек <b>${p.check ? rub(p.check) : '—'}</b></span><span>Оплачено <b>${st.total ? rub(st.total) : '—'}</b></span><span>Срок <b>${st.life || '—'}</b> мес.</span>${p.payDate ? `<span>Оплата <b>${dueInfo(p.payDate).label}</b></span>` : ''}</div>${walletHTML(p)}${projLinksHTML(p)}</div>`; }).join('')}</div>`;
 }
 let pLinksEdit = null;
 const ICON_FUNNEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/></svg>';
@@ -2538,6 +2547,25 @@ document.addEventListener('click', e => {
   if (id === 'kClear') saveKeys({apiClientId: '', apiClientSecret: ''}, 'Ключи удалены');
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && keysPid) closeKeys(); });
+const ICON_WALLET = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>';
+const WALLET_LOW = 3000;
+function walletHTML(p){
+  const has = p.walletBalance != null && p.walletBalance !== '';
+  let when = 'нажмите, чтобы внести';
+  if (has && p.walletAt){ const d = new Date(p.walletAt); when = 'обновлено ' + pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + ' в ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  return `<button type="button" class="wallet" data-wallet="${esc(p.id)}" title="Изменить баланс кошелька"><span aria-hidden="true">${ICON_WALLET}</span><span class="wl">Баланс кошелька<small>${when}</small></span><span class="wv${has ? (+p.walletBalance < WALLET_LOW ? ' low' : '') : ' none'}">${has ? rub(+p.walletBalance) : 'не указан'}</span></button>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-wallet]'); if (!b) return;
+  const p = projects.get(b.dataset.wallet); if (!p) return;
+  const v = prompt('Баланс кошелька «' + p.name + '», ₽ (оставьте пустым, чтобы убрать)', p.walletBalance != null ? String(p.walletBalance) : '');
+  if (v == null) return;
+  const n = v.trim() === '' ? null : parseNum(v);
+  if (n === undefined){ toast('Введите сумму числом, например 12500 или 12,5к', true); return; }
+  const patch = {walletBalance: n, walletAt: n == null ? null : Date.now()};
+  projects.set(p.id, {...p, ...patch}); renderProjectsView();
+  write(p.id, () => db.doc('projects/' + p.id).update(patch)).then(() => toast(n == null ? 'Баланс убран' : 'Баланс сохранён'));
+});
 function projLinksHTML(p){
   const okUrl = u => /^https:\/\//i.test(u || '');
   const btn = (url, label, icon) => okUrl(url)
