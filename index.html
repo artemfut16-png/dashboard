@@ -880,6 +880,10 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .wallet .wv.low{color:var(--bad)}
 .wallet .wv.none{color:var(--gray);font-size:13px;font-weight:500}
 
+.pi.tdl .pi-h b{color:var(--white)}
+.td-next{margin-top:8px;font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.td-next b{color:var(--orange);font-weight:600}
+
 /* login */
 #login{position:fixed;inset:0;z-index:100;background:#000;display:grid;place-items:center;padding:16px}
 #login form{width:min(380px,100%);display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:26px}
@@ -2293,7 +2297,7 @@ function renderProjectsView(){
   elP.innerHTML = `<div class="psec" style="margin-top:0">Проекты в работе <span class="num">${srcs.filter(x => projects.has(x.pid)).length}</span></div>
     <div class="pinfo">${srcs.filter(x => projects.has(x.pid)).map(x => { const p = projects.get(x.pid), st = projStats(p);
       return `<div class="pi" style="--pc:${x.color}"><div class="pi-h"><b title="${esc(p.name)}">${esc(p.name)}</b><button class="pill pst active" data-ptoggle="${esc(p.id)}" title="Перевести в «Ушёл»">В работе</button></div>
-        <div class="pc-meta"><span>Чек <b>${p.check ? rub(p.check) : '—'}</b></span><span>Оплачено <b>${st.total ? rub(st.total) : '—'}</b></span><span>Срок <b>${st.life || '—'}</b> мес.</span>${p.payDate ? `<span>Оплата <b>${dueInfo(p.payDate).label}</b></span>` : ''}</div>${walletHTML(p)}${projLinksHTML(p)}</div>`; }).join('')}</div>`;
+        <div class="pc-meta"><span>Чек <b>${p.check ? rub(p.check) : '—'}</b></span><span>Оплачено <b>${st.total ? rub(st.total) : '—'}</b></span><span>Срок <b>${st.life || '—'}</b> мес.</span>${p.payDate ? `<span>Оплата <b>${dueInfo(p.payDate).label}</b></span>` : ''}</div>${walletHTML(p)}${projLinksHTML(p)}</div>`; }).join('')}</div>${testDrivesHTML()}`;
 }
 let pLinksEdit = null;
 const ICON_FUNNEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/></svg>';
@@ -2598,6 +2602,25 @@ document.addEventListener('click', e => {
   const patch = {walletBalance: n, walletAt: n == null ? null : Date.now()};
   projects.set(p.id, {...p, ...patch}); renderProjectsView();
   write(p.id, () => db.doc('projects/' + p.id).update(patch)).then(() => toast(n == null ? 'Баланс убран' : 'Баланс сохранён'));
+});
+/* leads at the «Тест-драйв продан» stage, shown under the projects */
+function testDrivesHTML(){
+  const list = all().filter(l => l.status === 'td').sort(sortNew);
+  const head = `<div class="psec">Тест-драйвы в работе <span class="num">${list.length}</span></div>`;
+  if (!list.length) return head + '<div class="empty-state">Пока нет лидов на стадии «Тест-драйв продан». Как только лид попадёт в эту колонку CRM, он появится здесь.</div>';
+  return head + `<div class="pinfo">${list.map(l => {
+    const next = openTasks(l)[0];
+    return `<div class="pi tdl" style="--pc:#F16001">
+      <div class="pi-h"><b title="${esc(l.name || '')}">${esc(l.name || 'Без имени')}${l.company ? ' · ' + esc(l.company) : ''}</b><span class="pill s-td">Тест-драйв</span></div>
+      <div class="pc-meta"><span><b>${esc(l.phone || '—')}</b></span>${l.region ? `<span>${esc(l.region)}</span>` : ''}${l.product ? `<span>${esc(l.product)}</span>` : ''}${l.createdAt ? `<span>в CRM с ${createdLabel(l.createdAt)}</span>` : ''}</div>
+      ${next ? `<div class="td-next" title="${esc(next.text)}">Задача: ${esc(next.text)} · <b>${dueInfo(next.due).label}</b></div>` : ''}
+      <div class="pi-links"><button class="btn pi-l" type="button" data-open-lead="${esc(l.id)}">Карточка лида</button>${/^https:\/\//i.test(l.resource || '') ? `<a class="btn pi-l" href="${esc(l.resource)}" target="_blank" rel="noopener">Ресурс</a>` : ''}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-open-lead]'); if (!b) return;
+  if (leads.has(b.dataset.openLead)) openLead(b.dataset.openLead);
 });
 function projLinksHTML(p){
   const okUrl = u => /^https:\/\//i.test(u || '');
