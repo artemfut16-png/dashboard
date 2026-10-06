@@ -2614,13 +2614,23 @@ function testDrivesHTML(){
       <div class="pi-h"><b title="${esc(l.name || '')}">${esc(l.name || 'Без имени')}${l.company ? ' · ' + esc(l.company) : ''}</b><span class="pill s-td">Тест-драйв</span></div>
       <div class="pc-meta"><span><b>${esc(l.phone || '—')}</b></span>${l.region ? `<span>${esc(l.region)}</span>` : ''}${l.product ? `<span>${esc(l.product)}</span>` : ''}${l.createdAt ? `<span>в CRM с ${createdLabel(l.createdAt)}</span>` : ''}</div>
       ${next ? `<div class="td-next" title="${esc(next.text)}">Задача: ${esc(next.text)} · <b>${dueInfo(next.due).label}</b></div>` : ''}
-      <div class="pi-links"><button class="btn pi-l" type="button" data-open-lead="${esc(l.id)}">Карточка лида</button>${/^https:\/\//i.test(l.resource || '') ? `<a class="btn pi-l" href="${esc(l.resource)}" target="_blank" rel="noopener">Ресурс</a>` : ''}</div>
+      <div class="pi-links"><button class="btn pi-l" type="button" data-open-lead="${esc(l.id)}">Карточка лида</button>${/^https:\/\//i.test(l.folderUrl || '') ? `<a class="btn pi-l" href="${esc(l.folderUrl)}" target="_blank" rel="noopener" title="Открыть папку">${ICON_FOLDER}Папка</a><button class="pi-edit" type="button" data-lead-folder="${esc(l.id)}">изменить</button>` : `<button class="btn pi-l off" type="button" data-lead-folder="${esc(l.id)}" title="Добавить ссылку на папку">${ICON_FOLDER}Папка</button>`}</div>
     </div>`;
   }).join('')}</div>`;
 }
 document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('[data-open-lead]'); if (!b) return;
   if (leads.has(b.dataset.openLead)) openLead(b.dataset.openLead);
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-lead-folder]'); if (!b) return;
+  const l = leads.get(b.dataset.leadFolder); if (!l) return;
+  const v = prompt('Ссылка на папку тест-драйва «' + (l.name || l.phone || 'лид') + '» (Google Диск). Оставьте пустым, чтобы убрать.', l.folderUrl || '');
+  if (v == null) return;
+  const url = v.trim();
+  if (url && !/^https:\/\//i.test(url)){ toast('Ссылка должна начинаться с https://', true); return; }
+  leads.set(l.id, {...l, folderUrl: url}); renderProjectsView();
+  write(l.id, () => ref(l.id).update({folderUrl: url, updatedAt: Date.now()})).then(() => toast(url ? 'Папка сохранена' : 'Ссылка на папку убрана'));
 });
 function projLinksHTML(p){
   const okUrl = u => /^https:\/\//i.test(u || '');
