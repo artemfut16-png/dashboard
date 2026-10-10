@@ -884,6 +884,27 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .td-next{margin-top:8px;font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .td-next b{color:var(--orange);font-weight:600}
 
+/* subtasks */
+.rsub{list-style:none;margin:6px 0 2px;padding:0;display:flex;flex-direction:column;gap:3px}
+.rsub li{border:0 !important;padding:0 !important;display:block !important}
+.rsub label{display:inline-flex;align-items:flex-start;gap:8px;font-size:13.5px;color:var(--ink);cursor:pointer;max-width:100%}
+.rsub input{flex:none;width:15px;height:15px;margin:3px 0 0;accent-color:var(--orange);cursor:pointer}
+.rsub span{overflow-wrap:anywhere}
+.rsub li.done span{color:var(--gray);text-decoration:line-through}
+.rs .sprog{font-weight:600;color:var(--sand)}
+.esub-h{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.esub{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.esub li{display:flex;align-items:center;gap:8px}
+.esub li input[type=checkbox]{width:17px;height:17px;flex:none;accent-color:var(--orange)}
+.esub li .esub-t{flex:1;min-width:0;height:34px !important;background:transparent;border:1px solid transparent !important;border-radius:6px;padding:0 8px !important;color:var(--ink);font-size:14px}
+.esub li .esub-t:hover,.esub li .esub-t:focus{border-color:var(--input) !important}
+.esub li.done .esub-t{color:var(--gray);text-decoration:line-through}
+.esub li button{border:0;background:none;color:var(--gray);font-size:16px;padding:2px 6px}
+.esub li button:hover{color:var(--bad)}
+.esub-add{display:flex;gap:6px;margin-top:8px}
+.esub-add input{flex:1;min-width:0}
+.esub-add .btn{height:38px}
+
 /* login */
 #login{position:fixed;inset:0;z-index:100;background:#000;display:grid;place-items:center;padding:16px}
 #login form{width:min(380px,100%);display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:26px}
@@ -1070,6 +1091,11 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
     <div class="sh-body">
       <div class="tfields">
         <label class="full">Что нужно сделать<textarea id="eText" rows="3"></textarea></label>
+        <div class="full" id="eSubWrap">
+          <div class="esub-h"><span>Пункты</span><span id="eSubCount"></span></div>
+          <ul class="esub" id="eSubList"></ul>
+          <div class="esub-add"><input id="eSubIn" autocomplete="off" placeholder="Новый пункт, затем Enter" aria-label="Новый пункт"><button class="btn" id="eSubAdd" type="button">Добавить</button></div>
+        </div>
         <label class="full"><span id="eSrcLbl">К чему относится</span><select id="eSrc"></select></label>
         <label class="full">Дата и время<input type="hidden" id="eDue"><input type="hidden" id="eTime"><button type="button" class="pt-datebtn" id="eDateBtn" data-gc-edit><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg><span>Без даты</span></button></label>
         <label>Когда делать<select id="eWhen"><option value="today">Сегодня</option><option value="tomorrow">Завтра</option><option value="date">В выбранную дату</option><option value="none">Без срока</option></select></label>
@@ -2220,11 +2246,13 @@ function taskRow(it, bucket){
     d ? `<span class="${d.cls === 'over' ? 'over' : ''}">${d.cls === 'over' ? 'срок был ' : ''}${d.label}${t.time ? ' в ' + esc(t.time) : ''}</span>` : (t.time ? `<span>в ${esc(t.time)}</span>` : ''),
     t.repeat ? `<span>${REPEAT[t.repeat]}</span>` : '',
     t.key ? '<span class="rkey">ключевая задача</span>' : '',
+    (t.sub || []).length ? `<span class="sprog">пункты ${(t.sub || []).filter(s => s.done).length} из ${t.sub.length}</span>` : '',
   ].filter(Boolean).join('');
+  const subs = (t.sub || []).length ? `<ul class="rsub">${t.sub.map(s => `<li class="${s.done ? 'done' : ''}"><label><input type="checkbox" data-sub-toggle="${esc(s.id)}" data-tid="${esc(t.id)}" data-pid="${esc(it.pid)}" ${s.done ? 'checked' : ''}><span>${linkify(s.text)}</span></label></li>`).join('')}</ul>` : '';
   return `<li class="${t.done ? 'done' : ''}" ${t.done ? '' : 'draggable="true"'} data-tid="${esc(t.id)}" data-pid="${esc(it.pid)}" data-ord="${ordOf(t)}">
     ${t.done ? '' : '<span class="grip" title="Перетащите, чтобы изменить порядок" aria-hidden="true"></span>'}
     <input type="checkbox" class="rc" style="--pc:${it.color}" data-ptask="${esc(t.id)}" data-pid="${esc(it.pid)}" ${t.done ? 'checked' : ''} aria-label="Выполнено">
-    <div class="rbody"><div class="rt">${linkify(t.text)}</div><div class="rs">${sub}</div></div>
+    <div class="rbody"><div class="rt">${linkify(t.text)}</div><div class="rs">${sub}</div>${subs}</div>
     ${t.done ? '' : `<button class="rmove" data-pmove="${esc(t.id)}" data-pid="${esc(it.pid)}" data-to="${bucket === 'today' ? isoPlus(1) : 'today'}" type="button">${bucket === 'today' ? 'На завтра' : 'На сегодня'}</button>`}
     <button class="rflag${t.key ? ' on' : ''}" data-pkey="${esc(t.id)}" data-pid="${esc(it.pid)}" type="button" title="Ключевая задача" aria-label="Отметить ключевой" aria-pressed="${!!t.key}">★</button>
     <button class="tdel" data-ptask-del="${esc(t.id)}" data-pid="${esc(it.pid)}" type="button" aria-label="Удалить задачу">×</button>
@@ -2754,6 +2782,46 @@ function closeTask(){
   if ($('#tdrawer').contains(document.activeElement)) document.activeElement.blur();
   editT = null; $('#tdrawer').hidden = true;
 }
+function renderSubEditor(t){
+  const list = t.sub || [], ae = document.activeElement;
+  if (ae && ae.classList && ae.classList.contains('esub-t') && $('#eSubList').contains(ae)) return;
+  $('#eSubCount').textContent = list.length ? list.filter(s => s.done).length + ' из ' + list.length : '';
+  $('#eSubList').innerHTML = list.map(s => `<li class="${s.done ? 'done' : ''}"><input type="checkbox" data-sub-toggle="${esc(s.id)}" data-tid="${esc(t.id)}" data-pid="${esc(editT.pid)}" ${s.done ? 'checked' : ''} aria-label="Пункт выполнен"><input class="esub-t" data-sub-text="${esc(s.id)}" value="${esc(s.text)}" aria-label="Текст пункта"><button type="button" data-sub-del="${esc(s.id)}" aria-label="Удалить пункт">×</button></li>`).join('');
+}
+function patchSubs(pid, tid, fn){
+  return saveProjTasks(pid, ts => ts.map(x => x.id === tid ? {...x, sub: fn((x.sub || []).map(s => ({...s})))} : x));
+}
+function addSubFromInput(){
+  if (!editT) return;
+  const inp = $('#eSubIn'), text = inp.value.trim(); if (!text){ inp.focus(); return; }
+  inp.value = '';
+  patchSubs(editT.pid, editT.tid, l => l.concat({id: 's' + Date.now().toString(36), text, done: false}));
+  renderTaskEditor(); if (inProj()) renderProjectsView(); inp.focus();
+}
+document.addEventListener('click', e => {
+  if (e.target.id === 'eSubAdd'){ addSubFromInput(); return; }
+  const d = e.target.closest && e.target.closest('[data-sub-del]');
+  if (d && editT){ const sid = d.dataset.subDel; patchSubs(editT.pid, editT.tid, l => l.filter(s => s.id !== sid)); renderTaskEditor(); if (inProj()) renderProjectsView(); }
+});
+document.addEventListener('keydown', e => { if (e.target.id === 'eSubIn' && e.key === 'Enter'){ e.preventDefault(); addSubFromInput(); } });
+document.addEventListener('change', e => {
+  const cb = e.target.closest && e.target.closest('[data-sub-toggle]');
+  if (cb){
+    const sid = cb.dataset.subToggle, done = cb.checked;
+    patchSubs(cb.dataset.pid, cb.dataset.tid, l => l.map(s => s.id === sid ? {...s, done} : s));
+    if (editT) renderTaskEditor();
+    if (inProj()) renderProjectsView();
+    const t = tasksOf(cb.dataset.pid).find(x => x.id === cb.dataset.tid);
+    if (done && t && (t.sub || []).length && t.sub.every(s => s.done) && !t.done) toast('Все пункты выполнены — можно закрывать задачу');
+    return;
+  }
+  const tx = e.target.closest && e.target.closest('[data-sub-text]');
+  if (tx && editT){
+    const sid = tx.dataset.subText, text = tx.value.trim();
+    patchSubs(editT.pid, editT.tid, l => text ? l.map(s => s.id === sid ? {...s, text} : s) : l.filter(s => s.id !== sid));
+    tx.blur(); renderTaskEditor(); if (inProj()) renderProjectsView();
+  }
+});
 function renderTaskEditor(force){
   if (!editT) return;
   const t = tasksOf(editT.pid).find(x => x.id === editT.tid);
@@ -2771,6 +2839,7 @@ function renderTaskEditor(force){
   $('#tLead').hidden = !isLead(editT.pid);
   set('#eText', t.text); set('#eDue', t.due || ''); set('#eTime', t.time || ''); set('#eRep', t.repeat || '');
   gcLabel($('#eDateBtn'), t.due || '', t.time || '', 'Без даты');
+  renderSubEditor(t);
   { const g = groupOf(t); $('#eWhen').value = g === 'today' ? 'today' : g === 'none' ? 'none' : g === isoPlus(1) ? 'tomorrow' : 'date'; } $('#eKey').checked = !!t.key; $('#eDone').checked = !!t.done;
 }
 document.addEventListener('change', e => {
@@ -2802,7 +2871,7 @@ document.addEventListener('click', e => {
   }
   if (!inProj()) return;
   const body = e.target.closest('.tboard li[data-tid] .rbody');
-  if (body && !e.target.closest('a')){ const li = body.closest('li'); openTask(li.dataset.pid, li.dataset.tid); }
+  if (body && !e.target.closest('a') && !e.target.closest('.rsub')){ const li = body.closest('li[data-tid]'); openTask(li.dataset.pid, li.dataset.tid); }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && editT) closeTask(); });
 
