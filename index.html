@@ -1502,7 +1502,7 @@ function buckets(){
 }
 
 function taskBadges(){
-  const crm = all().reduce((n, l) => n + (l.tasks || []).filter(t => !t.done).length, 0);
+  const crm = all().reduce((n, l) => n + (l.tasks || []).filter(t => !t.done).length, 0) + (typeof crmTasks === 'undefined' ? 0 : crmTasks.filter(t => !t.done).length);
   let proj = 0;
   try { proj = allTasks().filter(it => !it.t.done).length; } catch {}
   $('#cTasks').textContent = crm + proj; $('#cTasks').hidden = !(crm + proj);
@@ -2189,13 +2189,13 @@ $('#sideToggle').addEventListener('click', () => {
 $('#sideScrim').addEventListener('click', () => $('#app').classList.remove('mopen'));
 
 /* ---------- projects section ---------- */
-const GEN = '__general', AG = '__agency', TD = '__td';
-let agencyTasks = [], tdTasks = [];
+const GEN = '__general', AG = '__agency', TD = '__td', CRMG = '__crm';
+let agencyTasks = [], tdTasks = [], crmTasks = [];
 let generalTasks = [], pFilter = 'all';
 const REPEAT = {daily: 'ежедневно', weekly: 'еженедельно', monthly: 'ежемесячно'};
 const PCOLORS = ['#E85002', '#D9C3AB', '#F9F9F9', '#F16001', '#ff9a5c', '#c9b8a6'];
 const isLead = pid => leads.has(pid);
-const tasksOf = pid => isLead(pid) ? (leads.get(pid).tasks || []) : pid === GEN ? generalTasks : pid === AG ? agencyTasks : pid === TD ? tdTasks : ((projects.get(pid) || {}).tasks || []);
+const tasksOf = pid => isLead(pid) ? (leads.get(pid).tasks || []) : pid === GEN ? generalTasks : pid === AG ? agencyTasks : pid === TD ? tdTasks : pid === CRMG ? crmTasks : ((projects.get(pid) || {}).tasks || []);
 function linkify(text){
   return esc(text).replace(/https?:\/\/[^\s<]+/g, u => `<a href="${u}" target="_blank" rel="noopener">${u.length > 46 ? u.slice(0, 43) + '…' : u}</a>`);
 }
@@ -2293,17 +2293,19 @@ function crmSrcs(){
   return all().sort((a, b) => String(a.name || 'яяя').localeCompare(String(b.name || 'яяя'), 'ru') || sortNew(a, b))
     .map(l => ({pid: l.id, name: [l.name || (l.company ? '' : 'Без имени'), l.company, l.phone].filter(Boolean).join(' · '), color: '#E85002', status: l.status}));
 }
+const CRM_FREE = {pid: CRMG, name: 'Без привязки к клиенту', color: '#A7A7A7', status: null};
 function renderCrmBoard(){
   const el = $('#v-tasks'), srcs = crmSrcs();
-  if (!srcs.length){ el.innerHTML = '<div class="empty-state"><strong>Лидов пока нет</strong>Задачи по CRM ставятся на лидов. Добавьте лида в разделе CRM.</div>'; return; }
-  const every = [];
+  const every = crmTasks.map(t => ({...CRM_FREE, t}));
   srcs.forEach(x => (leads.get(x.pid).tasks || []).forEach(t => every.push({...x, pill: `<span class="pill s-${x.status} tpill">${esc(S[x.status].name)}</span>`, t})));
-  const openBy = k => every.filter(it => !it.t.done && (k === 'all' || it.status === k)).length;
+  const passK = k => it => k === 'all' || (k === '__free' ? it.pid === CRMG : it.status === k);
+  const openBy = k => every.filter(it => !it.t.done && passK(k)(it)).length;
   if (cFilter !== 'all' && !openBy(cFilter)) cFilter = 'all';
   el.innerHTML = boardHTML({
-    every, pass: it => cFilter === 'all' || it.status === cFilter, srcLabel: 'Лид',
-    options: srcs.map(x => `<option value="${esc(x.pid)}">${esc(x.name)}</option>`).join(''),
+    every, pass: passK(cFilter), srcLabel: 'Клиент',
+    options: [CRM_FREE].concat(srcs).map(x => `<option value="${esc(x.pid)}">${esc(x.name)}</option>`).join(''),
     chips: `<button class="fchip" data-cfilter="all" aria-pressed="${cFilter === 'all'}">Все <b>${openBy('all')}</b></button>` +
+      (openBy('__free') ? `<button class="fchip" data-cfilter="__free" aria-pressed="${cFilter === '__free'}">Без клиента <b>${openBy('__free')}</b></button>` : '') +
       STATUSES.filter(st => openBy(st.k)).map(st => `<button class="fchip" data-cfilter="${st.k}" aria-pressed="${cFilter === st.k}">${st.name} <b>${openBy(st.k)}</b></button>`).join(''),
   });
 }
@@ -2694,12 +2696,13 @@ function saveProjTasks(pid, fn){
     leads.set(pid, {...l, tasks}); taskBadges();
     return write(pid, () => ref(pid).update({tasks, updatedAt: Date.now()}));
   }
-  if (pid === GEN || pid === AG || pid === TD){
+  if (pid === GEN || pid === AG || pid === TD || pid === CRMG){
     if (pid === GEN) generalTasks = fn(generalTasks.map(t => ({...t})));
     else if (pid === AG) agencyTasks = fn(agencyTasks.map(t => ({...t})));
-    else tdTasks = fn(tdTasks.map(t => ({...t})));
+    else if (pid === TD) tdTasks = fn(tdTasks.map(t => ({...t})));
+    else crmTasks = fn(crmTasks.map(t => ({...t})));
     projBadge();
-    const data = {tasks: generalTasks, agency: agencyTasks, td: tdTasks};
+    const data = {tasks: generalTasks, agency: agencyTasks, td: tdTasks, crm: crmTasks};
     return write('__gen', () => db.doc('dash/tasks').set(data));
   }
   const p = projects.get(pid); if (!p) return Promise.resolve();
@@ -2826,7 +2829,7 @@ function renderTaskEditor(force){
   if (!editT) return;
   const t = tasksOf(editT.pid).find(x => x.id === editT.tid);
   if (!t){ closeTask(); return; }
-  const srcs = isLead(editT.pid) ? crmSrcs() : sources(), src = srcs.find(x => x.pid === editT.pid) || {name: (projects.get(editT.pid) || {}).name || 'Проект', color: '#A7A7A7'};
+  const srcs = (isLead(editT.pid) || editT.pid === CRMG) ? [CRM_FREE].concat(crmSrcs()) : sources(), src = srcs.find(x => x.pid === editT.pid) || {name: (projects.get(editT.pid) || {}).name || 'Проект', color: '#A7A7A7'};
   const set = (id, v) => { const el = $(id); if (force || document.activeElement !== el) el.value = v; };
   $('#tSrcLabel').innerHTML = `<i style="--pc:${src.color}"></i><span style="color:${src.color}">${esc(src.name)}</span>`;
   $('#tTitle').textContent = t.text;
@@ -2835,7 +2838,7 @@ function renderTaskEditor(force){
   const opts = srcs.some(x => x.pid === editT.pid) ? srcs : srcs.concat([{pid: editT.pid, name: src.name}]);
   $('#eSrc').innerHTML = opts.map(x => `<option value="${esc(x.pid)}">${esc(x.name)}</option>`).join('');
   $('#eSrc').value = editT.pid;
-  $('#eSrcLbl').textContent = isLead(editT.pid) ? 'Лид' : 'К чему относится';
+  $('#eSrcLbl').textContent = (isLead(editT.pid) || editT.pid === CRMG) ? 'Клиент' : 'К чему относится';
   $('#tLead').hidden = !isLead(editT.pid);
   set('#eText', t.text); set('#eDue', t.due || ''); set('#eTime', t.time || ''); set('#eRep', t.repeat || '');
   gcLabel($('#eDateBtn'), t.due || '', t.time || '', 'Без даты');
@@ -3161,7 +3164,7 @@ $('#logoutBtn').addEventListener('click', async () => { await sb.auth.signOut();
   db = makeDb();
   db.doc('dash/y' + YEAR).onSnapshot(s => { fin = s.exists ? (s.data().months || null) : null; dashLoaded.fin = true; dashRefresh(); }, () => {});
   db.doc('dash/settings').onSnapshot(s => { appSettings = s.exists ? (s.data() || {}) : {}; applyDriveLink(); }, () => {});
-  db.doc('dash/tasks').onSnapshot(s => { const d = s.exists ? (s.data() || {}) : {}; generalTasks = d.tasks || []; agencyTasks = d.agency || []; tdTasks = d.td || []; dashRefresh(); }, () => {});
+  db.doc('dash/tasks').onSnapshot(s => { const d = s.exists ? (s.data() || {}) : {}; generalTasks = d.tasks || []; agencyTasks = d.agency || []; tdTasks = d.td || []; crmTasks = d.crm || []; dashRefresh(); }, () => {});
   db.collection('projects').onSnapshot(s => {
     const m = new Map(); s.docs.forEach(d => { const v = d.data(); if (v) m.set(d.id, {...v, id: d.id}); });
     projects = m; dashLoaded.proj = true; dashRefresh();
