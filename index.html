@@ -915,7 +915,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .tm-f textarea,.tm-f select{width:100%;box-sizing:border-box;background:transparent;border:1px solid var(--input);border-radius:8px;color:var(--ink);font-size:15px}
 .tm-f select{height:40px;padding:0 10px}
 .tm-f textarea{padding:10px 12px;resize:vertical;min-height:76px;font-family:inherit}
-.tm-f .pt-datebtn{align-self:flex-start;height:40px}
+.tm-f .pt-datebtn{width:100%;height:40px;justify-content:flex-start}
 .tm-row{display:flex;gap:10px;flex-wrap:wrap}
 .tm-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
 @media (max-width:640px){.tmodal{place-items:end stretch;padding:0}.tm-box{width:100%;border-radius:16px 16px 0 0;padding:18px 14px calc(18px + env(safe-area-inset-bottom,0px))}.subtabs #taskAddOpen{flex:1 1 auto}}
@@ -2339,11 +2339,10 @@ function boardHTML(o){
       <label class="tm-f">Задача<textarea class="pt-text" rows="3" placeholder="Что сделать" autocomplete="off"></textarea></label>
       <label class="tm-f">${o.srcLabel}<select class="pt-src">${o.options}</select></label>
       <div class="tm-row">
-        <label class="tm-f">Когда<select class="pt-when"><option value="today">Сегодня</option><option value="tomorrow">Завтра</option><option value="none">Без срока</option></select></label>
+        <div class="tm-f">Дата и время<button type="button" class="pt-datebtn" data-gc-form title="Выбрать дату и время"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg><span>Дата и время</span></button></div>
         <label class="tm-f">Повтор<select class="pt-rep"><option value="">Без повтора</option><option value="daily">Ежедневно</option><option value="weekly">Еженедельно</option><option value="monthly">Ежемесячно</option></select></label>
       </div>
       <input type="hidden" class="pt-due"><input type="hidden" class="pt-time">
-      <div class="tm-f">Точная дата и время<button type="button" class="pt-datebtn" data-gc-form title="Выбрать дату и время"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg><span>Дата и время</span></button></div>
       <div class="tm-foot"><button class="btn" type="button" data-tadd-close>Отмена</button><button class="btn primary" type="submit">Добавить</button></div>
     </form></div>
     <div class="pfilter">${o.chips}</div>
@@ -2792,12 +2791,11 @@ document.addEventListener('submit', e => {
     const text = f.querySelector('.pt-text').value.trim(); if (!text){ f.querySelector('.pt-text').focus(); return; }
     const secId = (f.closest('section') || {}).id;
     if (!f.querySelector('.pt-src').value){ toast('Сначала выберите, к чему относится задача', true); return; }
-    const pid = f.querySelector('.pt-src').value, when = f.querySelector('.pt-when').value, repeat = f.querySelector('.pt-rep').value || '';
-    const due = f.querySelector('.pt-due').value || (when === 'today' ? todayISO() : when === 'tomorrow' ? isoPlus(1) : (repeat ? todayISO() : ''));
-    const keep = {when, repeat};
+    const pid = f.querySelector('.pt-src').value, repeat = f.querySelector('.pt-rep').value || '';
+    const due = f.querySelector('.pt-due').value || (repeat ? todayISO() : '');
     const time = f.querySelector('.pt-time').value || '';
     saveProjTasks(pid, ts => ts.concat({id: 't' + Date.now().toString(36), text, due, time, repeat, key: false, done: false, at: Date.now(), ord: Date.now(), bucket: 'later'}));
-    taddKeep[secId] = {pid, when: keep.when};
+    taddKeep[secId] = {pid};
     if (gc) closeCal();
     renderProjectsView();
     toast('Задача добавлена');
@@ -3107,7 +3105,7 @@ document.addEventListener('click', e => {
   if (fb){
     const f = fb.closest('form');
     openCal(fb, f.querySelector('.pt-due').value, f.querySelector('.pt-time').value, (iso, time) => {
-      f.querySelector('.pt-due').value = iso; f.querySelector('.pt-time').value = time; gcLabel(fb, iso, time);
+      f.querySelector('.pt-due').value = iso; f.querySelector('.pt-time').value = time; gcLabel(fb, iso, time, 'Без даты');
     });
     return;
   }
@@ -3153,9 +3151,9 @@ document.addEventListener('click', e => {
   if (e.target.closest && e.target.closest('#taskAddOpen')){
     const m = taddModal(); if (!m) return;
     const f = m.querySelector('form'), k = taddKeep[m.parentElement.id];
-    f.reset(); f.querySelector('.pt-due').value = ''; f.querySelector('.pt-time').value = '';
-    gcLabel(f.querySelector('[data-gc-form]'), '', '');
-    if (k){ if ([...f.querySelector('.pt-src').options].some(o => o.value === k.pid)) f.querySelector('.pt-src').value = k.pid; f.querySelector('.pt-when').value = k.when; }
+    f.reset(); f.querySelector('.pt-due').value = todayISO(); f.querySelector('.pt-time').value = '';
+    gcLabel(f.querySelector('[data-gc-form]'), todayISO(), '', 'Без даты');
+    if (k && [...f.querySelector('.pt-src').options].some(o => o.value === k.pid)) f.querySelector('.pt-src').value = k.pid;
     m.hidden = false; setTimeout(() => f.querySelector('.pt-text').focus(), 0);
     return;
   }
