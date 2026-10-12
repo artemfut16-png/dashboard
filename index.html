@@ -2509,6 +2509,12 @@ function payPlanHTML(srcs){
     </div></div>
   </section>`;
 }
+function rerenderPay(){
+  const el = view === 'dash' && document.querySelector('#v-dash .payplan');
+  if (el){ const sl = el.querySelector('.tl')?.scrollLeft || 0; el.outerHTML = payPlanHTML(sources()); const tl = document.querySelector('#v-dash .payplan .tl'); if (tl) tl.scrollLeft = sl; }
+  else dashRefresh();
+  if (paySel && !$('#pdrawer').hidden) renderPayEditor();
+}
 function openPay(pid){
   const p = projects.get(pid); if (!p || !p.payDate) return;
   paySel = pid; $('#pdrawer').hidden = false;
