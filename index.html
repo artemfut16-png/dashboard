@@ -1945,7 +1945,7 @@ function renderDash(){
       ${kpi('Проектов в работе', active, `из ${pl.length} за год`)}
       ${kpi('LTV клиента', short(ltv), life ? `живёт ≈ ${String(Math.round(life * 10) / 10).replace('.', ',')} мес · ${short(arpu)}/мес` : '')}
       ${kpi('Отток за ' + MON_FULL[nowM].toLowerCase(), churnM, `за год ${churnY} · в среднем ${churnAvg != null ? String(Math.round(churnAvg * 10) / 10).replace('.', ',') : '—'} в мес.`)}
-      ${kpi('Выручка за ' + MON_FULL[nowM].toLowerCase(), short(revM), revSub, 'hl')}
+      ${kpi('Выручка за ' + MON_FULL[nowM].toLowerCase(), short(revM), '', 'hl')}
     </div>
     ${payPlanHTML(sources())}
     <div class="dgrid">
