@@ -894,6 +894,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .esub-add{display:flex;gap:6px;margin-top:8px}
 .esub-add input{flex:1;min-width:0}
 .esub-add .btn{height:38px}
+.kpi.hl{border-color:var(--orange);background:linear-gradient(160deg,rgba(232,80,2,.22),rgba(232,80,2,.06) 60%,var(--surface))}
+.kpi.hl .l{color:var(--orange)}
+.kpi.hl .v{color:var(--white)}
 /* add-task window */
 .subtabs{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .tmodal{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:16px}
@@ -1866,7 +1869,17 @@ function renderDash(){
     const d = cs[lm].rev / cs[pm].rev - 1;
     lmSub = `<span class="${d >= 0 ? 'up' : 'down'}">${d >= 0 ? '+' : '−'}${Math.abs(Math.round(d * 100))}%</span> к ${MON_PREP[pm]}`;
   }
-  const kpi = (l, v, s) => `<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  const kpi = (l, v, s, cls) => `<div class="kpi${cls ? ' ' + cls : ''}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  const curY = new Date().getFullYear();
+  const goneNow = pl.filter(p => p.status === 'gone' && p.goneAt && new Date(p.goneAt).getFullYear() === curY && new Date(p.goneAt).getMonth() === nowM).length;
+  const churnM = Math.abs(getp(ms[nowM], 'base.churn') || 0) + goneNow;
+  const churnY = churn + pl.filter(p => p.status === 'gone' && p.goneAt && new Date(p.goneAt).getFullYear() === curY).length;
+  const churnAvg = churnY / (nowM + 1);
+  const revM = cs[nowM].rev;
+  const monthEnd = new Date(curY, nowM + 1, 0).getTime() + 864e5 - 1;
+  const expM = pl.filter(p => p.status !== 'gone' && p.payDate && p.check && isoDate(p.payDate).getTime() <= monthEnd).reduce((a, p) => a + p.check, 0);
+  const prevRev = nowM > 0 ? cs[nowM - 1].rev : null;
+  const revSub = [expM ? `ещё ожидается ${short(expM)}` : '', prevRev ? `${MON_FULL[nowM - 1].toLowerCase()}: ${short(prevRev)}` : ''].filter(Boolean).join(' · ') || '&nbsp;';
   const nMonths = filled.length;
 
   // call funnels (холодные звонки, автообзвон)
@@ -1895,12 +1908,11 @@ function renderDash(){
     <div class="kpis">
       ${kpi('Выручка ' + YEAR, short(rev), `за ${nMonths} мес.`)}
       ${kpi('Чистая прибыль', short(net), `маржинальность ${pct(rev ? net / rev : null)}`)}
-      ${kpi('Расходы', rub(exp), `налог ${rub(tax)} · ФОТ и прочее ${rub(fot)}${autoBudget ? ` · автообзвон ${rub(autoBudget)}` : ''}`)}
       ${kpi('Средний чек', rub(sales ? rev / sales : null), `${sales} продаж за год`)}
       ${kpi('Проектов в работе', active, `из ${pl.length} за год`)}
       ${kpi('LTV клиента', short(ltv), life ? `живёт ≈ ${String(Math.round(life * 10) / 10).replace('.', ',')} мес · ${short(arpu)}/мес` : '')}
-      ${kpi('Отток за год', churn, `проектов ушло · ${pct(pl.length ? churn / pl.length : null)} клиентов`)}
-      ${lm != null ? kpi('Выручка за ' + MON_FULL[lm].toLowerCase(), short(cs[lm].rev), lmSub || '&nbsp;') : ''}
+      ${kpi('Отток за ' + MON_FULL[nowM].toLowerCase(), churnM, `за год ${churnY} · в среднем ${churnAvg != null ? String(Math.round(churnAvg * 10) / 10).replace('.', ',') : '—'} в мес.`)}
+      ${kpi('Выручка за ' + MON_FULL[nowM].toLowerCase(), short(revM), revSub, 'hl')}
     </div>
     ${payPlanHTML(sources())}
     <div class="dgrid">
@@ -2175,9 +2187,9 @@ document.addEventListener('click', e => {
   const tg = e.target.closest('[data-toggle]');
   if (tg){
     const p = projects.get(tg.dataset.toggle); if (!p) return;
-    const status = p.status === 'gone' ? 'active' : 'gone';
-    projects.set(p.id, {...p, status}); renderDash();
-    write(p.id, () => db.doc('projects/' + p.id).update({status}));
+    const status = p.status === 'gone' ? 'active' : 'gone', patch = {status, goneAt: status === 'gone' ? Date.now() : null};
+    projects.set(p.id, {...p, ...patch}); renderDash();
+    write(p.id, () => db.doc('projects/' + p.id).update(patch));
     return;
   }
   const del = e.target.closest('[data-del]');
@@ -2810,9 +2822,9 @@ document.addEventListener('click', e => {
   const tg = e.target.closest('[data-ptoggle]');
   if (tg){
     const p = projects.get(tg.dataset.ptoggle); if (!p) return;
-    const status = p.status === 'gone' ? 'active' : 'gone';
-    projects.set(p.id, {...p, status}); projBadge(); renderProjectsView();
-    write(p.id, () => db.doc('projects/' + p.id).update({status})).then(() => toast(status === 'gone' ? 'Проект переведён в «Ушёл»' : 'Проект возвращён в работу'));
+    const status = p.status === 'gone' ? 'active' : 'gone', patch = {status, goneAt: status === 'gone' ? Date.now() : null};
+    projects.set(p.id, {...p, ...patch}); projBadge(); renderProjectsView();
+    write(p.id, () => db.doc('projects/' + p.id).update(patch)).then(() => toast(status === 'gone' ? 'Проект переведён в «Ушёл»' : 'Проект возвращён в работу'));
   }
 });
 /* task editor */
