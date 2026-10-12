@@ -1074,9 +1074,6 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
         <div class="dname" id="dName" hidden></div>
         <div class="big-phone" id="dPhone"></div>
         <div class="sh-meta" id="dMeta"></div>
-        <div class="sh-actions">
-          <button class="btn" id="dCopy">Скопировать номер</button>
-        </div>
       </div>
       <button class="x" id="dClose" aria-label="Закрыть">×</button>
     </div>
@@ -1119,12 +1116,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
       <div class="sec">
         <h3>Задачи</h3>
         <ul class="tasks" id="dTasks"></ul>
-        <form class="taskadd" id="taskForm">
-          <input id="tText" placeholder="Что сделать, например: отправить КП" aria-label="Текст задачи" autocomplete="off">
-          <input type="hidden" id="tDue"><input type="hidden" id="tTime">
-          <button type="button" class="pt-datebtn" data-gc-field="tDue" data-gc-time="tTime" data-gc-empty="Без даты" title="Дата и время задачи"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg><span>Дата и время</span></button>
-          <button class="btn primary" type="submit">Добавить задачу</button>
-        </form>
+        <button class="btn primary" id="dTaskAdd" type="button" style="align-self:flex-start;margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Добавить задачу</button>
       </div>
       <div class="sec">
         <h3>Заметки и история</h3>
@@ -1656,7 +1648,7 @@ function renderAll(){
 
 /* ---------- drawer ---------- */
 function openLead(id){
-  openId = id; $('#dNote').value = ''; $('#tText').value = ''; $('#tDue').value = todayISO(); $('#tTime').value = ''; gcSyncAll(); resetDel();
+  openId = id; $('#dNote').value = ''; resetDel();
   $('#drawer').hidden = false; renderDrawer(true);
   setTimeout(() => $('#dClose').focus(), 0);
 }
@@ -1806,7 +1798,7 @@ let qT, iT;
 $('#q').addEventListener('input', e => { clearTimeout(qT); qT = setTimeout(() => { filt.q = e.target.value; listLimit = 200; renderList(); }, 150); });
 $('#importText').addEventListener('input', () => { clearTimeout(iT); iT = setTimeout(renderImport, 250); });
 $('#dNote').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); submitNote(); } });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && openId) closeLead(); if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('lcard')) openLead(e.target.dataset.id); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && openId && !editT && !gc) closeLead(); if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('lcard')) openLead(e.target.dataset.id); });
 
 /* drag & drop on the board */
 let dragId = null;
@@ -2902,6 +2894,7 @@ function saveDraft(){
   closeTask();
   saveProjTasks(pid, ts => ts.concat(t));
   if (inProj()) renderProjectsView();
+  if (openId && !$('#drawer').hidden) renderDrawer();
   toast('Задача добавлена');
 }
 function renderSubEditor(t){
@@ -3227,6 +3220,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && gc) closeC
 addEventListener('resize', placeCal);
 addEventListener('scroll', () => { if (gc) placeCal(); }, true);
 
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#dTaskAdd') && openId) newTask(openId); });
 /* «Добавить задачу» opens the task window with a draft */
 const taddKeep = {};
 document.addEventListener('click', e => {
