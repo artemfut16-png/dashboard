@@ -904,6 +904,38 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .esub-add{display:flex;gap:6px;margin-top:8px}
 .esub-add input{flex:1;min-width:0}
 .esub-add .btn{height:38px}
+/* phone */
+@media (max-width:640px){
+  input,select,textarea{font-size:16px !important}
+  .content{padding:16px 14px 40px}
+  .topbar{padding:0 14px;height:52px}
+  h1{font-size:26px}
+  .top{padding-block:0 12px}
+  .filters{gap:8px}
+  .filters .searchbox{flex-basis:100%}
+  .filters select,#importOpen{flex:1 1 0;min-width:0}
+  .board{scroll-snap-type:x mandatory;margin-inline:-14px;padding-inline:14px;scroll-padding-inline:14px;gap:8px}
+  .board .col{flex-basis:calc(100vw - 60px);scroll-snap-align:start}
+  .pfilter{flex-wrap:nowrap;overflow-x:auto;margin-inline:-14px;padding-inline:14px;scrollbar-width:none}
+  .pfilter::-webkit-scrollbar{display:none}
+  .pfilter .fchip{flex:none}
+  .grip{display:none}
+  .rlist li{flex-wrap:wrap;gap:4px 10px}
+  .rlist li .rbody{flex:1 1 calc(100% - 130px)}
+  .rmove{order:5;margin-left:28px;padding:4px 12px;font-size:12px}
+  .rflag,.rlist .tdel{min-width:30px;min-height:28px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .kpi{padding:10px 12px}
+  .kpi .v{font-size:20px}
+  .kpi .s{font-size:12px}
+  .sh-head,.sh-body,.sh-foot{padding-inline:14px}
+  .rblock{padding:14px 14px 8px}
+  .payplan{padding:14px 12px 10px}
+  .tl{--col:118px}
+  .tl-col{padding:0 10px}
+  .card{padding:14px 12px}
+  .chart text{font-size:21px}
+}
 
 /* login */
 #login{position:fixed;inset:0;z-index:100;background:#000;display:grid;place-items:center;padding:16px}
