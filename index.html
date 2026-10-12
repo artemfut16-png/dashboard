@@ -1939,13 +1939,13 @@ function renderDash(){
 
   el.innerHTML = `<div class="dash">
     <div class="kpis">
+      ${kpi('Проектов в работе', active, `из ${pl.length} за год`, 'hl')}
+      ${kpi('Выручка за ' + MON_FULL[nowM].toLowerCase(), short(revM), '', 'hl')}
       ${kpi('Выручка ' + YEAR, short(rev), `за ${nMonths} мес.`)}
       ${kpi('Чистая прибыль', short(net), `маржинальность ${pct(rev ? net / rev : null)}`)}
       ${kpi('Средний чек', rub(sales ? rev / sales : null), `${sales} продаж за год`)}
-      ${kpi('Проектов в работе', active, `из ${pl.length} за год`)}
       ${kpi('LTV клиента', short(ltv), life ? `живёт ≈ ${String(Math.round(life * 10) / 10).replace('.', ',')} мес · ${short(arpu)}/мес` : '')}
       ${kpi('Средний отток в месяц', String(Math.round(churnAvg * 10) / 10).replace('.', ','), `за всё время ушло ${churnY} · за ${MON_FULL[nowM].toLowerCase()} ${churnM}`)}
-      ${kpi('Выручка за ' + MON_FULL[nowM].toLowerCase(), short(revM), '', 'hl')}
     </div>
     ${payPlanHTML(sources())}
     <div class="dgrid">
