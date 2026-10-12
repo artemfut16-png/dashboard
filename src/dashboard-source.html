@@ -1874,7 +1874,7 @@ function renderDash(){
   const goneNow = pl.filter(p => p.status === 'gone' && p.goneAt && new Date(p.goneAt).getFullYear() === curY && new Date(p.goneAt).getMonth() === nowM).length;
   const churnM = Math.abs(getp(ms[nowM], 'base.churn') || 0) + goneNow;
   const churnY = churn + pl.filter(p => p.status === 'gone' && p.goneAt && new Date(p.goneAt).getFullYear() === curY).length;
-  const churnAvg = churnY / (nowM + 1);
+  const firstM = filled.length ? Math.min(filled[0], nowM) : 0, churnAvg = churnY / (nowM - firstM + 1);
   const revM = cs[nowM].rev;
   const monthEnd = new Date(curY, nowM + 1, 0).getTime() + 864e5 - 1;
   const expM = pl.filter(p => p.status !== 'gone' && p.payDate && p.check && isoDate(p.payDate).getTime() <= monthEnd).reduce((a, p) => a + p.check, 0);
@@ -1911,7 +1911,7 @@ function renderDash(){
       ${kpi('Средний чек', rub(sales ? rev / sales : null), `${sales} продаж за год`)}
       ${kpi('Проектов в работе', active, `из ${pl.length} за год`)}
       ${kpi('LTV клиента', short(ltv), life ? `живёт ≈ ${String(Math.round(life * 10) / 10).replace('.', ',')} мес · ${short(arpu)}/мес` : '')}
-      ${kpi('Отток за ' + MON_FULL[nowM].toLowerCase(), churnM, `за год ${churnY} · в среднем ${churnAvg != null ? String(Math.round(churnAvg * 10) / 10).replace('.', ',') : '—'} в мес.`)}
+      ${kpi('Средний отток в месяц', String(Math.round(churnAvg * 10) / 10).replace('.', ','), `за всё время ушло ${churnY} · за ${MON_FULL[nowM].toLowerCase()} ${churnM}`)}
       ${kpi('Выручка за ' + MON_FULL[nowM].toLowerCase(), short(revM), '', 'hl')}
     </div>
     ${payPlanHTML(sources())}
