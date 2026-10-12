@@ -1319,7 +1319,24 @@ function write(id, fn){
   queues[id] = p; return p;
 }
 function pushHist(l, entry){ return [...(l.history || []), {at: Date.now(), ...entry}].slice(-200); }
+function projectFromLead(id){
+  const l = leads.get(id); if (!l || !db) return;
+  if ([...projects.values()].some(p => p.leadId === id)) return;
+  const name = (l.company || l.name || l.phone || 'Новый проект').trim();
+  const v = prompt('Ведение продано. Проект «' + name + '» появится в разделе «Проекты».\nЧек в месяц, ₽ (Отмена — не создавать проект):', '');
+  if (v === null) return;
+  const check = v.trim() ? parseNum(v) : null;
+  if (check === undefined){ toast('Чек должен быть числом. Проект не создан, добавьте его в аналитике.', true); return; }
+  const pid = 'p' + Date.now().toString(36);
+  const order = Math.max(0, ...[...projects.values()].map(p => p.order || 0)) + 1;
+  const doc = {name, check, status: 'active', pay: Array(12).fill(null), order, year: YEAR, leadId: id};
+  if (l.folderUrl) doc.folderUrl = l.folderUrl;
+  projects.set(pid, {...doc, id: pid}); dashRefresh();
+  write(pid, () => db.doc('projects/' + pid).set(doc)).then(() => toast('Проект «' + name + '» добавлен в «Проекты»'));
+}
 function setStatus(id, to){
+  const cur = leads.get(id);
+  if (to === 'lead' && cur && cur.status !== 'lead') projectFromLead(id);
   return write(id, () => {
     const l = leads.get(id); if (!l || l.status === to) return;
     return ref(id).update({status: to, history: pushHist(l, {kind:'status', from: l.status, to}), updatedAt: Date.now()});
