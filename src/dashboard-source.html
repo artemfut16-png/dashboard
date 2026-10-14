@@ -910,6 +910,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .rs .rfold svg{width:12px;height:12px}
 .rs .rfold:hover{color:var(--white);border-color:var(--orange)}
 .tsrc-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#tFolder{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.rs .rfold + .rfold{margin-left:-4px}
 .tfold{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:1px solid var(--orange);border-radius:999px;color:var(--white);background:var(--accent-soft);font-size:12.5px;font-weight:600;text-decoration:none}
 .tfold svg{width:14px;height:14px;color:var(--orange)}
 .tfold:hover{background:var(--orange);color:#000}.tfold:hover svg{color:#000}
@@ -2303,6 +2305,13 @@ function folderOf(pid){
   if (pid === AG) return okUrl(driveUrl()) ? driveUrl() : '';
   const p = projects.get(pid); return p && okUrl(p.folderUrl) ? p.folderUrl : '';
 }
+function linksOf(pid){
+  const p = projects.get(pid), out = [];
+  const f = folderOf(pid); if (f) out.push({url: f, label: 'Папка', icon: ICON_FOLDER, k: 'folder'});
+  if (p && okUrl(p.funnelUrl)) out.push({url: p.funnelUrl, label: 'Воронка', icon: ICON_FUNNEL, k: 'funnel'});
+  if (p && okUrl(p.autoUrl)) out.push({url: p.autoUrl, label: 'Автозагрузка', icon: ICON_UPLOAD, k: 'auto'});
+  return out;
+}
 const canFolder = pid => isLead(pid) || projects.has(pid);
 function setFolder(pid, url){
   if (isLead(pid)){
@@ -2326,11 +2335,11 @@ function askFolder(pid){
   setFolder(pid, url);
 }
 function taskRow(it, bucket){
-  const fold = folderOf(it.pid);
+  const links = linksOf(it.pid);
   const t = it.t, d = t.due ? dueInfo(t.due, t.done) : null;
   const sub = [
     `<span class="src" style="color:${it.color}">${esc(it.name)}</span>${it.pill || ''}`,
-    fold ? `<a class="rfold" href="${esc(fold)}" target="_blank" rel="noopener" title="Открыть папку">${ICON_FOLDER}Папка</a>` : '',
+    links.map(x => `<a class="rfold" href="${esc(x.url)}" target="_blank" rel="noopener" title="Открыть: ${x.label.toLowerCase()}">${x.icon}${x.label}</a>`).join(''),
     d ? `<span class="${d.cls === 'over' ? 'over' : ''}">${d.cls === 'over' ? 'срок был ' : ''}${d.label}${t.time ? ' в ' + esc(t.time) : ''}</span>` : (t.time ? `<span>в ${esc(t.time)}</span>` : ''),
     t.repeat ? `<span>${REPEAT[t.repeat]}</span>` : '',
     t.key ? '<span class="rkey">ключевая задача</span>' : '',
@@ -2981,9 +2990,11 @@ function renderTaskEditor(force){
   const isNew = !!editT.draft;
   const srcs = (isLead(editT.pid) || editT.pid === CRMG) ? [CRM_FREE].concat(crmSrcs()) : sources(), src = srcs.find(x => x.pid === editT.pid) || {name: (projects.get(editT.pid) || {}).name || 'Проект', color: '#A7A7A7'};
   const set = (id, v) => { const el = $(id); if (force || document.activeElement !== el) el.value = v; };
-  { const f = folderOf(editT.pid), can = canFolder(editT.pid);
-    $('#tFolder').innerHTML = f ? `<a class="tfold" href="${esc(f)}" target="_blank" rel="noopener">${ICON_FOLDER}Открыть папку</a>${can ? '<button type="button" class="tfold-edit" data-tfolder>изменить</button>' : ''}`
-      : can ? `<button type="button" class="tfold off" data-tfolder>${ICON_FOLDER}Привязать папку</button>` : ''; }
+  { const f = folderOf(editT.pid), can = canFolder(editT.pid), more = linksOf(editT.pid).filter(x => x.k !== 'folder');
+    $('#tFolder').innerHTML = (f ? `<a class="tfold" href="${esc(f)}" target="_blank" rel="noopener">${ICON_FOLDER}Папка</a>`
+      : can ? `<button type="button" class="tfold off" data-tfolder>${ICON_FOLDER}Привязать папку</button>` : '')
+      + more.map(x => `<a class="tfold" href="${esc(x.url)}" target="_blank" rel="noopener">${x.icon}${x.label}</a>`).join('')
+      + (f && can ? '<button type="button" class="tfold-edit" data-tfolder>изменить папку</button>' : ''); }
   $('#tSrcLabel').innerHTML = `<i style="--pc:${src.color}"></i><span style="color:${src.color}">${esc(src.name)}</span>`;
   $('#tTitle').textContent = isNew ? 'Новая задача' : t.text;
   const d = t.due ? dueInfo(t.due, t.done) : null;
