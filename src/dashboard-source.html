@@ -906,6 +906,17 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .esub li.dropbefore{box-shadow:inset 0 2px 0 var(--orange)}
 .esub li.dropafter{box-shadow:inset 0 -2px 0 var(--orange)}
 @media (max-width:640px){#tdrawer:not([hidden]){place-items:end stretch;padding:0}#tdrawer .sheet{width:100%;border-radius:16px 16px 0 0;max-height:92vh}#tdrawer .esub li .grip{display:block}}
+.rs .rfold{display:inline-flex;align-items:center;gap:4px;color:var(--sand);text-decoration:none;font-weight:600;border:1px solid var(--input);border-radius:999px;padding:0 8px;line-height:18px}
+.rs .rfold svg{width:12px;height:12px}
+.rs .rfold:hover{color:var(--white);border-color:var(--orange)}
+.tsrc-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tfold{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:1px solid var(--orange);border-radius:999px;color:var(--white);background:var(--accent-soft);font-size:12.5px;font-weight:600;text-decoration:none}
+.tfold svg{width:14px;height:14px;color:var(--orange)}
+.tfold:hover{background:var(--orange);color:#000}.tfold:hover svg{color:#000}
+.tfold.off{border-style:dashed;border-color:var(--input);background:none;color:var(--muted)}
+.tfold.off:hover{color:var(--ink);border-color:var(--orange);background:none}.tfold.off:hover svg{color:var(--orange)}
+.tfold-edit{border:0;background:none;color:var(--gray);font-size:12px;text-decoration:underline;padding:0}
+.tfold-edit:hover{color:var(--ink)}
 .kpi.hl{border-color:var(--orange);background:linear-gradient(160deg,rgba(232,80,2,.22),rgba(232,80,2,.06) 60%,var(--surface))}
 .kpi.hl .l{color:var(--orange)}
 .kpi.hl .v{color:var(--white)}
@@ -1104,7 +1115,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="tTitle">
     <div class="sh-head">
       <div style="min-width:0">
-        <div class="tsrc" id="tSrcLabel"></div>
+        <div class="tsrc-row"><div class="tsrc" id="tSrcLabel"></div><span id="tFolder"></span></div>
         <div class="big-phone" id="tTitle" style="font-size:20px;margin-top:4px">Задача</div>
         <div class="sh-meta" id="tMeta"></div>
       </div>
@@ -2286,10 +2297,40 @@ function allTasks(){
   for (const src of sources()) for (const t of tasksOf(src.pid)) out.push({...src, t});
   return out;
 }
+const okUrl = u => /^https?:\/\//i.test(u || '');
+function folderOf(pid){
+  if (isLead(pid)){ const l = leads.get(pid); return l && okUrl(l.folderUrl) ? l.folderUrl : ''; }
+  if (pid === AG) return okUrl(driveUrl()) ? driveUrl() : '';
+  const p = projects.get(pid); return p && okUrl(p.folderUrl) ? p.folderUrl : '';
+}
+const canFolder = pid => isLead(pid) || projects.has(pid);
+function setFolder(pid, url){
+  if (isLead(pid)){
+    const l = leads.get(pid); if (!l) return;
+    leads.set(pid, {...l, folderUrl: url});
+    write(pid, () => ref(pid).update({folderUrl: url, updatedAt: Date.now()})).then(() => toast(url ? 'Папка привязана' : 'Папка отвязана'));
+  } else {
+    const p = projects.get(pid); if (!p) return;
+    projects.set(pid, {...p, folderUrl: url});
+    write(pid, () => db.doc('projects/' + pid).update({folderUrl: url})).then(() => toast(url ? 'Папка привязана' : 'Папка отвязана'));
+  }
+  if (inProj()) renderProjectsView();
+  if (editT) renderTaskEditor();
+}
+function askFolder(pid){
+  const cur = isLead(pid) ? (leads.get(pid) || {}).folderUrl : (projects.get(pid) || {}).folderUrl;
+  const v = prompt('Ссылка на папку (Google Диск). Оставьте пустым, чтобы отвязать.', cur || '');
+  if (v === null) return;
+  const url = v.trim();
+  if (url && !okUrl(url)){ toast('Нужна ссылка, начинающаяся с https://', true); return; }
+  setFolder(pid, url);
+}
 function taskRow(it, bucket){
+  const fold = folderOf(it.pid);
   const t = it.t, d = t.due ? dueInfo(t.due, t.done) : null;
   const sub = [
     `<span class="src" style="color:${it.color}">${esc(it.name)}</span>${it.pill || ''}`,
+    fold ? `<a class="rfold" href="${esc(fold)}" target="_blank" rel="noopener" title="Открыть папку">${ICON_FOLDER}Папка</a>` : '',
     d ? `<span class="${d.cls === 'over' ? 'over' : ''}">${d.cls === 'over' ? 'срок был ' : ''}${d.label}${t.time ? ' в ' + esc(t.time) : ''}</span>` : (t.time ? `<span>в ${esc(t.time)}</span>` : ''),
     t.repeat ? `<span>${REPEAT[t.repeat]}</span>` : '',
     t.key ? '<span class="rkey">ключевая задача</span>' : '',
@@ -2940,6 +2981,9 @@ function renderTaskEditor(force){
   const isNew = !!editT.draft;
   const srcs = (isLead(editT.pid) || editT.pid === CRMG) ? [CRM_FREE].concat(crmSrcs()) : sources(), src = srcs.find(x => x.pid === editT.pid) || {name: (projects.get(editT.pid) || {}).name || 'Проект', color: '#A7A7A7'};
   const set = (id, v) => { const el = $(id); if (force || document.activeElement !== el) el.value = v; };
+  { const f = folderOf(editT.pid), can = canFolder(editT.pid);
+    $('#tFolder').innerHTML = f ? `<a class="tfold" href="${esc(f)}" target="_blank" rel="noopener">${ICON_FOLDER}Открыть папку</a>${can ? '<button type="button" class="tfold-edit" data-tfolder>изменить</button>' : ''}`
+      : can ? `<button type="button" class="tfold off" data-tfolder>${ICON_FOLDER}Привязать папку</button>` : ''; }
   $('#tSrcLabel').innerHTML = `<i style="--pc:${src.color}"></i><span style="color:${src.color}">${esc(src.name)}</span>`;
   $('#tTitle').textContent = isNew ? 'Новая задача' : t.text;
   const d = t.due ? dueInfo(t.due, t.done) : null;
@@ -2978,6 +3022,7 @@ document.addEventListener('change', e => {
   edAfter();
 });
 document.addEventListener('click', e => {
+  if (e.target.closest && e.target.closest('[data-tfolder]') && editT){ askFolder(editT.pid); return; }
   if (e.target.id === 'tOk' && editT && editT.draft){ saveDraft(); return; }
   if (e.target.id === 'tScrim' || e.target.id === 'tClose' || e.target.id === 'tOk' || e.target.id === 'tCancel'){ closeTask(); return; }
   if (e.target.id === 'tLead' && editT){ const pid = editT.pid; closeTask(); if (isLead(pid)) openLead(pid); return; }
