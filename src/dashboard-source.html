@@ -3087,9 +3087,12 @@ document.addEventListener('change', e => {
   else if (id === 'eSrc'){
     const to = e.target.value; if (to === pid) return;
     if (editT.draft){ editT = {...editT, pid: to}; renderTaskEditor(); return; }
+    const toName = (e.target.selectedOptions[0] || {}).textContent || '';
+    if (!confirm('Перенести задачу в «' + toName + '»? Здесь она пропадёт.\n\nЧтобы задача осталась и тут, нажмите «Отмена» и используйте «Копировать в…».')){ e.target.value = pid; return; }
     saveProjTasks(pid, ts => ts.filter(x => x.id !== tid));
     saveProjTasks(to, ts => ts.concat({...t}));
     editT = {pid: to, tid};
+    toast('Задача перенесена в «' + toName + '»');
   } else return;
   edAfter();
 });
