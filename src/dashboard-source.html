@@ -919,6 +919,22 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .tfold.off:hover{color:var(--ink);border-color:var(--orange);background:none}.tfold.off:hover svg{color:var(--orange)}
 .tfold-edit{border:0;background:none;color:var(--gray);font-size:12px;text-decoration:underline;padding:0}
 .tfold-edit:hover{color:var(--ink)}
+.ecopy{margin-top:16px;border:1px solid var(--orange);border-radius:12px;padding:14px;background:var(--accent-soft)}
+.ecopy-h{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
+.ecopy-h b{font-size:14px}
+.ecopy-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px;max-height:220px;overflow-y:auto}
+.ecopy-i{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:13.5px;cursor:pointer;min-width:0}
+.ecopy-i:has(input:checked){border-color:var(--orange)}
+.ecopy-i input{width:16px;height:16px;flex:none;accent-color:var(--orange);margin:0}
+.ecopy-i i{width:8px;height:8px;border-radius:50%;background:var(--pc);flex:none}
+.ecopy-i span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ecopy-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+#tCopy svg{width:15px;height:15px}
+.rcopy{flex:none;border:0;background:none;color:var(--gray);padding:2px 4px;opacity:0;transition:opacity .12s;display:inline-flex}
+.rcopy svg{width:14px;height:14px}
+.rlist li:hover .rcopy,.rcopy:focus-visible{opacity:1}
+.rcopy:hover{color:var(--orange)}
+@media (hover:none){.rcopy{opacity:1}}
 .kpi.hl{border-color:var(--orange);background:linear-gradient(160deg,rgba(232,80,2,.22),rgba(232,80,2,.06) 60%,var(--surface))}
 .kpi.hl .l{color:var(--orange)}
 .kpi.hl .v{color:var(--white)}
@@ -954,7 +970,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
   .pfilter .fchip{flex:none}
   .grip{display:none}
   .rlist li{flex-wrap:wrap;gap:4px 10px}
-  .rlist li .rbody{flex:1 1 calc(100% - 130px)}
+  .rlist li .rbody{flex:1 1 calc(100% - 160px)}
   .rmove{order:5;margin-left:28px;padding:4px 12px;font-size:12px}
   .rflag,.rlist .tdel{min-width:30px;min-height:28px}
   .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -1137,9 +1153,15 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
         <label class="full tcheck"><input type="checkbox" id="eKey">Ключевая задача</label>
         <label class="full tcheck"><input type="checkbox" id="eDone">Выполнена</label>
       </div>
+      <div class="ecopy" id="eCopy" hidden>
+        <div class="ecopy-h"><b>Скопировать задачу в</b><span class="hint">вместе с пунктами, сроком и повтором</span></div>
+        <div class="ecopy-list" id="eCopyList"></div>
+        <div class="ecopy-foot"><button class="btn" type="button" id="eCopyCancel">Отмена</button><button class="btn primary" type="button" id="eCopyGo" disabled>Скопировать</button></div>
+      </div>
     </div>
     <div class="sh-foot">
       <button class="btn danger" id="tDelete" type="button">Удалить задачу</button>
+      <button class="btn" id="tCopy" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Копировать в…</button>
       <button class="btn" id="tLead" type="button" hidden>Карточка лида</button>
       <button class="btn" id="tCancel" type="button" hidden>Отмена</button>
       <button class="btn primary" id="tOk" type="button">Готово</button>
@@ -2351,6 +2373,7 @@ function taskRow(it, bucket){
     <input type="checkbox" class="rc" style="--pc:${it.color}" data-ptask="${esc(t.id)}" data-pid="${esc(it.pid)}" ${t.done ? 'checked' : ''} aria-label="Выполнено">
     <div class="rbody"><div class="rt">${linkify(t.text)}</div><div class="rs">${sub}</div>${subs}</div>
     ${t.done ? '' : `<button class="rmove" data-pmove="${esc(t.id)}" data-pid="${esc(it.pid)}" data-to="${bucket === 'today' ? isoPlus(1) : 'today'}" type="button">${bucket === 'today' ? 'На завтра' : 'На сегодня'}</button>`}
+    ${t.done ? '' : `<button class="rcopy" data-pcopy="${esc(t.id)}" data-pid="${esc(it.pid)}" type="button" title="Копировать в другой проект" aria-label="Копировать задачу">${ICON_COPY}</button>`}
     <button class="rflag${t.key ? ' on' : ''}" data-pkey="${esc(t.id)}" data-pid="${esc(it.pid)}" type="button" title="Ключевая задача" aria-label="Отметить ключевой" aria-pressed="${!!t.key}">★</button>
     <button class="tdel" data-ptask-del="${esc(t.id)}" data-pid="${esc(it.pid)}" type="button" aria-label="Удалить задачу">×</button>
   </li>`;
@@ -2884,7 +2907,7 @@ function edSubs(fn){
 }
 const edAfter = () => { if (editT && !editT.draft && inProj()) renderProjectsView(); renderTaskEditor(); };
 function openTask(pid, tid){
-  editT = {pid, tid}; draftT = null; $('#tdrawer').hidden = false; renderTaskEditor(true);
+  editT = {pid, tid}; draftT = null; copyOpen = false; $('#eCopyList').innerHTML = ''; $('#tdrawer').hidden = false; renderTaskEditor(true);
   setTimeout(() => $('#tClose').focus(), 0);
 }
 function newTask(pid){
@@ -2895,7 +2918,7 @@ function newTask(pid){
 function closeTask(){
   if ($('#tdrawer').contains(document.activeElement)) document.activeElement.blur();
   if (gc) closeCal();
-  editT = null; draftT = null; $('#tdrawer').hidden = true;
+  editT = null; draftT = null; copyOpen = false; $('#eCopyList').innerHTML = ''; $('#tdrawer').hidden = true;
 }
 function saveDraft(){
   if (!editT || !editT.draft) return;
@@ -2983,6 +3006,43 @@ document.addEventListener('drop', e => {
   edAfter();
 });
 document.addEventListener('dragend', () => { if (dragS !== null || $('#eSubList').querySelector('.dragging')){ dragS = null; renderTaskEditor(); } });
+const ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
+let copyOpen = false;
+function copyTargets(){
+  const crm = isLead(editT.pid) || editT.pid === CRMG;
+  return (crm ? [CRM_FREE].concat(crmSrcs()) : sources()).filter(x => x.pid !== editT.pid);
+}
+function renderCopy(){
+  const box = $('#eCopy'); box.hidden = !copyOpen || !editT || !!editT.draft;
+  if (box.hidden) return;
+  const prev = new Set([...$('#eCopyList').querySelectorAll('input:checked')].map(i => i.value));
+  $('#eCopyList').innerHTML = copyTargets().map(x => `<label class="ecopy-i"><input type="checkbox" value="${esc(x.pid)}" ${prev.has(x.pid) ? 'checked' : ''}><i style="--pc:${x.color || '#A7A7A7'}"></i><span>${esc(x.name)}</span></label>`).join('') || '<span class="hint">Больше некуда копировать</span>';
+  $('#eCopyGo').disabled = !prev.size;
+}
+function doCopy(){
+  const t = edTask(); if (!t) return;
+  const to = [...$('#eCopyList').querySelectorAll('input:checked')].map(i => i.value); if (!to.length) return;
+  const rid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  to.forEach(pid => {
+    const now = Date.now();
+    const c = {...t, id: rid('t'), done: false, doneAt: null, at: now, ord: now, bucket: 'later', sub: (t.sub || []).map(s => ({...s, id: rid('s'), done: false}))};
+    if (!c.sub.length) delete c.sub;
+    saveProjTasks(pid, ts => ts.concat(c));
+  });
+  copyOpen = false; $('#eCopyList').innerHTML = '';
+  if (inProj()) renderProjectsView();
+  renderTaskEditor();
+  const names = copyTargets().filter(x => to.includes(x.pid)).map(x => x.name);
+  toast(to.length === 1 ? 'Задача скопирована в «' + names[0] + '»' : 'Задача скопирована в ' + to.length + ' места');
+}
+document.addEventListener('click', e => {
+  const rc = e.target.closest && e.target.closest('[data-pcopy]');
+  if (rc){ openTask(rc.dataset.pid, rc.dataset.pcopy); copyOpen = true; renderCopy(); setTimeout(() => $('#eCopy').scrollIntoView({block: 'nearest'}), 0); return; }
+  if (e.target.closest && e.target.closest('#tCopy') && editT){ copyOpen = !copyOpen; renderCopy(); if (copyOpen) setTimeout(() => $('#eCopy').scrollIntoView({block: 'nearest', behavior: 'smooth'}), 0); return; }
+  if (e.target.id === 'eCopyCancel'){ copyOpen = false; renderCopy(); return; }
+  if (e.target.id === 'eCopyGo'){ doCopy(); return; }
+});
+document.addEventListener('change', e => { if (e.target.closest && e.target.closest('#eCopyList')) $('#eCopyGo').disabled = !$('#eCopyList').querySelector('input:checked'); });
 function renderTaskEditor(force){
   if (!editT) return;
   const t = edTask();
@@ -3004,7 +3064,8 @@ function renderTaskEditor(force){
   $('#eSrc').value = editT.pid;
   $('#eSrcLbl').textContent = (isLead(editT.pid) || editT.pid === CRMG) ? 'Клиент' : 'К чему относится';
   $('#tLead').hidden = isNew || !isLead(editT.pid);
-  $('#tDelete').hidden = isNew; $('#tCancel').hidden = !isNew;
+  $('#tDelete').hidden = isNew; $('#tCancel').hidden = !isNew; $('#tCopy').hidden = isNew;
+  renderCopy();
   $('#tOk').textContent = isNew ? 'Добавить' : 'Готово';
   $('#eDone').closest('label').hidden = isNew;
   $('#eText').placeholder = isNew ? 'Что сделать' : '';
