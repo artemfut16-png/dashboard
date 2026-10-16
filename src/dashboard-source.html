@@ -935,6 +935,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .rlist li:hover .rcopy,.rcopy:focus-visible{opacity:1}
 .rcopy:hover{color:var(--orange)}
 @media (hover:none){.rcopy{opacity:1}}
+.dstatus{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:12px;color:var(--muted)}
+.dstatus .selwrap select{height:34px;padding:0 30px 0 14px;font-size:14px;font-weight:600;cursor:pointer;appearance:none;-webkit-appearance:none}
+.dstatus .selwrap::after{right:12px}
 .kpi.hl{border-color:var(--orange);background:linear-gradient(160deg,rgba(232,80,2,.22),rgba(232,80,2,.06) 60%,var(--surface))}
 .kpi.hl .l{color:var(--orange)}
 .kpi.hl .v{color:var(--white)}
@@ -1070,6 +1073,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
         <div class="dname" id="dName" hidden></div>
         <div class="big-phone" id="dPhone"></div>
         <div class="sh-meta" id="dMeta"></div>
+        <div class="dstatus"><span>Колонка</span><span id="dStatus"></span></div>
       </div>
       <button class="x" id="dClose" aria-label="Закрыть">×</button>
     </div>
@@ -1660,6 +1664,7 @@ function renderDrawer(){
   const l = leads.get(openId);
   if (!l){ closeLead(); return; }
   $('#dPhone').textContent = l.phone || '—';
+  if (!$('#dStatus').contains(document.activeElement)) $('#dStatus').innerHTML = statusSelect(l);
   $('#dMeta').textContent = [l.region, tzLabel(l.tz), l.createdAt ? 'создан ' + createdLabel(l.createdAt, true) : ''].filter(Boolean).join(' · ');
   $('#dName').textContent = [l.name, l.company].filter(Boolean).join(' · '); $('#dName').hidden = !(l.name || l.company);
   if (document.activeElement !== $('#fCompany')) $('#fCompany').value = l.company || '';
