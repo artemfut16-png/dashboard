@@ -2431,20 +2431,17 @@ function askFolder(pid){
 }
 const CAL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>';
 function taskRow(it, bucket){
-  const links = linksOf(it.pid);
   const t = it.t, d = t.due ? dueInfo(t.due, t.done) : null;
   const sub = [
     t.key ? '<span class="mc mkey">★ Ключевая</span>' : '',
     `<span class="mc msrc">${esc(it.name)}</span>${it.pill || ''}`,
     d ? `<span class="mc mdue${d.cls === 'over' ? ' over' : d.cls === 'today' ? ' today' : ''}">${CAL_ICON}${d.cls === 'over' ? 'срок был ' : ''}${d.label}${t.time ? ', ' + esc(t.time) : ''}</span>` : (t.time ? `<span class="mc mdue">${CAL_ICON}в ${esc(t.time)}</span>` : ''),
-    t.repeat ? `<span class="mc">${REPEAT[t.repeat]}</span>` : '',
   ].filter(Boolean).join('');
   const subs = (t.sub || []).length ? `<ul class="rsub">${t.sub.map(s => `<li class="${s.done ? 'done' : ''}"><label><input type="checkbox" data-sub-toggle="${esc(s.id)}" data-tid="${esc(t.id)}" data-pid="${esc(it.pid)}" ${s.done ? 'checked' : ''}><span>${linkify(s.text)}</span></label></li>`).join('')}</ul>` : '';
   return `<li class="${t.done ? 'done' : ''}${t.key && !t.done ? ' key' : ''}" ${t.done ? '' : 'draggable="true"'} data-tid="${esc(t.id)}" data-pid="${esc(it.pid)}" data-ord="${ordOf(t)}">
     ${t.done ? '' : '<span class="grip" title="Перетащите, чтобы изменить порядок" aria-hidden="true"></span>'}
     <input type="checkbox" class="rc" data-ptask="${esc(t.id)}" data-pid="${esc(it.pid)}" ${t.done ? 'checked' : ''} aria-label="Выполнено">
     <div class="rbody"><div class="rt">${linkify(t.text)}</div><div class="rs">${sub}</div>${subs}</div>
-    ${links.length ? `<span class="rlinks">${links.map(x => `<a class="rlink" href="${esc(x.url)}" target="_blank" rel="noopener" title="${x.label}" aria-label="Открыть: ${x.label.toLowerCase()}">${x.icon}</a>`).join('')}</span>` : ''}
     ${t.done ? '' : `<button class="rmove" data-pmove="${esc(t.id)}" data-pid="${esc(it.pid)}" data-to="${bucket === 'today' ? isoPlus(1) : 'today'}" type="button">${bucket === 'today' ? 'На завтра' : 'На сегодня'}</button>`}
     ${t.done ? '' : `<button class="rcopy" data-pcopy="${esc(t.id)}" data-pid="${esc(it.pid)}" type="button" title="Копировать в другой проект" aria-label="Копировать задачу">${ICON_COPY}</button>`}
     <button class="rflag${t.key ? ' on' : ''}" data-pkey="${esc(t.id)}" data-pid="${esc(it.pid)}" type="button" title="Ключевая задача" aria-label="Отметить ключевой" aria-pressed="${!!t.key}">★</button>
