@@ -975,6 +975,13 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .rlist li.key .rflag.on{color:var(--orange)}
 .pst.active{background:rgba(34,197,94,.14);color:#4ade80}
 .pi .pi-h .pill.s-td{background:var(--accent-soft);color:var(--flame)}
+/* kanban: fixed column and card size */
+.board .col{flex:0 0 280px;width:280px;min-width:0;max-width:280px;box-sizing:border-box}
+.board .lcard{height:138px;box-sizing:border-box;overflow:hidden;min-width:0}
+.board .lcard > *{min-width:0;max-width:100%}
+.board .lcard .phone,.board .lc-date{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board .lc-prod{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-sizing:border-box}
+@media (max-width:640px){.board .col{flex-basis:calc(100vw - 60px);width:calc(100vw - 60px);max-width:calc(100vw - 60px)}}
 .kpi.hl{border-color:var(--orange);background:linear-gradient(160deg,rgba(232,80,2,.22),rgba(232,80,2,.06) 60%,var(--surface))}
 .kpi.hl .l{color:var(--orange)}
 .kpi.hl .v{color:var(--white)}
