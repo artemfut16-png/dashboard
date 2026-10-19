@@ -678,7 +678,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .pinfo{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr));gap:10px}
 .pi{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 14px;min-width:0}
 .pi-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.pi-h b{font-size:15px;font-weight:700;color:var(--pc);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pi-h b{font-size:15px;font-weight:700;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pi .pc-meta{margin-top:6px}
 
 /* task editor sheet */
@@ -948,6 +948,41 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .dstatus{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:12px;color:var(--muted)}
 .dstatus .selwrap select{height:34px;padding:0 30px 0 14px;font-size:14px;font-weight:600;cursor:pointer;appearance:none;-webkit-appearance:none}
 .dstatus .selwrap::after{right:12px}
+/* task rows: one neutral style for everything, orange only for key tasks */
+.rs{gap:6px;margin-top:6px;align-items:center}
+.rs .mc{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border:1px solid rgba(255,255,255,.1);border-radius:999px;background:rgba(255,255,255,.03);color:var(--muted);font-size:12px;font-weight:500;line-height:1;text-decoration:none;white-space:nowrap}
+.rs .mc svg{width:12px;height:12px}
+.rs a.mc:hover{color:var(--white);border-color:rgba(255,255,255,.3)}
+.rs .mc.over{color:#ff6b5b;border-color:rgba(255,107,91,.35);background:rgba(255,107,91,.06)}
+.rs .msrc{color:var(--ink)}
+.rlinks{flex:none;display:inline-flex;align-items:center;gap:2px;margin-top:-2px}
+.rlink{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;color:var(--muted);text-decoration:none}
+.rlink svg{width:17px;height:17px}
+.rlink:hover{color:var(--white);background:rgba(255,255,255,.08)}
+.rlist li.key .rlink{color:#F7B58F}
+.rlist li.key .rlink:hover{color:var(--white);background:rgba(232,80,2,.2)}
+.rs .mc.mdue{color:var(--white);font-weight:700;border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.08)}
+.rs .mc.mdue.today{color:#000;background:var(--white);border-color:var(--white)}
+.rs .mc.mdue.over{color:#fff;background:#d43a2a;border-color:#d43a2a}
+.rc{border-color:var(--gray)}
+.rc:hover{border-color:var(--white)}
+.rc:checked{background:var(--gray);border-color:var(--gray)}
+.rsub input{accent-color:#646464}
+.rsub span{color:var(--muted)}
+.rlist li.key{position:relative;margin:6px 0;padding:14px 14px 14px 12px;border:1px solid rgba(232,80,2,.45);border-radius:12px;background:linear-gradient(100deg,rgba(232,80,2,.16),rgba(232,80,2,.04) 55%,transparent);box-shadow:inset 3px 0 0 var(--orange)}
+.rlist li.key .rt{font-weight:700;color:var(--white)}
+.rlist li.key .rc{border-color:var(--orange)}
+.rlist li.key .rc:hover{background:rgba(232,80,2,.25)}
+.rlist li.key .rs .mc{border-color:rgba(232,80,2,.4);background:rgba(232,80,2,.08);color:#F7B58F}
+.rlist li.key .rs .msrc{color:var(--white)}
+.rlist li.key .rs a.mc:hover{border-color:var(--orange);color:var(--white)}
+.rlist li.key .rs .mc.mkey{background:var(--orange);border-color:var(--orange);color:#000;font-weight:700}
+.rlist li.key .rs .mc.mdue{color:var(--white);border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.1)}
+.rlist li.key .rs .mc.mdue.today{color:#000;background:var(--white);border-color:var(--white)}
+.rlist li.key .rs .mc.mdue.over{color:#fff;background:#d43a2a;border-color:#d43a2a}
+.rlist li.key .rsub input{accent-color:var(--orange)}
+.rlist li.key .rsub span{color:var(--ink)}
+.rlist li.key .rflag.on{color:var(--orange)}
 .kpi.hl{border-color:var(--orange);background:linear-gradient(160deg,rgba(232,80,2,.22),rgba(232,80,2,.06) 60%,var(--surface))}
 .kpi.hl .l{color:var(--orange)}
 .kpi.hl .v{color:var(--white)}
@@ -2394,22 +2429,22 @@ function askFolder(pid){
   if (url && !okUrl(url)){ toast('Нужна ссылка, начинающаяся с https://', true); return; }
   setFolder(pid, url);
 }
+const CAL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>';
 function taskRow(it, bucket){
   const links = linksOf(it.pid);
   const t = it.t, d = t.due ? dueInfo(t.due, t.done) : null;
   const sub = [
-    `<span class="src" style="color:${it.color}">${esc(it.name)}</span>${it.pill || ''}`,
-    links.map(x => `<a class="rfold" href="${esc(x.url)}" target="_blank" rel="noopener" title="Открыть: ${x.label.toLowerCase()}">${x.icon}${x.label}</a>`).join(''),
-    d ? `<span class="${d.cls === 'over' ? 'over' : ''}">${d.cls === 'over' ? 'срок был ' : ''}${d.label}${t.time ? ' в ' + esc(t.time) : ''}</span>` : (t.time ? `<span>в ${esc(t.time)}</span>` : ''),
-    t.repeat ? `<span>${REPEAT[t.repeat]}</span>` : '',
-    t.key ? '<span class="rkey">ключевая задача</span>' : '',
-    (t.sub || []).length ? `<span class="sprog">пункты ${(t.sub || []).filter(s => s.done).length} из ${t.sub.length}</span>` : '',
+    t.key ? '<span class="mc mkey">★ Ключевая</span>' : '',
+    `<span class="mc msrc">${esc(it.name)}</span>${it.pill || ''}`,
+    d ? `<span class="mc mdue${d.cls === 'over' ? ' over' : d.cls === 'today' ? ' today' : ''}">${CAL_ICON}${d.cls === 'over' ? 'срок был ' : ''}${d.label}${t.time ? ', ' + esc(t.time) : ''}</span>` : (t.time ? `<span class="mc mdue">${CAL_ICON}в ${esc(t.time)}</span>` : ''),
+    t.repeat ? `<span class="mc">${REPEAT[t.repeat]}</span>` : '',
   ].filter(Boolean).join('');
   const subs = (t.sub || []).length ? `<ul class="rsub">${t.sub.map(s => `<li class="${s.done ? 'done' : ''}"><label><input type="checkbox" data-sub-toggle="${esc(s.id)}" data-tid="${esc(t.id)}" data-pid="${esc(it.pid)}" ${s.done ? 'checked' : ''}><span>${linkify(s.text)}</span></label></li>`).join('')}</ul>` : '';
-  return `<li class="${t.done ? 'done' : ''}" ${t.done ? '' : 'draggable="true"'} data-tid="${esc(t.id)}" data-pid="${esc(it.pid)}" data-ord="${ordOf(t)}">
+  return `<li class="${t.done ? 'done' : ''}${t.key && !t.done ? ' key' : ''}" ${t.done ? '' : 'draggable="true"'} data-tid="${esc(t.id)}" data-pid="${esc(it.pid)}" data-ord="${ordOf(t)}">
     ${t.done ? '' : '<span class="grip" title="Перетащите, чтобы изменить порядок" aria-hidden="true"></span>'}
-    <input type="checkbox" class="rc" style="--pc:${it.color}" data-ptask="${esc(t.id)}" data-pid="${esc(it.pid)}" ${t.done ? 'checked' : ''} aria-label="Выполнено">
+    <input type="checkbox" class="rc" data-ptask="${esc(t.id)}" data-pid="${esc(it.pid)}" ${t.done ? 'checked' : ''} aria-label="Выполнено">
     <div class="rbody"><div class="rt">${linkify(t.text)}</div><div class="rs">${sub}</div>${subs}</div>
+    ${links.length ? `<span class="rlinks">${links.map(x => `<a class="rlink" href="${esc(x.url)}" target="_blank" rel="noopener" title="${x.label}" aria-label="Открыть: ${x.label.toLowerCase()}">${x.icon}</a>`).join('')}</span>` : ''}
     ${t.done ? '' : `<button class="rmove" data-pmove="${esc(t.id)}" data-pid="${esc(it.pid)}" data-to="${bucket === 'today' ? isoPlus(1) : 'today'}" type="button">${bucket === 'today' ? 'На завтра' : 'На сегодня'}</button>`}
     ${t.done ? '' : `<button class="rcopy" data-pcopy="${esc(t.id)}" data-pid="${esc(it.pid)}" type="button" title="Копировать в другой проект" aria-label="Копировать задачу">${ICON_COPY}</button>`}
     <button class="rflag${t.key ? ' on' : ''}" data-pkey="${esc(t.id)}" data-pid="${esc(it.pid)}" type="button" title="Ключевая задача" aria-label="Отметить ключевой" aria-pressed="${!!t.key}">★</button>
