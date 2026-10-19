@@ -643,7 +643,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .radd2 select,.radd2 .pt-due{flex:none;height:34px;max-width:100%;background:transparent;border:1px solid var(--input);border-radius:8px;padding:0 8px;color:var(--muted);font-size:13px}
 .pfilter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
 .fchip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--input);border-radius:999px;background:none;color:var(--muted);padding:5px 12px;font-size:13px;font-weight:500}
-.fchip i{width:8px;height:8px;border-radius:50%;background:var(--pc, var(--lgray))}
+.fchip i{display:none;width:8px;height:8px;border-radius:50%;background:var(--pc, var(--lgray))}
 .fchip b{font-weight:600;color:var(--gray);font-variant-numeric:tabular-nums}
 .fchip:hover{color:var(--ink)}
 .fchip[aria-pressed="true"]{background:var(--surface-2);border-color:var(--gray);color:var(--ink)}
@@ -2315,7 +2315,7 @@ const GEN = '__general', AG = '__agency', TD = '__td', CRMG = '__crm';
 let agencyTasks = [], tdTasks = [], crmTasks = [];
 let generalTasks = [], pFilter = 'all';
 const REPEAT = {daily: 'ежедневно', weekly: 'еженедельно', monthly: 'ежемесячно'};
-const PCOLORS = ['#E85002', '#D9C3AB', '#F9F9F9', '#F16001', '#ff9a5c', '#c9b8a6'];
+const PCOLORS = ['#F9F9F9'];
 const isLead = pid => leads.has(pid);
 const tasksOf = pid => isLead(pid) ? (leads.get(pid).tasks || []) : pid === GEN ? generalTasks : pid === AG ? agencyTasks : pid === TD ? tdTasks : pid === CRMG ? crmTasks : ((projects.get(pid) || {}).tasks || []);
 function linkify(text){
@@ -2330,7 +2330,7 @@ function nextDue(due, rep){
   return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate());
 }
 function sources(){
-  return [{pid: GEN, name: 'Общие задачи по проектам', color: '#A7A7A7'}, {pid: AG, name: 'Агентство', color: '#ff9a5c'}, {pid: TD, name: 'Тест-драйвы', color: '#c9b8a6'}].concat(
+  return [{pid: GEN, name: 'Общие задачи по проектам', color: '#F9F9F9'}, {pid: AG, name: 'Агентство', color: '#F9F9F9'}, {pid: TD, name: 'Тест-драйвы', color: '#F9F9F9'}].concat(
     projList().filter(p => p.status !== 'gone').map((p, i) => ({pid: p.id, name: p.name, color: PCOLORS[i % PCOLORS.length]})));
 }
 // a task sits in "today" or "later"; a later task with a due date comes up by itself when the day arrives
