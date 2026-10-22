@@ -135,7 +135,7 @@ h1{font-size:24px;font-weight:700;letter-spacing:-.01em;margin:0;text-wrap:balan
 .s-sent{background:var(--s-sent-bg);color:var(--s-sent-fg)}
 .s-td{background:var(--s-td-bg);color:var(--s-td-fg)}
 .s-lead{background:var(--s-lead-bg);color:var(--s-lead-fg)}
-.s-lost{background:var(--s-lost-bg);color:var(--s-lost-fg)}
+.s-lost,.s-tdlost{background:var(--s-lost-bg);color:var(--s-lost-fg)}
 .selwrap{position:relative;display:inline-block;max-width:100%}
 .selwrap::after{content:"▾";position:absolute;right:9px;top:50%;transform:translateY(-52%);font-size:10px;pointer-events:none;color:inherit;opacity:.7}
 select.pill{appearance:none;-webkit-appearance:none;padding:5px 24px 5px 11px;cursor:pointer;max-width:100%}
@@ -1337,6 +1337,7 @@ const STATUSES = [
   {k:'lead',   name:'Ведение продано'},
   {k:'unq',    name:'Не квал лид'},
   {k:'noint',  name:'Не интересно'},
+  {k:'tdlost', name:'Тест-драйв не продан'},
   {k:'lost',   name:'Ведение не продано'},
 ];
 const S = Object.fromEntries(STATUSES.map(s => [s.k, s]));
