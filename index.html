@@ -1328,7 +1328,6 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 const STATUSES = [
   {k:'new',    name:'Новый'},
   {k:'miss',   name:'Недозвон'},
-  {k:'sent',   name:'Материалы отправлены'},
   {k:'qual',   name:'Квал лид'},
   {k:'sched',  name:'Созвон назначен'},
   {k:'met',    name:'Созвон проведен'},
@@ -1346,11 +1345,10 @@ const norm = s => s.toLowerCase().replace(/ё/g,'е').replace(/[^a-zа-я]/g,'')
 const STATUS_BY_NAME = Object.fromEntries(STATUSES.map(s => [norm(s.name), s.k]));
 // старые названия из таблицы
 Object.assign(STATUS_BY_NAME, {
-  [norm('Материалы отпрвалены')]: 'sent', [norm('Звонок совершен')]: 'sent',
   [norm('Недозвонился')]: 'miss', [norm('Не продано')]: 'lost', [norm('Отправить материалы')]: 'new',
 });
 // названия статусов, которые встречаются в старой истории
-const OLD_NAMES = {done:'Звонок совершен', send:'Отправить материалы', recall:'Перезвонить'};
+const OLD_NAMES = {sent:'Материалы отправлены', done:'Звонок совершен', send:'Отправить материалы', recall:'Перезвонить'};
 
 const $ = s => document.querySelector(s);
 let crmView = 'list';
