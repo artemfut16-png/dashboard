@@ -1327,8 +1327,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 <script>
 const STATUSES = [
   {k:'new',    name:'Новый'},
-  {k:'qual',   name:'Квал лид'},
+  {k:'miss',   name:'Недозвон'},
   {k:'sent',   name:'Материалы отправлены'},
+  {k:'qual',   name:'Квал лид'},
   {k:'sched',  name:'Созвон назначен'},
   {k:'met',    name:'Созвон проведен'},
   {k:'tdok',   name:'Тест-драйв согласован'},
@@ -1336,7 +1337,6 @@ const STATUSES = [
   {k:'lead',   name:'Ведение продано'},
   {k:'unq',    name:'Не квал лид'},
   {k:'noint',  name:'Не интересно'},
-  {k:'miss',   name:'Недозвон'},
   {k:'lost',   name:'Ведение не продано'},
 ];
 const S = Object.fromEntries(STATUSES.map(s => [s.k, s]));
