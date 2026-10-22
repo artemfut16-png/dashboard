@@ -985,6 +985,13 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .board .lcard .phone,.board .lc-date{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .board .lc-prod{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-sizing:border-box}
 @media (max-width:640px){.board .col{flex-basis:calc(100vw - 60px);width:calc(100vw - 60px);max-width:calc(100vw - 60px)}}
+.dtasks{margin:4px 0 10px}
+.dtasks li{padding:10px 0}
+.dtasks li.key{padding:12px 10px}
+.dtasks .rbody{cursor:pointer}
+.dtasks .rbody:hover .rt{text-decoration:underline;text-underline-offset:3px}
+.dtasks .tdel{opacity:.6}
+.dtasks li.empty{padding:4px 0;border:0;color:var(--muted);font-size:13px}
 .kpi.hl{border-color:var(--orange);background:linear-gradient(160deg,rgba(232,80,2,.22),rgba(232,80,2,.06) 60%,var(--surface))}
 .kpi.hl .l{color:var(--orange)}
 .kpi.hl .v{color:var(--white)}
@@ -1162,7 +1169,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
       </div>
       <div class="sec">
         <h3>Задачи</h3>
-        <ul class="tasks" id="dTasks"></ul>
+        <ul class="rlist dtasks" id="dTasks"></ul>
         <button class="btn primary" id="dTaskAdd" type="button" style="align-self:flex-start;margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Добавить задачу</button>
       </div>
       <div class="sec">
@@ -1497,8 +1504,16 @@ function saveTasks(id, fn, histEntry){
 function renderTasks(l){
   const list = [...(l.tasks || [])].sort((a, b) => (a.done - b.done) || byDue(a, b));
   $('#dTasks').innerHTML = list.length ? list.map(t => {
-    const d = dueInfo(t.due, t.done);
-    return `<li class="${t.done ? 'done' : ''}"><input type="checkbox" data-task-toggle="${esc(t.id)}" ${t.done ? 'checked' : ''} aria-label="Выполнено"><span class="tt">${esc(t.text)}</span><span class="td ${d.cls}">${d.label}</span><button class="tdel" data-task-del="${esc(t.id)}" aria-label="Удалить задачу" type="button">×</button></li>`;
+    const d = t.due ? dueInfo(t.due, t.done) : null;
+    const chips = [
+      t.key ? '<span class="mc mkey">★ Ключевая</span>' : '',
+      d ? `<span class="mc mdue${d.cls === 'over' ? ' over' : d.cls === 'today' ? ' today' : ''}">${CAL_ICON}${d.cls === 'over' ? 'срок был ' : ''}${d.label}${t.time ? ', ' + esc(t.time) : ''}</span>` : (t.time ? `<span class="mc mdue">${CAL_ICON}в ${esc(t.time)}</span>` : '<span class="mc">без срока</span>'),
+    ].filter(Boolean).join('');
+    const subs = (t.sub || []).length ? `<ul class="rsub">${t.sub.map(s => `<li class="${s.done ? 'done' : ''}"><label><input type="checkbox" data-sub-toggle="${esc(s.id)}" data-tid="${esc(t.id)}" data-pid="${esc(l.id)}" ${s.done ? 'checked' : ''}><span>${linkify(s.text)}</span></label></li>`).join('')}</ul>` : '';
+    return `<li class="${t.done ? 'done' : ''}${t.key && !t.done ? ' key' : ''}" data-dtask="${esc(t.id)}">
+      <input type="checkbox" class="rc" data-task-toggle="${esc(t.id)}" ${t.done ? 'checked' : ''} aria-label="Выполнено">
+      <div class="rbody" data-dopen="${esc(t.id)}" title="Открыть задачу"><div class="rt">${linkify(t.text)}</div><div class="rs">${chips}</div>${subs}</div>
+      <button class="tdel" data-task-del="${esc(t.id)}" aria-label="Удалить задачу" type="button">×</button></li>`;
   }).join('') : '<li class="empty">Задач нет</li>';
 }
 document.addEventListener('submit', e => {
@@ -1520,6 +1535,8 @@ document.addEventListener('change', e => {
     done && t ? {kind: 'task', text: t.text} : null);
 });
 document.addEventListener('click', e => {
+  const op = e.target.closest && e.target.closest('#dTasks [data-dopen]');
+  if (op && openId && !e.target.closest('a') && !e.target.closest('.rsub')){ openTask(openId, op.dataset.dopen); return; }
   const del = e.target.closest('[data-task-del]'); if (!del || !openId) return;
   const tid = del.dataset.taskDel;
   saveTasks(openId, ts => ts.filter(x => x.id !== tid));
