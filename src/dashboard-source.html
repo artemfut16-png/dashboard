@@ -3381,7 +3381,8 @@ document.addEventListener('click', e => {
   const sec = document.querySelector('#v-tasks:not([hidden]), #v-ptasks:not([hidden])'); if (!sec) return;
   const k = taddKeep[sec.id], crm = sec.id === 'v-tasks';
   const valid = pid => pid && (crm ? (pid === CRMG || leads.has(pid)) : (pid === GEN || pid === AG || pid === TD || projects.has(pid)));
-  newTask(k && valid(k.pid) ? k.pid : (crm ? CRMG : GEN));
+  const picked = crm ? (cFilter === '__free' ? CRMG : null) : (pFilter !== 'all' && valid(pFilter) ? pFilter : null);
+  newTask(picked || (k && valid(k.pid) ? k.pid : (crm ? CRMG : GEN)));
 });
 
 /* ---------- boot ---------- */
