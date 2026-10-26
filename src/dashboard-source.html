@@ -3380,6 +3380,22 @@ addEventListener('resize', placeCal);
 addEventListener('scroll', () => { if (gc) placeCal(); }, true);
 
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#dTaskAdd') && openId) newTask(openId); });
+/* project names follow the client card in CRM */
+let leadsLoaded = false;
+function syncProjNames(){
+  if (!db || !leadsLoaded || !dashLoaded.proj) return;
+  for (const p of projects.values()){
+    let l = p.leadId && leads.get(p.leadId);
+    const nm = s => String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/[«»"']/g, '').replace(/\s+/g, ' ').trim();
+    if (!l && p.name) l = all().find(x => SOLD.has(x.status) && x.company && nm(x.company) === nm(p.name));
+    if (!l) continue;
+    const name = String(l.company || l.name || '').trim();
+    if (!name || (name === p.name && p.leadId === l.id)) continue;
+    const patch = {name, leadId: l.id};
+    projects.set(p.id, {...p, ...patch});
+    write(p.id, () => db.doc('projects/' + p.id).update(patch));
+  }
+}
 /* «Добавить задачу» opens the task window with a draft */
 const taddKeep = {};
 document.addEventListener('click', e => {
@@ -3405,12 +3421,12 @@ renderAll();
   db.doc('dash/tasks').onSnapshot(s => { const d = s.exists ? (s.data() || {}) : {}; generalTasks = d.tasks || []; agencyTasks = d.agency || []; tdTasks = d.td || []; crmTasks = d.crm || []; dashRefresh(); }, () => {});
   db.collection('projects').onSnapshot(s => {
     const m = new Map(); s.docs.forEach(d => { const v = d.data(); if (v) m.set(d.id, {...v, id: d.id}); });
-    projects = m; dashLoaded.proj = true; dashRefresh();
+    projects = m; dashLoaded.proj = true; syncProjNames(); dashRefresh();
   }, () => {});
   db.collection('leads').onSnapshot(snap => {
     const m = new Map();
     snap.docs.forEach(d => { const v = d.data(); if (v) m.set(d.id, {...v, id: d.id, status: S[v.status] ? v.status : 'new'}); });
-    leads = m;
+    leads = m; leadsLoaded = true; syncProjNames();
     if (document.querySelector('select[data-status-for]:focus')) { renderStats(); if (openId) renderDrawer(); }
     else renderAll();
     if (!$('#importBox').hidden) renderImport();
