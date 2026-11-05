@@ -2902,7 +2902,8 @@ function projLinksHTML(p){
       <input class="pl-auto" type="url" placeholder="Ссылка на автозагрузку" aria-label="Ссылка на автозагрузку" value="${esc(p.autoUrl || '')}">
       <div class="irow"><button class="btn primary" type="submit">Сохранить</button><button class="btn" type="button" data-plinks-cancel>Отмена</button></div>
     </form>`;
-  return `<div class="pi-links">${btn(p.funnelUrl, 'Воронка', ICON_FUNNEL)}${btn(p.folderUrl, 'Папка', ICON_FOLDER)}${btn(p.autoUrl, 'Автозагрузка', ICON_UPLOAD)}<button class="pi-edit" type="button" data-plinks="${esc(p.id)}">ссылки</button></div>`;
+  const many = (urls, fallback, label, icon) => { const list = [...new Set([fallback, ...(urls || [])].filter(okUrl))]; return list.length > 1 ? list.map((url, i) => btn(url, label + ' ' + (i + 1), icon)).join('') : btn(list[0] || '', label, icon); };
+  return `<div class="pi-links">${many(p.funnelUrls, p.funnelUrl, 'Воронка', ICON_FUNNEL)}${many(p.folderUrls, p.folderUrl, 'Папка', ICON_FOLDER)}${many(p.autoUrls, p.autoUrl, 'Автозагрузка', ICON_UPLOAD)}<button class="pi-edit" type="button" data-plinks="${esc(p.id)}">ссылки</button></div>`;
 }
 document.addEventListener('click', e => {
   if (!inProj()) return;
@@ -3429,7 +3430,7 @@ function syncProjNames(){
     const nm = s => String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/[«»"']/g, '').replace(/\s+/g, ' ').trim();
     if (!l && p.name) l = all().find(x => SOLD.has(x.status) && x.company && nm(x.company) === nm(p.name));
     if (!l) continue;
-    const name = String(l.company || l.name || '').trim();
+    const name = String(p.sheetName || l.company || l.name || '').trim();
     if (!name || (name === p.name && p.leadId === l.id)) continue;
     const patch = {name, leadId: l.id};
     projects.set(p.id, {...p, ...patch});
@@ -3560,5 +3561,6 @@ $('#logoutBtn').addEventListener('click', async () => { await sb.auth.signOut();
   });
 })();
 </script>
+<script src="google-sync.js" defer></script>
 </body>
 </html>
