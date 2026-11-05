@@ -92,8 +92,8 @@
         const matches = active.length ? active : candidates;
         if (!matches.length) { unmatched++; continue; }
         if (matches.length > 1) { conflicts++; conflictNames.push(g.name); continue; } // Never merge finance records automatically.
-        const p = matches[0], patch = {name:g.name, sheetName:g.name, sheetCompanyKey:g.key, sheetRows:g.rows};
-        for (const [list, field] of [['folderUrls','folderUrl'], ['funnelUrls','funnelUrl'], ['autoUrls','autoUrl']]) {
+        const p = matches[0], patch = {name:g.name, sheetName:g.name, sheetCompanyKey:g.key, sheetRows:g.rows, autoUrls:g.autoUrls, autoUrl:g.autoUrls[0] || ''};
+        for (const [list, field] of [['folderUrls','folderUrl'], ['funnelUrls','funnelUrl']]) {
           if (g[list].length) { patch[list] = g[list]; patch[field] = g[list][0]; }
         }
         if (!Object.entries(patch).some(([k,v]) => JSON.stringify(v) !== JSON.stringify(p[k]))) continue;

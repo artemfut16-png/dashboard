@@ -2862,7 +2862,7 @@ function projLinksHTML(p){
       <div class="irow"><button class="btn primary" type="submit">Сохранить</button><button class="btn" type="button" data-plinks-cancel>Отмена</button></div>
     </form>`;
   const many = (urls, fallback, label, icon) => { const list = [...new Set([fallback, ...(urls || [])].filter(okUrl))]; return list.length > 1 ? list.map((url, i) => btn(url, label + ' ' + (i + 1), icon)).join('') : btn(list[0] || '', label, icon); };
-  return `<div class="pi-links">${many(p.funnelUrls, p.funnelUrl, 'Воронка', ICON_FUNNEL)}${many(p.folderUrls, p.folderUrl, 'Папка', ICON_FOLDER)}${many(p.autoUrls, p.autoUrl, 'Автозагрузка', ICON_UPLOAD)}<button class="pi-edit" type="button" data-plinks="${esc(p.id)}">ссылки</button></div>`;
+  return `<div class="pi-links">${many(p.funnelUrls, p.funnelUrl, 'Воронка', ICON_FUNNEL)}${many(p.folderUrls, p.folderUrl, 'Папка', ICON_FOLDER)}${([p.autoUrl, ...(p.autoUrls || [])].some(okUrl)) ? many(p.autoUrls, p.autoUrl, 'Автозагрузка', ICON_UPLOAD) : ''}<button class="pi-edit" type="button" data-plinks="${esc(p.id)}">ссылки</button></div>`;
 }
 document.addEventListener('click', e => {
   if (!inProj()) return;
@@ -3436,4 +3436,4 @@ renderAll();
 })();
 </script>
 
-<script src="google-sync.js?v=2" defer></script>
+<script src="google-sync.js?v=3" defer></script>
