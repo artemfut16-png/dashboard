@@ -1140,12 +1140,14 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
         <button class="tab" role="tab" data-view="tasks" aria-selected="true">CRM<span class="cnt" id="stCrm"></span></button>
         <button class="tab" role="tab" data-view="ptasks" aria-selected="false">Проекты<span class="cnt" id="stProj"></span></button>
         <button class="tab" role="tab" data-view="atasks" aria-selected="false">Агентство<span class="cnt" id="stAg"></span></button>
+        <button class="tab" role="tab" data-view="alltasks" aria-selected="false">Все<span class="cnt" id="stAll"></span></button>
       </div>
       <button class="btn primary" id="taskAddOpen" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Добавить задачу</button>
     </div>
     <section id="v-tasks" class="tboard" hidden></section>
     <section id="v-ptasks" class="tboard" hidden></section>
     <section id="v-atasks" class="tboard" hidden></section>
+    <section id="v-alltasks" class="tboard" hidden></section>
 
     <section id="v-projects" hidden></section>
 
@@ -1685,6 +1687,7 @@ function taskBadges(){
   $('#cTasks').textContent = crm + proj; $('#cTasks').hidden = !(crm + proj);
   let ag = 0;
   try { ag = allTasks().filter(it => !it.t.done && it.pid === AG).length; } catch {}
+  $('#stAll').textContent = (crm + proj) || '';
   $('#stCrm').textContent = crm || ''; $('#stProj').textContent = (proj - ag) || ''; $('#stAg').textContent = ag || '';
 }
 function renderStats(){
@@ -1734,14 +1737,14 @@ function renderList(){
 }
 
 function renderView(){
-  for (const v of ['list','tasks','ptasks','atasks','projects','dash']) $('#v-' + v).hidden = v !== view;
-  $('#taskTabs').hidden = !(view === 'tasks' || view === 'ptasks' || view === 'atasks');
+  for (const v of ['list','tasks','ptasks','atasks','alltasks','projects','dash']) $('#v-' + v).hidden = v !== view;
+  $('#taskTabs').hidden = !(view === 'tasks' || view === 'ptasks' || view === 'atasks' || view === 'alltasks');
   document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.view === view));
   if (view === 'list') renderList();
   else if (view === 'dash') renderDash();
   else if (view === 'tasks') renderProjectsView();
-  else if (view === 'projects' || view === 'ptasks' || view === 'atasks') renderProjectsView();
-  const sect = view === 'dash' ? 'an' : (view === 'tasks' || view === 'ptasks' || view === 'atasks') ? 'tasks' : view === 'projects' ? 'projects' : 'crm';
+  else if (view === 'projects' || view === 'ptasks' || view === 'atasks' || view === 'alltasks') renderProjectsView();
+  const sect = view === 'dash' ? 'an' : (view === 'tasks' || view === 'ptasks' || view === 'atasks' || view === 'alltasks') ? 'tasks' : view === 'projects' ? 'projects' : 'crm';
   document.querySelectorAll('.sbtn').forEach(b => b.toggleAttribute('aria-current', b.dataset.sect === sect));
   $('#crumbCur').textContent = {an: 'Аналитика', tasks: 'Задачи', projects: 'Проекты', crm: 'CRM'}[sect];
   $('#pageTitle').innerHTML = {an: 'Аналитика <span class="dim">агентства</span>', tasks: 'Задачи <span class="dim">CRM, проекты, агентство</span>', projects: 'Проекты <span class="dim">в работе</span>', crm: 'CRM <span class="dim">лиды и сделки</span>'}[sect];
@@ -1917,7 +1920,7 @@ document.addEventListener('drop', e => { const col = e.target.closest('.col'); i
 document.addEventListener('dragend', () => { dragId = null; document.querySelectorAll('.col.drop').forEach(x => x.classList.remove('drop')); });
 
 /* clocks tick every minute */
-setInterval(() => { renderStats(); if (view !== 'import' && view !== 'dash' && view !== 'projects' && view !== 'ptasks' && view !== 'atasks' && !document.querySelector('select:focus')) renderView(); if (openId && !$('#drawer').contains(document.activeElement)) renderDrawer(); }, 60e3);
+setInterval(() => { renderStats(); if (view !== 'import' && view !== 'dash' && view !== 'projects' && view !== 'ptasks' && view !== 'atasks' && view !== 'alltasks' && !document.querySelector('select:focus')) renderView(); if (openId && !$('#drawer').contains(document.activeElement)) renderDrawer(); }, 60e3);
 
 
 /* ---------- agency dashboard ---------- */
@@ -2312,14 +2315,14 @@ function commitEdit(raw){
   renderDash();
 }
 function projBadge(){ taskBadges(); }
-const inProj = () => view === 'projects' || view === 'ptasks' || view === 'atasks' || view === 'tasks';
+const inProj = () => view === 'projects' || view === 'ptasks' || view === 'atasks' || view === 'alltasks' || view === 'tasks';
 function dashRefresh(){
   projBadge();
   if (typeof editT !== 'undefined' && editT) renderTaskEditor();
   if (inProj()){
     if (gc) return;
     const ae = document.activeElement;
-    if (!(ae && ($('#v-projects').contains(ae) || $('#v-ptasks').contains(ae) || $('#v-atasks').contains(ae) || $('#v-tasks').contains(ae)) && (ae.tagName === 'SELECT' || (ae.tagName === 'INPUT' && ae.type !== 'checkbox')))) renderProjectsView();
+    if (!(ae && ($('#v-projects').contains(ae) || $('#v-ptasks').contains(ae) || $('#v-atasks').contains(ae) || $('#v-alltasks').contains(ae) || $('#v-tasks').contains(ae)) && (ae.tagName === 'SELECT' || (ae.tagName === 'INPUT' && ae.type !== 'checkbox')))) renderProjectsView();
     return;
   }
   if (view !== 'dash' || editing) return;
@@ -2509,10 +2512,14 @@ function crmSrcs(){
     .map(l => ({pid: l.id, name: [l.name || (l.company ? '' : 'Без имени'), l.company, l.phone].filter(Boolean).join(' · '), color: '#E85002', status: l.status}));
 }
 const CRM_FREE = {pid: CRMG, name: 'Без привязки к клиенту', color: '#A7A7A7', status: null};
-function renderCrmBoard(){
-  const el = $('#v-tasks'), srcs = crmSrcs();
+function crmBoardTasks(){
+  const srcs = crmSrcs();
   const every = crmTasks.map(t => ({...CRM_FREE, t}));
   srcs.forEach(x => (leads.get(x.pid).tasks || []).forEach(t => every.push({...x, pill: `<span class="pill s-${x.status} tpill">${esc(S[x.status].name)}</span>`, t})));
+  return every;
+}
+function renderCrmBoard(){
+  const el = $('#v-tasks'), srcs = crmSrcs(), every = crmBoardTasks();
   const passK = k => it => k === 'all' || (k === '__free' ? it.pid === CRMG : it.status === k);
   const openBy = k => every.filter(it => !it.t.done && passK(k)(it)).length;
   if (cFilter !== 'all' && !openBy(cFilter)) cFilter = 'all';
@@ -2531,6 +2538,7 @@ function renderProjectsView(){
   const srcs = sources().filter(x => x.pid !== AG);
   if (pFilter !== 'all' && !srcs.some(x => x.pid === pFilter)) pFilter = 'all';
   const allT = allTasks(), every = allT.filter(it => it.pid !== AG);
+  $('#v-alltasks').innerHTML = boardHTML({every: crmBoardTasks().concat(allT), pass: () => true, chips: ''});
   $('#v-atasks').innerHTML = boardHTML({every: allT.filter(it => it.pid === AG), pass: () => true, srcLabel: 'К чему относится', options: '', chips: ''});
   const cnt = pid => every.filter(it => !it.t.done && (pid === 'all' || it.pid === pid)).length;
   el.innerHTML = boardHTML({
@@ -3034,7 +3042,7 @@ function saveDraft(){
   const now = Date.now(), pid = editT.pid;
   const t = {...draftT, text, sub, due: draftT.due || (draftT.repeat ? todayISO() : ''), at: now, ord: now, bucket: 'later'};
   if (!t.sub.length) delete t.sub;
-  const secId = (document.querySelector('#v-tasks:not([hidden]), #v-ptasks:not([hidden]), #v-atasks:not([hidden])') || {}).id;
+  const secId = (document.querySelector('#v-tasks:not([hidden]), #v-ptasks:not([hidden]), #v-atasks:not([hidden]), #v-alltasks:not([hidden])') || {}).id;
   if (secId) taddKeep[secId] = {pid};
   closeTask();
   saveProjTasks(pid, ts => ts.concat(t));
@@ -3433,8 +3441,9 @@ function syncProjNames(){
 const taddKeep = {};
 document.addEventListener('click', e => {
   if (!(e.target.closest && e.target.closest('#taskAddOpen'))) return;
-  const sec = document.querySelector('#v-tasks:not([hidden]), #v-ptasks:not([hidden]), #v-atasks:not([hidden])'); if (!sec) return;
+  const sec = document.querySelector('#v-tasks:not([hidden]), #v-ptasks:not([hidden]), #v-atasks:not([hidden]), #v-alltasks:not([hidden])'); if (!sec) return;
   if (sec.id === 'v-atasks'){ newTask(AG); return; }
+  if (sec.id === 'v-alltasks'){ newTask((taddKeep[sec.id] || {}).pid || GEN); return; }
   const k = taddKeep[sec.id], crm = sec.id === 'v-tasks';
   const valid = pid => pid && (crm ? (pid === CRMG || leads.has(pid)) : (pid === GEN || pid === AG || pid === TD || projects.has(pid)));
   const picked = crm ? (cFilter === '__free' ? CRMG : null) : (pFilter !== 'all' && valid(pFilter) ? pFilter : null);
