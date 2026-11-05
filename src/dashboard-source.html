@@ -1131,6 +1131,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
         <div class="big-phone" id="dPhone"></div>
         <div class="sh-meta" id="dMeta"></div>
         <div class="dstatus"><span>Колонка</span><span id="dStatus"></span></div>
+        <div class="dstatus"><label for="fLeadSource">Источник лида</label><span class="selwrap"><select id="fLeadSource" class="pill" aria-label="Источник лида">
+          <option value="">Не указан</option><option value="auto">Автообзвон</option><option value="threads">Тредс</option><option value="referral">Рекомендации</option><option value="cold">Холодный звонок</option>
+        </select></span></div>
       </div>
       <button class="x" id="dClose" aria-label="Закрыть">×</button>
     </div>
@@ -1589,6 +1592,7 @@ function saveClient(id, field){
   }
   else if (field === 'fSales'){ const v = $('#fSales').value; if (v === (l.salesDept || '')) return; patch = {salesDept: v}; }
   else if (field === 'fAvito'){ const v = $('#fAvito').value; if (v === (l.avito || '')) return; patch = {avito: v}; }
+  else if (field === 'fLeadSource'){ const v = $('#fLeadSource').value; if (!['','auto','threads','referral','cold'].includes(v) || v === (l.leadSource || '')) return; patch = {leadSource: v}; }
   else if (field === 'fProduct'){ const v = $('#fProduct').value; if (v === (l.product || '')) return; patch = {product: v}; }
   else {
     const raw = $('#fPhone').value.trim(), d = phoneDigits(raw);
@@ -1739,6 +1743,7 @@ function renderDrawer(){
   if (document.activeElement !== $('#fCompany')) $('#fCompany').value = l.company || '';
   if (document.activeElement !== $('#fName')) $('#fName').value = l.name || '';
   if (document.activeElement !== $('#fPhone')) $('#fPhone').value = l.phone || '';
+  if (document.activeElement !== $('#fLeadSource')) $('#fLeadSource').value = l.leadSource || '';
   if (document.activeElement !== $('#fProduct')) $('#fProduct').value = l.product || '';
   if (document.activeElement !== $('#fRes')) $('#fRes').value = l.resource || '';
   { const ok = /^https?:\/\//i.test(l.resource || ''); $('#fResOpen').hidden = !ok; $('#fResOpen').href = ok ? l.resource : '#'; }
@@ -1861,7 +1866,7 @@ function submitNote(){
 document.addEventListener('change', e => {
   const sel = e.target.closest('[data-status-for]');
   if (sel){ setStatus(sel.dataset.statusFor, sel.value); return; }
-  if (['fName','fCompany','fPhone','fProduct','fRegion','fSales','fAvito','fRes'].includes(e.target.id) && openId){ saveClient(openId, e.target.id); return; }
+  if (['fName','fCompany','fPhone','fLeadSource','fProduct','fRegion','fSales','fAvito','fRes'].includes(e.target.id) && openId){ saveClient(openId, e.target.id); return; }
   if (e.target.id === 'dNextInput'){ const v = e.target.value; setNext(openId, v ? new Date(v).getTime() : null); e.target.blur(); return; }
   if (e.target.id === 'fSort'){ filt.sort = e.target.value; renderList(); return; }
   if (e.target.id === 'importFile'){
@@ -2034,13 +2039,6 @@ function renderDash(){
         <div class="chart" id="revChart">${revChart(ms, cs, nowM)}<div class="tip" id="revTip" hidden></div></div>
         <div class="legend center"><span><i class="ld net"></i>Чистая прибыль</span><span><i class="ld rev"></i>Выручка</span></div>
       </div>
-      ${funnelCard('cold', 'Холодные звонки', 'Исходящие звонки')}
-      ${funnelCard('auto', 'Автообзвон', 'Лиды', 'leads', 'лид')}
-      <div class="card wide">
-        <div class="card-h"><h2>Каналы продаж</h2></div>
-        <div class="mixbar">${mixBar}</div>
-        <div class="scroll" style="margin-top:0"><table class="dt"><thead><tr><th>Канал</th><th>Выручка</th><th>Доля</th><th>Продажи</th><th>Ср. чек</th></tr></thead><tbody>${mixRows}</tbody></table></div>
-      </div>
     </div>
     <div class="card">
       <div class="card-h"><h2>Проекты</h2><span class="hint">Оплаты из этой таблицы формируют выручку наверху. Нажмите на сумму, чтобы изменить. Статус переключается по клику.</span></div>
@@ -2102,6 +2100,7 @@ function revChart(ms, cs, nowM){
   }
   s += `<line class="cross" id="revCross" y1="${T}" y2="${T + ih}" x1="0" x2="0"/><circle class="dot net" id="revDot2" r="4.5"/><circle class="dot rev" id="revDot1" r="4.5"/>`;
   ms.forEach((m, i) => {
+    if (cs[i].has) s += `<text class="rev-label" x="${X(i)}" y="${Math.max(T + 10, Y(cs[i].rev) - 10)}" text-anchor="middle" style="fill:var(--ink);font-size:9px;font-weight:600;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round;pointer-events:none">${rub(cs[i].rev)}</text>`;
     s += `<text class="m${i === nowM ? ' cur' : ''}" x="${X(i)}" y="${H - 8}" text-anchor="middle">${MON[i]}</text>`;
     s += `<rect class="hit" data-m="${i}" data-x="${X(i)}"${i <= last ? ` data-y1="${Y(cs[i].rev)}" data-y2="${Y(cs[i].net)}"` : ''} x="${L + i * bw}" y="${T}" width="${bw}" height="${ih + B}" fill="transparent"/>`;
   });
