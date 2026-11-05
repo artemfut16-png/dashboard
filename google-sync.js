@@ -104,8 +104,8 @@
     } catch (e) { info.textContent = e.message || 'Не удалось обновить ссылки'; }
     finally { busy = false; }
   }
-  const panel = document.createElement('div'); panel.className = 'bar';
-  panel.innerHTML = '<div><button class="btn" id="googleSyncConnect" type="button">Подключить Google</button> <button class="btn" id="googleSyncRun" type="button" disabled>Обновить ссылки</button></div><span class="hint" id="googleSyncInfo" role="status">Названия и ссылки из Google Таблицы · одна карточка на компанию</span>';
+  const panel = document.createElement('details'); panel.style.marginBottom = '14px';
+  panel.innerHTML = '<summary style="cursor:pointer;color:var(--muted);font-size:12px;padding:6px 0">Синхронизация Google</summary><div class="bar" style="margin-top:8px"><div><button class="btn" id="googleSyncConnect" type="button">Подключить Google</button> <button class="btn" id="googleSyncRun" type="button" disabled>Обновить ссылки</button></div><span class="hint" id="googleSyncInfo" role="status">Названия и ссылки из Google Таблицы · одна карточка на компанию</span></div>';
   document.getElementById('v-projects').before(panel); panel.hidden = true;
   new MutationObserver(() => { panel.hidden = document.getElementById('v-projects').hidden; }).observe(document.getElementById('v-projects'), {attributes:true, attributeFilter:['hidden']});
   const script = document.createElement('script'); script.src = 'https://accounts.google.com/gsi/client'; script.async = true; document.head.append(script);
