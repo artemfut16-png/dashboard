@@ -83,7 +83,7 @@
   async function sync() {
     if (busy || !token || Date.now() >= expires || !db || !dashLoaded.proj || !leadsLoaded) return;
     busy = true; const info = document.getElementById('googleSyncInfo'); info.textContent = 'Обновляем ссылки из Google…';
-    let count = 0, unmatched = 0, conflicts = 0;
+    let count = 0, unmatched = 0, conflicts = 0; const conflictNames = [];
     try {
       const groups = await collect();
       for (const g of groups) {
@@ -91,7 +91,7 @@
         const active = candidates.filter(p => p.status !== 'gone');
         const matches = active.length ? active : candidates;
         if (!matches.length) { unmatched++; continue; }
-        if (matches.length > 1) { conflicts++; continue; } // Never merge finance records automatically.
+        if (matches.length > 1) { conflicts++; conflictNames.push(g.name); continue; } // Never merge finance records automatically.
         const p = matches[0], patch = {name:g.name, sheetName:g.name, sheetCompanyKey:g.key, sheetRows:g.rows};
         for (const [list, field] of [['folderUrls','folderUrl'], ['funnelUrls','funnelUrl'], ['autoUrls','autoUrl']]) {
           if (g[list].length) { patch[list] = g[list]; patch[field] = g[list][0]; }
@@ -100,7 +100,7 @@
         await db.doc('projects/' + p.id).update(patch); projects.set(p.id, {...p,...patch}); count++;
       }
       syncProjNames(); dashRefresh();
-      info.textContent = 'Обновлено: ' + count + ' · ' + new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}) + (unmatched ? ' · без карточки: ' + unmatched : '') + (conflicts ? ' · совпадения требуют проверки: ' + conflicts : '');
+      info.textContent = 'Обновлено: ' + count + ' · ' + new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}) + (unmatched ? ' · без карточки: ' + unmatched : '') + (conflicts ? ' · совпадения требуют проверки: ' + conflictNames.join(', ') : '');
     } catch (e) { info.textContent = e.message || 'Не удалось обновить ссылки'; }
     finally { busy = false; }
   }
