@@ -662,9 +662,6 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .rlist li:hover .rmove,.rmove:focus-visible{opacity:1}
 .rmove:hover{color:var(--ink);border-color:var(--gray)}
 @media (hover:none){.rmove{opacity:1}}
-.rdone{margin:0 0 6px}
-.rdone summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;padding:6px 2px;list-style-position:inside}
-.rdone .rlist{margin-top:2px}
 .pinfo{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr));gap:10px}
 .pi{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 14px;min-width:0}
 .pi-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -2443,7 +2440,6 @@ function boardHTML(o){
   const tomI = isoPlus(1), t0ms = dayStart(0);
   const dayKeys = [...new Set(open.map(it => groupOf(it.t)).filter(k => k !== 'today' && k !== 'none' && k !== tomI))].sort();
   const inDays = iso => { const [y, m, d] = iso.split('-').map(Number); return Math.round((new Date(y, m - 1, d).getTime() - t0ms) / 864e5); };
-  const done = shown.filter(it => it.t.done).sort((a, b) => (b.t.doneAt || 0) - (a.t.doneAt || 0)).slice(0, 30);
   const dateStr = new Date().toLocaleDateString('ru-RU', {day: 'numeric', month: 'long', weekday: 'long'});
   const list = (items, bucket, emptyText) => `<ul class="rlist" data-bucket="${bucket}">${items.length ? items.map(it => taskRow(it, bucket)).join('') : `<li class="empty">${emptyText}</li>`}</ul>`;
   return `
@@ -2455,7 +2451,7 @@ function boardHTML(o){
       {k: 'none', title: 'Без срока', note: '', cls: 'day none', empty: 'Задач без срока нет. Сюда можно перетащить задачу, чтобы убрать у неё дату.'},
     ].map(g => { const items = open.filter(it => groupOf(it.t) === g.k);
       return `<section class="rblock bk ${g.cls}"><div class="rb-h"><h2>${g.title}</h2>${g.note ? `<span class="rcount">${g.note}</span>` : ''}</div>${list(items, g.k, g.empty)}</section>`; }).join('')}
-    ${done.length ? `<details class="rdone"><summary>Выполнено</summary><ul class="rlist">${done.map(it => taskRow(it, 'done')).join('')}</ul></details>` : ''}`;
+  `;
 }
 /* CRM tasks: the same board, sources are leads, filters are lead statuses */
 function crmSrcs(){
