@@ -1082,7 +1082,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
     <div class="brand"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="bt"><b>Дашборд</b><span>Агентство</span></span></div>
     <div class="navlbl">Разделы</div>
     <button class="sbtn" data-sect="crm" aria-current="page" title="CRM"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="lbl">CRM</span></button>
-    <button class="sbtn" data-sect="tasks" title="Задачи"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="lbl">Задачи</span><span class="badge" id="cTasks" hidden></span></button>
+    <button class="sbtn" data-sect="tasks" title="Задачи"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="lbl">Задачи</span></button>
     <button class="sbtn" data-sect="projects" title="Проекты"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg><span class="lbl">Проекты</span></button>
     <button class="sbtn" data-sect="an" title="Аналитика"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span class="lbl">Аналитика</span></button>
     <div class="navlbl" id="linksLbl">Ссылки</div>
@@ -1137,10 +1137,10 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 
     <div class="subtabs" id="taskTabs" hidden>
       <div class="tabs" role="tablist">
-        <button class="tab" role="tab" data-view="tasks" aria-selected="true">CRM<span class="cnt" id="stCrm"></span></button>
-        <button class="tab" role="tab" data-view="ptasks" aria-selected="false">Проекты<span class="cnt" id="stProj"></span></button>
-        <button class="tab" role="tab" data-view="atasks" aria-selected="false">Агентство<span class="cnt" id="stAg"></span></button>
-        <button class="tab" role="tab" data-view="alltasks" aria-selected="false">Все<span class="cnt" id="stAll"></span></button>
+        <button class="tab" role="tab" data-view="tasks" aria-selected="true">CRM</button>
+        <button class="tab" role="tab" data-view="ptasks" aria-selected="false">Проекты</button>
+        <button class="tab" role="tab" data-view="atasks" aria-selected="false">Агентство</button>
+        <button class="tab" role="tab" data-view="alltasks" aria-selected="false">Все</button>
       </div>
       <button class="btn primary" id="taskAddOpen" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Добавить задачу</button>
     </div>
@@ -1532,7 +1532,7 @@ function taskChip(l){
   const open = openTasks(l); if (!open.length) return '';
   const t = open[0], d = dueInfo(t.due);
   const tip = open.map(x => x.text + ' — ' + dueInfo(x.due).label).join('\n');
-  return `<span class="lc-task ${d.cls}" title="${esc(tip)}">${d.label}${open.length > 1 ? ' +' + (open.length - 1) : ''}</span>`;
+  return `<span class="lc-task ${d.cls}" title="${esc(tip)}">${d.label}</span>`;
 }
 function saveTasks(id, fn, histEntry){
   return write(id, () => {
@@ -1684,20 +1684,9 @@ function buckets(){
   return {over, today, fresh};
 }
 
-function taskBadges(){
-  const crm = all().reduce((n, l) => n + (l.tasks || []).filter(t => !t.done).length, 0) + (typeof crmTasks === 'undefined' ? 0 : crmTasks.filter(t => !t.done).length);
-  let proj = 0;
-  try { proj = allTasks().filter(it => !it.t.done).length; } catch {}
-  $('#cTasks').textContent = crm + proj; $('#cTasks').hidden = !(crm + proj);
-  let ag = 0;
-  try { ag = allTasks().filter(it => !it.t.done && it.pid === AG).length; } catch {}
-  $('#stAll').textContent = (crm + proj) || '';
-  $('#stCrm').textContent = crm || ''; $('#stProj').textContent = (proj - ag) || ''; $('#stAg').textContent = ag || '';
-}
 function renderStats(){
   const a = all();
   const nt = a.reduce((n, l) => n + (l.tasks || []).filter(t => !t.done).length, 0);
-  taskBadges();
 
   $('#sub').textContent = view === 'dash' ? 'Доходы, расходы и проекты агентства' : ''; $('#sub').hidden = view !== 'dash';
 }
@@ -2313,10 +2302,8 @@ function commitEdit(raw){
   }
   renderDash();
 }
-function projBadge(){ taskBadges(); }
 const inProj = () => view === 'projects' || view === 'ptasks' || view === 'atasks' || view === 'alltasks' || view === 'tasks';
 function dashRefresh(){
-  projBadge();
   if (typeof editT !== 'undefined' && editT) renderTaskEditor();
   if (inProj()){
     if (gc) return;
@@ -2502,8 +2489,8 @@ function boardHTML(o){
       ...dayKeys.map(k => ({k, title: dayTitle(k), note: 'через ' + inDays(k) + ' дн.', cls: 'day', empty: ''})),
       {k: 'none', title: 'Без срока', note: '', cls: 'day none', empty: 'Задач без срока нет. Сюда можно перетащить задачу, чтобы убрать у неё дату.'},
     ].map(g => { const items = open.filter(it => groupOf(it.t) === g.k);
-      return `<section class="rblock bk ${g.cls}"><div class="rb-h"><h2>${g.title}</h2><span class="rcount">${g.note ? g.note + ' · ' : ''}${items.length}</span></div>${list(items, g.k, g.empty)}</section>`; }).join('')}
-    ${done.length ? `<details class="rdone"><summary>Выполнено · ${done.length}</summary><ul class="rlist">${done.map(it => taskRow(it, 'done')).join('')}</ul></details>` : ''}`;
+      return `<section class="rblock bk ${g.cls}"><div class="rb-h"><h2>${g.title}</h2>${g.note ? `<span class="rcount">${g.note}</span>` : ''}</div>${list(items, g.k, g.empty)}</section>`; }).join('')}
+    ${done.length ? `<details class="rdone"><summary>Выполнено</summary><ul class="rlist">${done.map(it => taskRow(it, 'done')).join('')}</ul></details>` : ''}`;
 }
 /* CRM tasks: the same board, sources are leads, filters are lead statuses */
 function crmSrcs(){
@@ -2525,9 +2512,9 @@ function renderCrmBoard(){
   el.innerHTML = boardHTML({
     every, pass: passK(cFilter), srcLabel: 'Клиент',
     options: [CRM_FREE].concat(srcs).map(x => `<option value="${esc(x.pid)}">${esc(x.name)}</option>`).join(''),
-    chips: `<button class="fchip" data-cfilter="all" aria-pressed="${cFilter === 'all'}">Все <b>${openBy('all')}</b></button>` +
-      (openBy('__free') ? `<button class="fchip" data-cfilter="__free" aria-pressed="${cFilter === '__free'}">Без клиента <b>${openBy('__free')}</b></button>` : '') +
-      STATUSES.filter(st => openBy(st.k)).map(st => `<button class="fchip" data-cfilter="${st.k}" aria-pressed="${cFilter === st.k}">${st.name} <b>${openBy(st.k)}</b></button>`).join(''),
+    chips: `<button class="fchip" data-cfilter="all" aria-pressed="${cFilter === 'all'}">Все</button>` +
+      (openBy('__free') ? `<button class="fchip" data-cfilter="__free" aria-pressed="${cFilter === '__free'}">Без клиента</button>` : '') +
+      STATUSES.filter(st => openBy(st.k)).map(st => `<button class="fchip" data-cfilter="${st.k}" aria-pressed="${cFilter === st.k}">${st.name}</button>`).join(''),
   });
 }
 function renderProjectsView(){
@@ -2539,12 +2526,11 @@ function renderProjectsView(){
   const allT = allTasks(), every = allT.filter(it => it.pid !== AG);
   $('#v-alltasks').innerHTML = boardHTML({every: crmBoardTasks().concat(allT), pass: () => true, chips: ''});
   $('#v-atasks').innerHTML = boardHTML({every: allT.filter(it => it.pid === AG), pass: () => true, srcLabel: 'К чему относится', options: '', chips: ''});
-  const cnt = pid => every.filter(it => !it.t.done && (pid === 'all' || it.pid === pid)).length;
   el.innerHTML = boardHTML({
     every, pass: it => pFilter === 'all' || it.pid === pFilter, srcLabel: 'К чему относится',
     options: srcs.map(x => `<option value="${esc(x.pid)}"${x.pid === pFilter ? ' selected' : ''}>${esc(x.name)}</option>`).join(''),
-    chips: `<button class="fchip" data-pfilter="all" aria-pressed="${pFilter === 'all'}">Все <b>${cnt('all')}</b></button>` +
-      srcs.map(x => `<button class="fchip" style="--pc:${x.color}" data-pfilter="${esc(x.pid)}" aria-pressed="${pFilter === x.pid}"><i></i>${esc(x.name)} <b>${cnt(x.pid)}</b></button>`).join(''),
+    chips: `<button class="fchip" data-pfilter="all" aria-pressed="${pFilter === 'all'}">Все</button>` +
+      srcs.map(x => `<button class="fchip" style="--pc:${x.color}" data-pfilter="${esc(x.pid)}" aria-pressed="${pFilter === x.pid}"><i></i>${esc(x.name)}</button>`).join(''),
   });
   renderCrmBoard();
   elP.innerHTML = `<div class="psec" style="margin-top:0">Проекты в работе <span class="num">${srcs.filter(x => projects.has(x.pid)).length}</span></div>
@@ -2923,7 +2909,7 @@ document.addEventListener('submit', e => {
 function saveProjTasks(pid, fn){
   if (isLead(pid)){
     const l = leads.get(pid), tasks = fn((l.tasks || []).map(t => ({...t})));
-    leads.set(pid, {...l, tasks}); taskBadges();
+    leads.set(pid, {...l, tasks});
     return write(pid, () => ref(pid).update({tasks, updatedAt: Date.now()}));
   }
   if (pid === GEN || pid === AG || pid === TD || pid === CRMG){
@@ -2931,13 +2917,12 @@ function saveProjTasks(pid, fn){
     else if (pid === AG) agencyTasks = fn(agencyTasks.map(t => ({...t})));
     else if (pid === TD) tdTasks = fn(tdTasks.map(t => ({...t})));
     else crmTasks = fn(crmTasks.map(t => ({...t})));
-    projBadge();
     const data = {tasks: generalTasks, agency: agencyTasks, td: tdTasks, crm: crmTasks};
     return write('__gen', () => db.doc('dash/tasks').set(data));
   }
   const p = projects.get(pid); if (!p) return Promise.resolve();
   const tasks = fn((p.tasks || []).map(t => ({...t})));
-  projects.set(pid, {...p, tasks}); projBadge();
+  projects.set(pid, {...p, tasks});
   return write(pid, () => db.doc('projects/' + pid).update({tasks}));
 }
 const patchTask = (pid, tid, patch) => saveProjTasks(pid, ts => ts.map(x => x.id === tid ? {...x, ...patch} : x));
@@ -3001,7 +2986,7 @@ document.addEventListener('click', e => {
   if (tg){
     const p = projects.get(tg.dataset.ptoggle); if (!p) return;
     const status = p.status === 'gone' ? 'active' : 'gone', patch = {status, goneAt: status === 'gone' ? Date.now() : null};
-    projects.set(p.id, {...p, ...patch}); projBadge(); renderProjectsView();
+    projects.set(p.id, {...p, ...patch}); renderProjectsView();
     write(p.id, () => db.doc('projects/' + p.id).update(patch)).then(() => toast(status === 'gone' ? 'Проект переведён в «Ушёл»' : 'Проект возвращён в работу'));
   }
 });
