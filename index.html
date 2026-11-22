@@ -2476,7 +2476,7 @@ let cFilter = 'all';
 function boardHTML(o){
   const open = o.every.filter(o.pass).filter(it => !it.t.done && it.t.due === todayISO())
     .sort((a,b) => (a.t.time || '99:99').localeCompare(b.t.time || '99:99') || ordOf(a.t) - ordOf(b.t));
-  const period = t => !t.time ? 'none' : Number(t.time.split(':')[0]) < 12 ? 'morning' : Number(t.time.split(':')[0]) < 18 ? 'afternoon' : 'evening';
+  const period = t => t.dayPeriod || (!t.time ? 'none' : Number(t.time.split(':')[0]) < 12 ? 'morning' : Number(t.time.split(':')[0]) < 18 ? 'afternoon' : 'evening');
   const groups = [['morning','Утро','00:00–11:59'],['afternoon','День','12:00–17:59'],['evening','Вечер','18:00–23:59'],['none','Без времени','']];
   const dateStr = new Date().toLocaleDateString('ru-RU', {day:'numeric',month:'long',weekday:'long'});
   return `<div class="pfilter">${o.chips}</div><section class="rblock bk daily-board"><div class="rb-h"><h2>Сегодня</h2><span class="rcount">${dateStr}</span></div>${groups.map(([key,title,note]) => {
@@ -3170,7 +3170,7 @@ document.addEventListener('change', e => {
   const t = edTask(); if (!t) return;
   if (id === 'eText'){ const v = e.target.value.trim(); if (editT.draft){ edPatch({text: v}); return; } if (!v){ e.target.value = t.text; return; } edPatch({text: v}); }
   else if (id === 'eDue'){ const due = e.target.value || ''; edPatch({due, bucket: 'later'}); }
-  else if (id === 'eTime') edPatch({time: e.target.value || ''});
+  else if (id === 'eTime') edPatch({time: e.target.value || '', timeExplicit: !!e.target.value, dayPeriod: ''});
   else if (id === 'eRep'){ const repeat = e.target.value || ''; edPatch({repeat, due: t.due || (repeat ? today : '')}); }
   else if (id === 'eKey') edPatch({key: e.target.checked});
   else if (id === 'eDone') edPatch({done: e.target.checked, doneAt: e.target.checked ? Date.now() : null});
@@ -3206,11 +3206,10 @@ document.addEventListener('keydown', e => {
 });
 
 function periodPatch(t, period){
-  if (!period) return {};
-  if (period === 'none') return {time: ''};
-  const hour = t.time ? Number(t.time.split(':')[0]) : -1;
-  const current = hour < 0 ? 'none' : hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
-  return current === period ? {} : {time: {morning:'09:00', afternoon:'12:00', evening:'18:00'}[period]};
+  if (!['morning','afternoon','evening','none'].includes(period)) return {};
+  // Old drag operations stored a default hour without recording its origin.
+  const legacyDefault = !t.timeExplicit && ['09:00','12:00','18:00'].includes(t.time);
+  return {dayPeriod: period, ...(legacyDefault ? {time: ''} : {})};
 }
 /* drag to reorder inside and between «Сегодня» and «Потом» */
 let dragT = null;
