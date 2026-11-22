@@ -1040,6 +1040,10 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
   .card{padding:14px 12px}
   .chart text{font-size:21px}
 }
+.day-period + .day-period{margin-top:28px}
+.day-period h3{margin:0;font-size:18px;font-weight:600;color:var(--ink)}
+.daily-board .rb-h h2{color:var(--ink)}
+.daily-board{border-color:var(--line);background:var(--surface)}
 </style>
 
 <div class="app" id="app">
@@ -1513,7 +1517,7 @@ function renderTasks(l){
       d ? `<span class="mc mdue${d.cls === 'over' ? ' over' : d.cls === 'today' ? ' today' : ''}">${CAL_ICON}${d.cls === 'over' ? 'срок был ' : ''}${d.label}${t.time ? ', ' + esc(t.time) : ''}</span>` : (t.time ? `<span class="mc mdue">${CAL_ICON}в ${esc(t.time)}</span>` : '<span class="mc">без срока</span>'),
     ].filter(Boolean).join('');
     const subs = (t.sub || []).length ? `<ul class="rsub">${t.sub.map(s => `<li class="${s.done ? 'done' : ''}"><label><input type="checkbox" data-sub-toggle="${esc(s.id)}" data-tid="${esc(t.id)}" data-pid="${esc(l.id)}" ${s.done ? 'checked' : ''}><span>${linkify(s.text)}</span></label></li>`).join('')}</ul>` : '';
-    return `<li class="${t.done ? 'done' : ''}${t.key && !t.done ? ' key' : ''}" data-dtask="${esc(t.id)}">
+    return `<li class="${t.done ? 'done' : ''}" data-dtask="${esc(t.id)}">
       <input type="checkbox" class="rc" data-task-toggle="${esc(t.id)}" ${t.done ? 'checked' : ''} aria-label="Выполнено">
       <div class="rbody" data-dopen="${esc(t.id)}" title="Открыть задачу"><div class="rt">${linkify(t.text)}</div><div class="rs">${chips}</div>${subs}</div>
       <button class="tdel" data-task-del="${esc(t.id)}" aria-label="Удалить задачу" type="button">×</button></li>`;
@@ -2423,7 +2427,7 @@ function taskRow(it, bucket){
     d ? `<span class="mc mdue${d.cls === 'over' ? ' over' : d.cls === 'today' ? ' today' : ''}">${CAL_ICON}${d.cls === 'over' ? 'срок был ' : ''}${d.label}${t.time ? ', ' + esc(t.time) : ''}</span>` : (t.time ? `<span class="mc mdue">${CAL_ICON}в ${esc(t.time)}</span>` : ''),
   ].filter(Boolean).join('');
   const subs = (t.sub || []).length ? `<ul class="rsub">${t.sub.map(s => `<li class="${s.done ? 'done' : ''}"><label><input type="checkbox" data-sub-toggle="${esc(s.id)}" data-tid="${esc(t.id)}" data-pid="${esc(it.pid)}" ${s.done ? 'checked' : ''}><span>${linkify(s.text)}</span></label></li>`).join('')}</ul>` : '';
-  return `<li class="${t.done ? 'done' : ''}${t.key && !t.done ? ' key' : ''}" ${t.done ? '' : 'draggable="true"'} data-tid="${esc(t.id)}" data-pid="${esc(it.pid)}" data-ord="${ordOf(t)}">
+  return `<li class="${t.done ? 'done' : ''}" ${t.done ? '' : 'draggable="true"'} data-tid="${esc(t.id)}" data-pid="${esc(it.pid)}" data-ord="${ordOf(t)}">
     ${t.done ? '' : '<span class="grip" title="Перетащите, чтобы изменить порядок" aria-hidden="true"></span>'}
     <input type="checkbox" class="rc" data-ptask="${esc(t.id)}" data-pid="${esc(it.pid)}" ${t.done ? 'checked' : ''} aria-label="Выполнено">
     <div class="rbody"><div class="rt">${linkify(t.text)}</div><div class="rs">${sub}</div>${subs}</div>
@@ -2435,23 +2439,15 @@ function taskRow(it, bucket){
 }
 let cFilter = 'all';
 function boardHTML(o){
-  const shown = o.every.filter(o.pass);
-  const open = shown.filter(it => !it.t.done).sort((a, b) => ordOf(a.t) - ordOf(b.t));
-  const tomI = isoPlus(1), t0ms = dayStart(0);
-  const dayKeys = [...new Set(open.map(it => groupOf(it.t)).filter(k => k !== 'today' && k !== 'none' && k !== tomI))].sort();
-  const inDays = iso => { const [y, m, d] = iso.split('-').map(Number); return Math.round((new Date(y, m - 1, d).getTime() - t0ms) / 864e5); };
-  const dateStr = new Date().toLocaleDateString('ru-RU', {day: 'numeric', month: 'long', weekday: 'long'});
-  const list = (items, bucket, emptyText) => `<ul class="rlist" data-bucket="${bucket}">${items.length ? items.map(it => taskRow(it, bucket)).join('') : `<li class="empty">${emptyText}</li>`}</ul>`;
-  return `
-    <div class="pfilter">${o.chips}</div>
-    ${[
-      {k: 'today', title: 'Сегодня', note: dateStr, cls: 'today', empty: 'На сегодня пусто. Перетащите сюда задачу или добавьте новую.'},
-      {k: tomI, title: 'Завтра', note: dayTitle(tomI), cls: 'day', empty: 'На завтра пока ничего. Сюда можно перетащить задачу.'},
-      ...dayKeys.map(k => ({k, title: dayTitle(k), note: 'через ' + inDays(k) + ' дн.', cls: 'day', empty: ''})),
-      {k: 'none', title: 'Без срока', note: '', cls: 'day none', empty: 'Задач без срока нет. Сюда можно перетащить задачу, чтобы убрать у неё дату.'},
-    ].map(g => { const items = open.filter(it => groupOf(it.t) === g.k);
-      return `<section class="rblock bk ${g.cls}"><div class="rb-h"><h2>${g.title}</h2>${g.note ? `<span class="rcount">${g.note}</span>` : ''}</div>${list(items, g.k, g.empty)}</section>`; }).join('')}
-  `;
+  const open = o.every.filter(o.pass).filter(it => !it.t.done && it.t.due === todayISO())
+    .sort((a,b) => (a.t.time || '99:99').localeCompare(b.t.time || '99:99') || ordOf(a.t) - ordOf(b.t));
+  const period = t => !t.time ? 'none' : Number(t.time.split(':')[0]) < 12 ? 'morning' : Number(t.time.split(':')[0]) < 18 ? 'afternoon' : 'evening';
+  const groups = [['morning','Утро','00:00–11:59'],['afternoon','День','12:00–17:59'],['evening','Вечер','18:00–23:59'],['none','Без времени','']];
+  const dateStr = new Date().toLocaleDateString('ru-RU', {day:'numeric',month:'long',weekday:'long'});
+  return `<div class="pfilter">${o.chips}</div><section class="rblock bk daily-board"><div class="rb-h"><h2>Сегодня</h2><span class="rcount">${dateStr}</span></div>${groups.map(([key,title,note]) => {
+    const items = open.filter(it => period(it.t) === key);
+    return `<div class="day-period"><div class="rb-h"><h3>${title}</h3><span class="rcount">${note}</span></div><ul class="rlist" data-bucket="today">${items.length ? items.map(it => taskRow(it,'today')).join('') : '<li class="empty">Нет задач</li>'}</ul></div>`;
+  }).join('')}</section>`;
 }
 /* CRM tasks: the same board, sources are leads, filters are lead statuses */
 function crmSrcs(){
