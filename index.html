@@ -1088,6 +1088,37 @@ body,.side,.topbar,.mainw,.sheet,.gcal,#login,#login form{background:#000;backdr
 .rs .mc.mdue.over{background:#d93025;color:#fff}
 .rs .mc.mdue.today{background:#f9f9f9;color:#000}
 </style>
+
+<style id="compact-dashboard-theme">
+:root:root:root:root{--ink:#fafafa;--muted:#a1a1aa;--gray:#71717a;--line:#27272a;--input:#3f3f46;--surface-2:#18181b}
+body{font-size:14px;line-height:1.5}
+.topbar{height:64px;padding-inline:24px;border:0}
+.content{padding:24px 24px 48px}
+h1{font-size:28px;font-weight:600;line-height:1.25;letter-spacing:-.035em}
+h1 .dim{color:var(--muted);background:none;-webkit-text-fill-color:currentColor}
+.top{padding-bottom:24px}
+.side .sbtn{font-size:14px;border-radius:6px;padding:9px 10px}
+.side .sbtn[aria-current]{background:#18181b;color:#fafafa}
+.navlbl{font-size:12px;font-weight:500;color:#71717a}
+.tabs,.subtabs .tabs{padding:4px;gap:4px;border:1px solid var(--line);border-radius:8px;background:#090909}
+.tabs button{font-size:14px;font-weight:500;border-radius:5px;padding:7px 14px}
+.btn,.pi-l,.fchip,.pt-datebtn,input,select,textarea{border-radius:6px;font-size:14px}
+.btn{height:36px;box-shadow:none}
+.pfilter{gap:8px;margin-bottom:20px}
+.pfilter button{border-radius:6px;font-size:12px;padding:6px 10px}
+.pi,.card,.panel,.kpi,.rblock,.rblock.bk,.empty-state,.lcard,.payplan{border-radius:10px;border-color:var(--line);box-shadow:none}
+.pi,.card,.panel,.kpi,.rblock.bk{padding:24px}
+.rb-h{margin-bottom:16px}
+.rb-h h2,.pi-h b{font-size:18px;font-weight:600;letter-spacing:-.025em}
+.rcount{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rlist>li{padding-block:12px}
+.rt{font-size:14px;line-height:1.5}
+.rsub{font-size:13px;color:var(--muted)}
+.rs .mc{height:22px;padding-inline:8px;border-radius:5px;font-size:11px;font-weight:500}
+.kpi .val{font-size:28px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+:where(button,a,input,select,textarea):focus-visible{outline:2px solid var(--orange);outline-offset:3px}
+@media(max-width:700px){.content{padding:16px 16px 32px}.topbar{padding-inline:16px}h1{font-size:24px}.pi,.card,.panel,.kpi,.rblock.bk{padding:16px}.tabs{max-width:100%}.flat-board .rbody{gap:6px}}
+</style>
 </head>
 <body>
 <div id="login" hidden>
