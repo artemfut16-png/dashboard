@@ -1044,6 +1044,10 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .day-period h3{margin:0;font-size:18px;font-weight:600;color:var(--ink)}
 .daily-board .rb-h h2{color:var(--ink)}
 .daily-board{border-color:var(--line);background:var(--surface)}
+.flat-board .rbody{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 20px}
+.flat-board .rs{margin-top:0;justify-content:flex-end;flex-wrap:nowrap}
+.flat-board .rsub{grid-column:1/-1}
+@media(max-width:700px){.flat-board .rbody{grid-template-columns:minmax(0,1fr)}.flat-board .rs{justify-content:flex-start;flex-wrap:wrap}}
 </style>
 <style id="smoked-glass-theme">
 /* Smoked glass / graphite metal — preserves the agency palette */
@@ -2413,6 +2417,7 @@ function groupOf(t){
 }
 // what changes on a task when it is moved into a group
 function groupPatch(t, key){
+  if (key === 'all') return {};
   const today = todayISO();
   if (key === 'none') return {due: '', bucket: 'later'};
   if (key === 'today') return {due: t.due && t.due < today ? t.due : today, bucket: 'later'};
@@ -2483,15 +2488,7 @@ let cFilter = 'all';
 function boardHTML(o){
   const open = o.every.filter(o.pass).filter(it => !it.t.done)
     .sort((a,b) => (a.t.time || '99:99').localeCompare(b.t.time || '99:99') || ordOf(a.t) - ordOf(b.t));
-  const dateStr = new Date().toLocaleDateString('ru-RU', {day:'numeric',month:'long',weekday:'long'});
-  return `<div class="pfilter">${o.chips}</div><section class="rblock bk daily-board"><div class="rb-h"><h2>Сегодня</h2><span class="rcount">${dateStr}</span></div><ul class="rlist" data-bucket="today">${open.filter(it => groupOf(it.t) === 'today').map(it => taskRow(it,'today')).join('') || '<li class="empty">Нет задач</li>'}</ul></section>${[
-    {key:isoPlus(1), title:'Завтра'},
-    ...[...new Set(open.map(it => groupOf(it.t)))].filter(k => k !== 'today' && k !== 'none' && k !== isoPlus(1)).sort().map(key => ({key,title:dayTitle(key)})),
-    {key:'none',title:'Без срока'},
-  ].map(({key,title}) => {
-    const items = open.filter(it => groupOf(it.t) === key);
-    return `<section class="rblock bk day"><div class="rb-h"><h2>${title}</h2><span class="rcount">${items.length}</span></div><ul class="rlist" data-bucket="${key}">${items.length ? items.map(it => taskRow(it,key)).join('') : '<li class="empty">Нет задач</li>'}</ul></section>`;
-  }).join('')}`;
+  return `<div class="pfilter">${o.chips}</div><section class="rblock bk flat-board"><div class="rb-h"><h2>Задачи</h2><span class="rcount">${open.length}</span></div><ul class="rlist" data-bucket="all">${open.map(it => taskRow(it,groupOf(it.t))).join('') || '<li class="empty">Нет задач</li>'}</ul></section>`;
 }
 /* CRM tasks: the same board, sources are leads, filters are lead statuses */
 function crmSrcs(){
