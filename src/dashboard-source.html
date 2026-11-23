@@ -1051,11 +1051,12 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 @media(max-width:700px){.flat-board .rbody{grid-template-columns:minmax(0,1fr)}.flat-board .rs{justify-content:flex-start;flex-wrap:wrap}}
 </style>
 <style id="solid-black-theme">
-:root:root:root:root{--bg:#000;--surface:#000;--surface-2:#111;--col:#000;--line:transparent;--shadow:none}
+:root:root:root:root{--bg:#000;--surface:#000;--surface-2:#111;--col:#000;--line:#292929;--shadow:none}
 body,.side,.topbar,.mainw,.sheet,.gcal,#login,#login form{background:#000;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none}
 .mainw::before{display:none}
 .side,.topbar{border:0}
-.pi,.card,.panel,.kpi,.rblock,.rblock.bk,.rblock.gen,.rblock.plan,.rblock.bk.today,.daily-board,.empty-state,.lcard,.payplan,.kpi.hl{background:#000;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+.sheet{border-left:0}
+.pi,.card,.panel,.kpi,.rblock,.rblock.bk,.rblock.gen,.rblock.plan,.rblock.bk.today,.daily-board,.empty-state,.lcard,.payplan,.kpi.hl{background:#000;border:1px solid var(--line);box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
 .rlist li,.rlist li.key{border:0;background:#000;box-shadow:none}
 .rlist li[data-tid]:hover,.pi:hover,.lcard:hover{background:#111}
 .btn,.pi-l,.fchip,.pt-datebtn{background:#000}
