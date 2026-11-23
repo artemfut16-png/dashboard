@@ -13,6 +13,7 @@
 .daily-board .rb-h h2{color:var(--ink)}
 .daily-board{border-color:var(--line);background:var(--surface)}
 .flat-board .rbody{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 20px}
+.flat-board .rlist > li > .rmove,.flat-board .rlist > li > .rcopy,.flat-board .rlist > li > .rflag,.flat-board .rlist > li > .tdel{display:none}
 .flat-board .rs{margin-top:0;justify-content:flex-end;flex-wrap:nowrap}
 .flat-board .rsub{grid-column:1/-1}
 @media(max-width:700px){.flat-board .rbody{grid-template-columns:minmax(0,1fr)}.flat-board .rs{justify-content:flex-start;flex-wrap:wrap}}
