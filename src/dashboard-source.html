@@ -2481,15 +2481,22 @@ function taskRow(it, bucket){
 }
 let cFilter = 'all';
 function boardHTML(o){
-  const open = o.every.filter(o.pass).filter(it => !it.t.done && it.t.due === todayISO())
+  const open = o.every.filter(o.pass).filter(it => !it.t.done)
     .sort((a,b) => (a.t.time || '99:99').localeCompare(b.t.time || '99:99') || ordOf(a.t) - ordOf(b.t));
   const period = t => t.dayPeriod || (!t.time ? 'none' : Number(t.time.split(':')[0]) < 12 ? 'morning' : Number(t.time.split(':')[0]) < 18 ? 'afternoon' : 'evening');
   const groups = [['morning','Утро','00:00–11:59'],['afternoon','День','12:00–17:59'],['evening','Вечер','18:00–23:59'],['none','Без времени','']];
   const dateStr = new Date().toLocaleDateString('ru-RU', {day:'numeric',month:'long',weekday:'long'});
   return `<div class="pfilter">${o.chips}</div><section class="rblock bk daily-board"><div class="rb-h"><h2>Сегодня</h2><span class="rcount">${dateStr}</span></div>${groups.map(([key,title,note]) => {
-    const items = open.filter(it => period(it.t) === key);
+    const items = open.filter(it => groupOf(it.t) === 'today' && period(it.t) === key);
     return `<div class="day-period"><div class="rb-h"><h3>${title}</h3><span class="rcount">${note}</span></div><ul class="rlist" data-bucket="today" data-period="${key}">${items.length ? items.map(it => taskRow(it,'today')).join('') : '<li class="empty">Нет задач</li>'}</ul></div>`;
-  }).join('')}</section>`;
+  }).join('')}</section>${[
+    {key:isoPlus(1), title:'Завтра'},
+    ...[...new Set(open.map(it => groupOf(it.t)))].filter(k => k !== 'today' && k !== 'none' && k !== isoPlus(1)).sort().map(key => ({key,title:dayTitle(key)})),
+    {key:'none',title:'Без срока'},
+  ].map(({key,title}) => {
+    const items = open.filter(it => groupOf(it.t) === key);
+    return `<section class="rblock bk day"><div class="rb-h"><h2>${title}</h2><span class="rcount">${items.length}</span></div><ul class="rlist" data-bucket="${key}">${items.length ? items.map(it => taskRow(it,key)).join('') : '<li class="empty">Нет задач</li>'}</ul></section>`;
+  }).join('')}`;
 }
 /* CRM tasks: the same board, sources are leads, filters are lead statuses */
 function crmSrcs(){
