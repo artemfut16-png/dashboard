@@ -1050,47 +1050,21 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .flat-board .rsub{grid-column:1/-1}
 @media(max-width:700px){.flat-board .rbody{grid-template-columns:minmax(0,1fr)}.flat-board .rs{justify-content:flex-start;flex-wrap:wrap}}
 </style>
-<style id="smoked-glass-theme">
-/* Smoked glass / graphite metal — preserves the agency palette */
-:root:root:root:root{
- --surface:rgba(24,24,25,.68);--surface-2:rgba(39,39,41,.72);
- --line:rgba(255,255,255,.13);--input:rgba(255,255,255,.22);
- --muted:#b3b0ad;--gray:#92908e;--col:rgba(12,12,13,.5);
- --shadow:0 24px 70px rgba(0,0,0,.5);
-}
-body{background:#080809;background-image:radial-gradient(ellipse at 88% 5%,rgba(217,195,171,.12),transparent 42%),radial-gradient(ellipse at 18% 70%,rgba(232,80,2,.065),transparent 48%);background-attachment:fixed}
-.mainw::before{background-image:none;background:linear-gradient(125deg,rgba(255,255,255,.035),transparent 55%);height:100%;mask-image:none;-webkit-mask-image:none}
-.side{background:rgba(15,15,16,.8);backdrop-filter:blur(24px) saturate(115%);-webkit-backdrop-filter:blur(24px) saturate(115%);border-right:1px solid rgba(255,255,255,.12)}
-.topbar{background:rgba(18,18,19,.72);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid var(--line)}
-.pi,.card,.panel,.kpi,.rblock.bk,.empty-state,.lcard{
- background:linear-gradient(135deg,rgba(255,255,255,.055),transparent 44%),var(--surface);
- border:1px solid var(--line);border-top-color:rgba(255,255,255,.24);border-radius:18px;
- box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 12px 32px rgba(0,0,0,.2);
- backdrop-filter:blur(22px) saturate(120%);-webkit-backdrop-filter:blur(22px) saturate(120%);
-}
-.pi{padding:22px;transition:border-color .18s,background-color .18s}
-.pi:hover,.lcard:hover{border-color:rgba(217,195,171,.35);background-color:rgba(39,37,35,.78)}
-.pi-h b{font-size:18px;letter-spacing:-.025em}
-.pi .pc-meta{line-height:1.8;margin-top:10px}
-.pi-links{gap:8px;margin-top:18px}
-.btn,.pi-l,.fchip,.pt-datebtn{background:linear-gradient(180deg,rgba(255,255,255,.065),rgba(255,255,255,.015));border-color:var(--input);border-radius:11px}
-.btn:hover,.pi-l:hover,.fchip:hover{background-color:rgba(255,255,255,.08)}
-.btn.primary{background:linear-gradient(180deg,#ff781c,#e85002);border-color:#f97830;color:#080808}
-.side .sbtn{border-radius:12px}
-.side .sbtn[aria-current]{background:linear-gradient(120deg,rgba(232,80,2,.2),rgba(217,195,171,.08));box-shadow:inset 0 1px 0 rgba(255,255,255,.09)}
-.rblock.bk.today,.daily-board{border-color:var(--line);background:linear-gradient(135deg,rgba(255,255,255,.045),transparent 50%),var(--surface)}
-.rlist li{border-bottom-color:rgba(255,255,255,.09)}
-.rlist li[data-tid]:hover{background:rgba(255,255,255,.025)}
-.rs .mc{background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.16)}
-.sheet{background:rgba(20,20,22,.97);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px)}
-select option{background:#202022}
-#login{background:radial-gradient(ellipse at 70% 20%,#30271f,#080809 65%)}
-#login form{background:rgba(30,29,29,.8);border-color:rgba(255,255,255,.19);border-radius:22px;backdrop-filter:blur(22px)}
-::selection{background:rgba(232,80,2,.4);color:#fff}
-*{scrollbar-width:thin;scrollbar-color:#62605d transparent}
-@supports not (backdrop-filter:blur(1px)){.pi,.card,.panel,.kpi,.rblock.bk,.lcard{background-color:#202022}}
-@media(max-width:700px){.pi{padding:18px}.pi,.card,.panel,.rblock.bk{border-radius:15px}.pi-h b{font-size:16px}}
-@media(prefers-reduced-motion:reduce){.pi{transition:none}}
+<style id="solid-black-theme">
+:root:root:root:root{--bg:#000;--surface:#000;--surface-2:#111;--col:#000;--line:transparent;--shadow:none}
+body,.side,.topbar,.mainw,.sheet,.gcal,#login,#login form{background:#000;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none}
+.mainw::before{display:none}
+.side,.topbar{border:0}
+.pi,.card,.panel,.kpi,.rblock,.rblock.bk,.rblock.gen,.rblock.plan,.rblock.bk.today,.daily-board,.empty-state,.lcard,.payplan,.kpi.hl{background:#000;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+.rlist li,.rlist li.key{border:0;background:#000;box-shadow:none}
+.rlist li[data-tid]:hover,.pi:hover,.lcard:hover{background:#111}
+.btn,.pi-l,.fchip,.pt-datebtn{background:#000}
+.btn.primary{background:var(--orange)}
+.side .sbtn[aria-current]{background:#151515;box-shadow:none}
+.rs .mc{border:0;background:#111}
+.rs .mc.mdue{background:#222}
+.rs .mc.mdue.over{background:#d93025;color:#fff}
+.rs .mc.mdue.today{background:#f9f9f9;color:#000}
 </style>
 
 <div class="app" id="app">
