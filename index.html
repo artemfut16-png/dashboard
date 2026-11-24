@@ -1066,7 +1066,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
 <script src="./assets/overview.js"></script>
-<link rel="stylesheet" href="dashboard-theme.css?v=11">
+<link rel="stylesheet" href="dashboard-theme.css?v=12">
 <style>
 #listBody .board .col{padding:0;border:0!important;background:transparent!important;backdrop-filter:none!important}
 .board .col header{box-sizing:border-box;width:100%;padding:8px 12px;border:1px solid #393939;border-radius:10px;background:#191919}
@@ -2504,23 +2504,8 @@ function taskRow(it, bucket){
 }
 let cFilter = 'all';
 function boardHTML(o){
-  const shown = o.every.filter(o.pass);
-  const open = shown.filter(it => !it.t.done).sort((a, b) => ordOf(a.t) - ordOf(b.t));
-  const tomI = isoPlus(1), t0ms = dayStart(0);
-  const dayKeys = [...new Set(open.map(it => groupOf(it.t)).filter(k => k !== 'today' && k !== 'none' && k !== tomI))].sort();
-  const inDays = iso => { const [y, m, d] = iso.split('-').map(Number); return Math.round((new Date(y, m - 1, d).getTime() - t0ms) / 864e5); };
-  const dateStr = new Date().toLocaleDateString('ru-RU', {day: 'numeric', month: 'long', weekday: 'long'});
-  const list = (items, bucket, emptyText) => `<ul class="rlist" data-bucket="${bucket}">${items.length ? items.map(it => taskRow(it, bucket)).join('') : `<li class="empty">${emptyText}</li>`}</ul>`;
-  return `
-    <div class="pfilter">${o.chips}</div>
-    ${[
-      {k: 'today', title: 'Сегодня', note: dateStr, cls: 'today', empty: 'На сегодня пусто. Перетащите сюда задачу или добавьте новую.'},
-      {k: tomI, title: 'Завтра', note: dayTitle(tomI), cls: 'day', empty: 'На завтра пока ничего. Сюда можно перетащить задачу.'},
-      ...dayKeys.map(k => ({k, title: dayTitle(k), note: 'через ' + inDays(k) + ' дн.', cls: 'day', empty: ''})),
-      {k: 'none', title: 'Без срока', note: '', cls: 'day none', empty: 'Задач без срока нет. Сюда можно перетащить задачу, чтобы убрать у неё дату.'},
-    ].map(g => { const items = open.filter(it => groupOf(it.t) === g.k);
-      return `<section class="rblock bk ${g.cls}"><div class="rb-h"><h2>${g.title}</h2>${g.note ? `<span class="rcount">${g.note}</span>` : ''}</div>${list(items, g.k, g.empty)}</section>`; }).join('')}
-  `;
+  const open = o.every.filter(o.pass).filter(it => !it.t.done).sort((a, b) => ordOf(a.t) - ordOf(b.t));
+  return `<div class="pfilter">${o.chips}</div><ul class="rlist" data-bucket="all">${open.length ? open.map(it => taskRow(it, 'all')).join('') : '<li class="empty">Задач пока нет</li>'}</ul>`;
 }
 /* CRM tasks: the same board, sources are leads, filters are lead statuses */
 function crmSrcs(){
@@ -3281,7 +3266,7 @@ document.addEventListener('drop', e => {
   else if (li) { dragT = null; clearDropMarks(); return; }
   const prev = rows[idx - 1] ? +rows[idx - 1].dataset.ord : null, next = rows[idx] ? +rows[idx].dataset.ord : null;
   const ord = prev != null && next != null ? (prev + next) / 2 : prev != null ? prev + 1000 : next != null ? next - 1000 : Date.now();
-  { const t = tasksOf(dragT.pid).find(x => x.id === dragT.tid); if (t) patchTask(dragT.pid, dragT.tid, {ord, ...groupPatch(t, ul.dataset.bucket)}); }
+  { const t = tasksOf(dragT.pid).find(x => x.id === dragT.tid); if (t) patchTask(dragT.pid, dragT.tid, {ord, ...(ul.dataset.bucket === 'all' ? {} : groupPatch(t, ul.dataset.bucket))}); }
   dragT = null; renderProjectsView();
 });
 document.addEventListener('dragend', () => { dragT = null; clearDropMarks(); document.querySelectorAll('.tboard .dragging').forEach(x => x.classList.remove('dragging')); });
