@@ -188,3 +188,26 @@ body{background:#080808;background-image:none}
 .dash-dropdown-option:disabled{opacity:.4;cursor:default}
 
 .metric-content{order:0}.metric-months{order:1}
+
+.rlist li[data-tid]{align-items:center;gap:12px;padding:13px 4px}
+.rlist li[data-tid] .grip{width:8px;opacity:0}
+.rlist li[data-tid]:hover .grip{opacity:.55}
+.rlist li[data-tid] .rc{width:22px;height:22px;margin:0;border-color:#ddd}
+.rlist li[data-tid] .rt{font-size:15px;font-weight:500}
+.rlist li[data-tid] .rs{margin:0 0 0 auto;justify-content:flex-end;align-items:center;gap:14px;text-align:right}
+.rlist li[data-tid] .rs .mc{border:0;background:transparent;padding:0;height:auto;color:#999;font-size:12px}
+.rlist li[data-tid] .rs .mc.over{color:#ed8a80}
+.rlist li[data-tid] .rs .mc svg{display:none}
+.profit-chart{padding:22px!important;min-width:0}
+.profit-plot{position:relative;height:230px;margin:12px 0 0}
+.profit-plot svg{display:block;width:100%;height:100%;overflow:visible}
+.profit-point{position:absolute;width:18px;height:18px;padding:0;border:0;background:transparent;transform:translate(-50%,-50%);cursor:pointer;z-index:1}
+.profit-point::after{content:"";position:absolute;width:8px;height:8px;left:5px;top:5px;background:#eee;border-radius:50%}
+.profit-point:hover,.profit-point:focus-visible{z-index:4;outline:none}
+.profit-point:hover::after,.profit-point:focus-visible::after{box-shadow:0 0 0 4px #ffffff35}
+.profit-tooltip{display:none;position:absolute;bottom:20px;left:50%;transform:translateX(-50%);padding:9px 12px;border:1px solid #414141;border-radius:9px;background:#242424;box-shadow:0 8px 24px #0008;text-align:left;white-space:nowrap;color:#ccc;font-size:12px}
+.profit-tooltip b{display:block;color:#fff;margin-top:4px}
+.profit-point:hover .profit-tooltip,.profit-point:focus-visible .profit-tooltip{display:block}
+.profit-point:first-of-type .profit-tooltip{left:0;transform:none}.profit-point:last-of-type .profit-tooltip{left:auto;right:0;transform:none}
+.profit-month-labels{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));text-align:center;color:#999;font-size:11px}
+@media(max-width:700px){.rlist li[data-tid] .rs{gap:4px;flex-direction:column;align-items:flex-end}.profit-chart{padding:15px!important}.profit-plot{height:190px}.profit-month-labels{font-size:9px}}
