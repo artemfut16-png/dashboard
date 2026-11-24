@@ -1479,7 +1479,14 @@ function write(id, fn){
 function pushHist(l, entry){ return [...(l.history || []), {at: Date.now(), ...entry}].slice(-200); }
 function projectFromLead(id){
   const l = leads.get(id); if (!l || !db) return;
-  if ([...projects.values()].some(p => p.leadId === id)) return;
+  const existing = [...projects.values()].find(p => p.leadId === id);
+  if (existing){
+    if (existing.status === 'trial'){
+      projects.set(existing.id, {...existing, status:'active'});
+      write(existing.id, () => db.doc('projects/' + existing.id).update({status:'active'}));
+    }
+    return;
+  }
   const name = (l.company || l.name || l.phone || 'Новый проект').trim();
   const v = prompt('Ведение продано. Проект «' + name + '» появится в разделе «Проекты».\nЧек в месяц, ₽ (Отмена — не создавать проект):', '');
   if (v === null) return;
@@ -2187,14 +2194,14 @@ function projTable(pl, pst, nowM){
       if (v > 0) colSum[i] += v;
       const cls = v > 0 ? 'heat' : v === 0 ? 'zero' : '';
       const style = v > 0 ? ` style="--a:${Math.round(12 + v / maxPay * 43)}%"` : '';
-      return `<td class="${cls}"${style} data-edit="pay" data-p="${esc(p.id)}" data-i="${i}">${v == null ? '' : nf.format(v)}</td>`;
+      return `<td class="${cls}"${style} data-edit="${p.trialLeadId ? 'trialpay' : 'pay'}" data-p="${esc(p.id)}" data-i="${i}">${v == null ? '' : nf.format(v)}</td>`;
     }).join('');
     return `<tr class="${p.status === 'gone' ? 'gone' : ''}">
-      <td class="stick namecell" data-edit="name" data-p="${esc(p.id)}">${esc(p.name)}</td>
-      <td style="text-align:left"><select class="pill pst" data-project-status="${esc(p.id)}" aria-label="Статус проекта"><option value="active" ${p.status !== 'gone' && p.status !== 'trial' ? 'selected' : ''}>В работе</option><option value="trial" ${p.status === 'trial' ? 'selected' : ''}>Тест-драйв</option><option value="gone" ${p.status === 'gone' ? 'selected' : ''}>Не в работе</option></select></td>
+      <td class="stick namecell" ${p.trialLeadId ? `data-trial-open="${esc(p.trialLeadId)}"` : `data-edit="name" data-p="${esc(p.id)}"`}>${esc(p.name)}</td>
+      ${p.trialLeadId ? '<td style="text-align:left"><span class="pill pst">Тест-драйв</span></td>' : `<td style="text-align:left"><select class="pill pst" data-project-status="${esc(p.id)}" aria-label="Статус проекта"><option value="active" ${p.status !== 'gone' && p.status !== 'trial' ? 'selected' : ''}>В работе</option><option value="trial" ${p.status === 'trial' ? 'selected' : ''}>Тест-драйв</option><option value="gone" ${p.status === 'gone' ? 'selected' : ''}>Не в работе</option></select></td>`}
       ${cells}
       <td class="num"><b>${st.total ? nf.format(st.total) : '—'}</b></td>
-      <td data-del="${esc(p.id)}"><button class="rowx" aria-label="Удалить проект">×</button></td>
+      ${p.trialLeadId ? '<td></td>' : `<td data-del="${esc(p.id)}"><button class="rowx" aria-label="Удалить проект">×</button></td>`}
     </tr>`;
   }).join('');
   const head = MON.map((m, i) => `<th class="${i === nowM ? 'cur' : ''}">${m}</th>`).join('');
@@ -2277,6 +2284,7 @@ function startEdit(td){
   const kind = td.dataset.edit;
   let val;
   if (kind === 'fin') val = getp(months()[+td.dataset.i], td.dataset.f);
+  else if (kind === 'trialpay') val = null;
   else {
     const p = projects.get(td.dataset.p); if (!p) return;
     val = kind === 'name' ? p.name : kind === 'check' ? p.check : (p.pay || [])[+td.dataset.i];
@@ -2302,6 +2310,26 @@ function commitEdit(raw){
   }
   const v = parseNum(raw);
   if (v === undefined){ toast('Введите число, например 50000 или 50к', true); renderDash(); return; }
+  if (ed.kind === 'trialpay'){
+    const lead=leads.get(td.dataset.p);
+    if (!lead || lead.status !== 'td'){ toast('Тест-драйв уже изменился, обновите страницу', true); renderDash(); return; }
+    if (v == null){ renderDash(); return; }
+    const name=(lead.company || lead.name || 'Без названия').trim();
+    const sameName = p => lead.company && String(p.name || '').trim().toLocaleLowerCase() === String(lead.company).trim().toLocaleLowerCase();
+    const existing=[...projects.values()].find(p=>p.leadId===lead.id || sameName(p));
+    const id=existing ? existing.id : 'trial-' + lead.id;
+    const pay=Array.from({length:12},(_,i)=>(existing?.pay || [])[i] ?? null);
+    pay[+td.dataset.i]=v;
+    if(existing){
+      projects.set(id,{...existing,pay});
+      write(id,()=>db.doc('projects/'+id).update({pay}));
+    }else{
+      const doc={name,leadId:lead.id,status:'trial',pay,check:null,year:YEAR,order:Date.now()};
+      projects.set(id,{...doc,id});
+      write(id,()=>db.doc('projects/'+id).set(doc));
+    }
+    renderDash(); return;
+  }
   if (ed.kind === 'fin'){
     const i = +td.dataset.i, [g, k] = td.dataset.f.split('.');
     const next = JSON.parse(JSON.stringify(months()));
@@ -3588,5 +3616,5 @@ $('#logoutBtn').addEventListener('click', async () => { await sb.auth.signOut();
 
 <script src="dashboard-calendar.js?v=3" defer></script>
 
-<script src="dashboard-overview.js?v=16" defer></script>
+<script src="dashboard-overview.js?v=17" defer></script>
 <script src="dashboard-dropdowns.js?v=1" defer></script>
