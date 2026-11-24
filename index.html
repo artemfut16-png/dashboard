@@ -1066,7 +1066,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
 <script src="./assets/overview.js"></script>
-<link rel="stylesheet" href="dashboard-theme.css?v=5">
+<link rel="stylesheet" href="dashboard-theme.css?v=6">
 <style>
 #listBody .board .col{padding:0;border:0!important;background:transparent!important;backdrop-filter:none!important}
 .board .col header{box-sizing:border-box;width:100%;padding:8px 12px;border:1px solid #393939;border-radius:10px;background:#191919}
@@ -2195,19 +2195,17 @@ function projTable(pl, pst, nowM){
     }).join('');
     return `<tr class="${p.status === 'gone' ? 'gone' : ''}">
       <td class="stick namecell" data-edit="name" data-p="${esc(p.id)}">${esc(p.name)}</td>
-      <td style="text-align:left"><button class="pill pst ${p.status === 'gone' ? 'gone' : 'active'}" data-toggle="${esc(p.id)}">${p.status === 'gone' ? 'Ушёл' : 'В работе'}</button></td>
-      <td data-edit="check" data-p="${esc(p.id)}">${p.check ? nf.format(p.check) : '—'}</td>
+      <td style="text-align:left"><select class="pill pst" data-project-status="${esc(p.id)}" aria-label="Статус проекта"><option value="active" ${p.status !== 'gone' && p.status !== 'trial' ? 'selected' : ''}>В работе</option><option value="trial" ${p.status === 'trial' ? 'selected' : ''}>Тест-драйв</option><option value="gone" ${p.status === 'gone' ? 'selected' : ''}>Не в работе</option></select></td>
       ${cells}
       <td class="num"><b>${st.total ? nf.format(st.total) : '—'}</b></td>
-      <td class="num">${st.life || '—'}</td>
       <td data-del="${esc(p.id)}"><button class="rowx" aria-label="Удалить проект">×</button></td>
     </tr>`;
   }).join('');
   const head = MON.map((m, i) => `<th class="${i === nowM ? 'cur' : ''}">${m}</th>`).join('');
   const total = colSum.reduce((a, b) => a + b, 0);
-  return `<table class="dt"><thead><tr><th class="stick">Проект</th><th style="text-align:left">Статус</th><th>Чек</th>${head}<th>LTV</th><th title="Месяцев с первой по последнюю оплату">Мес.</th><th></th></tr></thead>
-    <tbody>${rows || `<tr><td colspan="18" class="hint">Проектов пока нет. Добавьте первый ниже.</td></tr>`}</tbody>
-    <tfoot><tr class="tot"><td class="stick">Итого</td><td></td><td></td>${colSum.map(v => `<td class="num">${v ? nf.format(v) : ''}</td>`).join('')}<td class="num">${nf.format(total)}</td><td></td><td></td></tr></tfoot></table>`;
+  return `<table class="dt"><thead><tr><th class="stick">Проект</th><th style="text-align:left">Статус</th>${head}<th>LTV</th><th></th></tr></thead>
+    <tbody>${rows || `<tr><td colspan="16" class="hint">Проектов пока нет. Добавьте первый ниже.</td></tr>`}</tbody>
+    <tfoot><tr class="tot"><td class="stick">Итого</td><td></td>${colSum.map(v => `<td class="num">${v ? nf.format(v) : ''}</td>`).join('')}<td class="num">${nf.format(total)}</td><td></td></tr></tfoot></table>`;
 }
 
 const FIN_ROWS = [
@@ -2337,6 +2335,17 @@ function dashRefresh(){
   if (view !== 'dash' || editing) return;
   renderDash();
 }
+document.addEventListener('change', e => {
+  const select = e.target.closest('[data-project-status]');
+  if (!select) return;
+  const p = projects.get(select.dataset.projectStatus);
+  if (!p) return;
+  const status = select.value;
+  const patch = {status, goneAt: status === 'gone' ? (p.goneAt || Date.now()) : null};
+  projects.set(p.id, {...p, ...patch});
+  renderDash();
+  write(p.id, () => db.doc('projects/' + p.id).update(patch));
+});
 document.addEventListener('click', e => {
   if (view !== 'dash') return;
   const td = e.target.closest('#v-dash td[data-edit]');
@@ -3582,4 +3591,4 @@ $('#logoutBtn').addEventListener('click', async () => { await sb.auth.signOut();
 
 <script src="dashboard-calendar.js?v=2" defer></script>
 
-<script src="dashboard-overview.js?v=5" defer></script>
+<script src="dashboard-overview.js?v=6" defer></script>
