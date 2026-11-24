@@ -1066,7 +1066,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
 <script src="./assets/overview.js"></script>
-<link rel="stylesheet" href="dashboard-theme.css?v=12">
+<link rel="stylesheet" href="dashboard-theme.css?v=13">
 <style>
 #listBody .board .col{padding:0;border:0!important;background:transparent!important;backdrop-filter:none!important}
 .board .col header{box-sizing:border-box;width:100%;padding:8px 12px;border:1px solid #393939;border-radius:10px;background:#191919}
@@ -1256,7 +1256,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
         <label class="full"><span id="eSrcLbl">К чему относится</span><select id="eSrc"></select></label>
         <label>Дата и время<input type="hidden" id="eDue"><input type="hidden" id="eTime"><button type="button" class="pt-datebtn" id="eDateBtn" data-gc-edit><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg><span>Без даты</span></button></label>
         <label>Повтор<select id="eRep"><option value="">Без повтора</option><option value="daily">Ежедневно</option><option value="weekly">Еженедельно</option><option value="monthly">Ежемесячно</option></select></label>
-        <label class="full tcheck"><input type="checkbox" id="eKey">Ключевая задача</label>
+        <label class="full tcheck" hidden><input type="checkbox" id="eKey">Ключевая задача</label>
         <label class="full tcheck"><input type="checkbox" id="eDone">Выполнена</label>
       </div>
       <div class="ecopy" id="eCopy" hidden>
@@ -3054,6 +3054,7 @@ function saveDraft(){
   if (!t.sub.length) delete t.sub;
   const secId = (document.querySelector('#v-tasks:not([hidden]), #v-ptasks:not([hidden]), #v-atasks:not([hidden]), #v-alltasks:not([hidden])') || {}).id;
   if (secId) taddKeep[secId] = {pid};
+  if (secId === 'v-alltasks' && unifiedFilter !== 'all') unifiedFilter = (isLead(pid) || pid === CRMG) && unifiedFilter === 'crm' ? 'crm' : pid;
   closeTask();
   saveProjTasks(pid, ts => ts.concat(t));
   if (inProj()) renderProjectsView();
@@ -3452,7 +3453,7 @@ document.addEventListener('click', e => {
   if (!(e.target.closest && e.target.closest('#taskAddOpen'))) return;
   const sec = document.querySelector('#v-tasks:not([hidden]), #v-ptasks:not([hidden]), #v-atasks:not([hidden]), #v-alltasks:not([hidden])'); if (!sec) return;
   if (sec.id === 'v-atasks'){ newTask(AG); return; }
-  if (sec.id === 'v-alltasks'){ newTask((taddKeep[sec.id] || {}).pid || GEN); return; }
+  if (sec.id === 'v-alltasks'){ const selected = unifiedFilter === 'crm' ? CRMG : unifiedFilter !== 'all' ? unifiedFilter : null; newTask(selected || (taddKeep[sec.id] || {}).pid || GEN); return; }
   const k = taddKeep[sec.id], crm = sec.id === 'v-tasks';
   const valid = pid => pid && (crm ? (pid === CRMG || leads.has(pid)) : (pid === GEN || pid === AG || pid === TD || projects.has(pid)));
   const picked = crm ? (cFilter === '__free' ? CRMG : null) : (pFilter !== 'all' && valid(pFilter) ? pFilter : null);
