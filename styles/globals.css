@@ -1,0 +1,17 @@
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+body {background:radial-gradient(ellipse at 85% 0%,#293a45,transparent 52%),radial-gradient(ellipse at 0% 85%,#263e39,transparent 58%),#10161c;background-attachment:fixed}
+.app,.main,main {background:transparent}
+.glass-panel,.side,.card,.pi,.kpi,.btn,.fchip,.rbody,.col,#login form {background:linear-gradient(135deg,rgba(104,126,142,.24),rgba(30,39,47,.68));backdrop-filter:blur(14px);border:1px solid #ffffff27;box-shadow:inset 1px 1px 1px #ffffff20,0 6px 20px #0002}
+.glass-panel {border-radius:18px;padding:clamp(16px,2vw,26px);min-width:0}
+.overview {display:grid;gap:16px;margin-bottom:16px}
+.overview h2 {font-size:1.12rem;margin:0 0 14px}
+.project-tags,.overview-title {display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.project-tags span {border:1px solid #ffffff30;padding:6px 12px;border-radius:10px}
+.metric-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.metric-grid strong {font-size:clamp(22px,3vw,36px)}
+.metric-grid svg {color:#91cbb8}.metric-grid p {margin:10px 0 4px}
+.profit-scroll {overflow-x:auto}.profit-bars {min-width:780px;display:grid;grid-template-columns:repeat(12,1fr)}
+.profit-month {text-align:center;font-size:12px}.profit-month svg {display:block;height:125px;width:100%}
+.task-preview,.overview-title {display:flex;justify-content:space-between;gap:12px}.task-preview {border-top:1px solid #ffffff20;padding:10px 0;flex-wrap:wrap}
+@media(max-width:650px){.metric-grid{grid-template-columns:1fr}.glass-panel{padding:16px}}
