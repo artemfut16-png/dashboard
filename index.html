@@ -8,16 +8,7 @@
 <link rel="apple-touch-icon" href="favicon.svg">
 <meta name="theme-color" content="#000000">
 <title>Дашборд</title>
-<style>:root{color-scheme:dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}.day-period + .day-period{margin-top:28px}
-.day-period h3{margin:0;font-size:18px;font-weight:600;color:var(--ink)}
-.daily-board .rb-h h2{color:var(--ink)}
-.daily-board{border-color:var(--line);background:var(--surface)}
-.flat-board .rbody{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 20px}
-.flat-board .rlist > li > .rmove,.flat-board .rlist > li > .rcopy,.flat-board .rlist > li > .rflag,.flat-board .rlist > li > .tdel{display:none}
-.flat-board .rs{margin-top:0;justify-content:flex-end;flex-wrap:nowrap}
-.flat-board .rsub{grid-column:1/-1}
-@media(max-width:700px){.flat-board .rbody{grid-template-columns:minmax(0,1fr)}.flat-board .rs{justify-content:flex-start;flex-wrap:wrap}}
-</style>
+<style>:root{color-scheme:dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">
@@ -1071,54 +1062,6 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .side .logout{margin-top:auto}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<style id="solid-black-theme">
-:root:root:root:root{--bg:#000;--surface:#000;--surface-2:#111;--col:#000;--line:#292929;--shadow:none}
-body,.side,.topbar,.mainw,.sheet,.gcal,#login,#login form{background:#000;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none}
-.mainw::before{display:none}
-.side,.topbar{border:0}
-.sheet{border-left:0}
-.pi,.card,.panel,.kpi,.rblock,.rblock.bk,.rblock.gen,.rblock.plan,.rblock.bk.today,.daily-board,.empty-state,.lcard,.payplan,.kpi.hl{background:#000;border:1px solid var(--line);box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
-.rlist li,.rlist li.key{border:0;background:#000;box-shadow:none}
-.rlist li[data-tid]:hover,.pi:hover,.lcard:hover{background:#111}
-.btn,.pi-l,.fchip,.pt-datebtn{background:#000}
-.btn.primary{background:var(--orange)}
-.side .sbtn[aria-current]{background:#151515;box-shadow:none}
-.rs .mc{border:0;background:#111}
-.rs .mc.mdue{background:#222}
-.rs .mc.mdue.over{background:#d93025;color:#fff}
-.rs .mc.mdue.today{background:#f9f9f9;color:#000}
-</style>
-
-<style id="compact-dashboard-theme">
-:root:root:root:root{--ink:#fafafa;--muted:#a1a1aa;--gray:#71717a;--line:#27272a;--input:#3f3f46;--surface-2:#18181b}
-body{font-size:14px;line-height:1.5}
-.topbar{height:64px;padding-inline:24px;border:0}
-.content{padding:24px 24px 48px}
-h1{font-size:28px;font-weight:600;line-height:1.25;letter-spacing:-.035em}
-h1 .dim{color:var(--muted);background:none;-webkit-text-fill-color:currentColor}
-.top{padding-bottom:24px}
-.side .sbtn{font-size:14px;border-radius:6px;padding:9px 10px}
-.side .sbtn[aria-current]{background:#18181b;color:#fafafa}
-.navlbl{font-size:12px;font-weight:500;color:#71717a}
-.tabs,.subtabs .tabs{padding:4px;gap:4px;border:1px solid var(--line);border-radius:8px;background:#090909}
-.tabs button{font-size:14px;font-weight:500;border-radius:5px;padding:7px 14px}
-.btn,.pi-l,.fchip,.pt-datebtn,input,select,textarea{border-radius:6px;font-size:14px}
-.btn{height:36px;box-shadow:none}
-.pfilter{gap:8px;margin-bottom:20px}
-.pfilter button{border-radius:6px;font-size:12px;padding:6px 10px}
-.pi,.card,.panel,.kpi,.rblock,.rblock.bk,.empty-state,.lcard,.payplan{border-radius:10px;border-color:var(--line);box-shadow:none}
-.pi,.card,.panel,.kpi,.rblock.bk{padding:24px}
-.rb-h{margin-bottom:16px}
-.rb-h h2,.pi-h b{font-size:18px;font-weight:600;letter-spacing:-.025em}
-.rcount{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
-.rlist>li{padding-block:12px}
-.rt{font-size:14px;line-height:1.5}
-.rsub{font-size:13px;color:var(--muted)}
-.rs .mc{height:22px;padding-inline:8px;border-radius:5px;font-size:11px;font-weight:500}
-.kpi .val{font-size:28px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
-:where(button,a,input,select,textarea):focus-visible{outline:2px solid var(--orange);outline-offset:3px}
-@media(max-width:700px){.content{padding:16px 16px 32px}.topbar{padding-inline:16px}h1{font-size:24px}.pi,.card,.panel,.kpi,.rblock.bk{padding:16px}.tabs{max-width:100%}.flat-board .rbody{gap:6px}}
-</style>
 </head>
 <body>
 <div id="login" hidden>
@@ -1605,7 +1548,7 @@ function renderTasks(l){
       d ? `<span class="mc mdue${d.cls === 'over' ? ' over' : d.cls === 'today' ? ' today' : ''}">${CAL_ICON}${d.cls === 'over' ? 'срок был ' : ''}${d.label}${t.time ? ', ' + esc(t.time) : ''}</span>` : (t.time ? `<span class="mc mdue">${CAL_ICON}в ${esc(t.time)}</span>` : '<span class="mc">без срока</span>'),
     ].filter(Boolean).join('');
     const subs = (t.sub || []).length ? `<ul class="rsub">${t.sub.map(s => `<li class="${s.done ? 'done' : ''}"><label><input type="checkbox" data-sub-toggle="${esc(s.id)}" data-tid="${esc(t.id)}" data-pid="${esc(l.id)}" ${s.done ? 'checked' : ''}><span>${linkify(s.text)}</span></label></li>`).join('')}</ul>` : '';
-    return `<li class="${t.done ? 'done' : ''}" data-dtask="${esc(t.id)}">
+    return `<li class="${t.done ? 'done' : ''}${t.key && !t.done ? ' key' : ''}" data-dtask="${esc(t.id)}">
       <input type="checkbox" class="rc" data-task-toggle="${esc(t.id)}" ${t.done ? 'checked' : ''} aria-label="Выполнено">
       <div class="rbody" data-dopen="${esc(t.id)}" title="Открыть задачу"><div class="rt">${linkify(t.text)}</div><div class="rs">${chips}</div>${subs}</div>
       <button class="tdel" data-task-del="${esc(t.id)}" aria-label="Удалить задачу" type="button">×</button></li>`;
@@ -2459,7 +2402,6 @@ function groupOf(t){
 }
 // what changes on a task when it is moved into a group
 function groupPatch(t, key){
-  if (key === 'all') return {};
   const today = todayISO();
   if (key === 'none') return {due: '', bucket: 'later'};
   if (key === 'today') return {due: t.due && t.due < today ? t.due : today, bucket: 'later'};
@@ -2516,7 +2458,7 @@ function taskRow(it, bucket){
     d ? `<span class="mc mdue${d.cls === 'over' ? ' over' : d.cls === 'today' ? ' today' : ''}">${CAL_ICON}${d.cls === 'over' ? 'срок был ' : ''}${d.label}${t.time ? ', ' + esc(t.time) : ''}</span>` : (t.time ? `<span class="mc mdue">${CAL_ICON}в ${esc(t.time)}</span>` : ''),
   ].filter(Boolean).join('');
   const subs = (t.sub || []).length ? `<ul class="rsub">${t.sub.map(s => `<li class="${s.done ? 'done' : ''}"><label><input type="checkbox" data-sub-toggle="${esc(s.id)}" data-tid="${esc(t.id)}" data-pid="${esc(it.pid)}" ${s.done ? 'checked' : ''}><span>${linkify(s.text)}</span></label></li>`).join('')}</ul>` : '';
-  return `<li class="${t.done ? 'done' : ''}" ${t.done ? '' : 'draggable="true"'} data-tid="${esc(t.id)}" data-pid="${esc(it.pid)}" data-ord="${ordOf(t)}">
+  return `<li class="${t.done ? 'done' : ''}${t.key && !t.done ? ' key' : ''}" ${t.done ? '' : 'draggable="true"'} data-tid="${esc(t.id)}" data-pid="${esc(it.pid)}" data-ord="${ordOf(t)}">
     ${t.done ? '' : '<span class="grip" title="Перетащите, чтобы изменить порядок" aria-hidden="true"></span>'}
     <input type="checkbox" class="rc" data-ptask="${esc(t.id)}" data-pid="${esc(it.pid)}" ${t.done ? 'checked' : ''} aria-label="Выполнено">
     <div class="rbody"><div class="rt">${linkify(t.text)}</div><div class="rs">${sub}</div>${subs}</div>
@@ -2528,9 +2470,23 @@ function taskRow(it, bucket){
 }
 let cFilter = 'all';
 function boardHTML(o){
-  const open = o.every.filter(o.pass).filter(it => !it.t.done)
-    .sort((a,b) => (a.t.time || '99:99').localeCompare(b.t.time || '99:99') || ordOf(a.t) - ordOf(b.t));
-  return `<div class="pfilter">${o.chips}</div><section class="rblock bk flat-board"><div class="rb-h"><h2>Задачи</h2><span class="rcount">${open.length}</span></div><ul class="rlist" data-bucket="all">${open.map(it => taskRow(it,groupOf(it.t))).join('') || '<li class="empty">Нет задач</li>'}</ul></section>`;
+  const shown = o.every.filter(o.pass);
+  const open = shown.filter(it => !it.t.done).sort((a, b) => ordOf(a.t) - ordOf(b.t));
+  const tomI = isoPlus(1), t0ms = dayStart(0);
+  const dayKeys = [...new Set(open.map(it => groupOf(it.t)).filter(k => k !== 'today' && k !== 'none' && k !== tomI))].sort();
+  const inDays = iso => { const [y, m, d] = iso.split('-').map(Number); return Math.round((new Date(y, m - 1, d).getTime() - t0ms) / 864e5); };
+  const dateStr = new Date().toLocaleDateString('ru-RU', {day: 'numeric', month: 'long', weekday: 'long'});
+  const list = (items, bucket, emptyText) => `<ul class="rlist" data-bucket="${bucket}">${items.length ? items.map(it => taskRow(it, bucket)).join('') : `<li class="empty">${emptyText}</li>`}</ul>`;
+  return `
+    <div class="pfilter">${o.chips}</div>
+    ${[
+      {k: 'today', title: 'Сегодня', note: dateStr, cls: 'today', empty: 'На сегодня пусто. Перетащите сюда задачу или добавьте новую.'},
+      {k: tomI, title: 'Завтра', note: dayTitle(tomI), cls: 'day', empty: 'На завтра пока ничего. Сюда можно перетащить задачу.'},
+      ...dayKeys.map(k => ({k, title: dayTitle(k), note: 'через ' + inDays(k) + ' дн.', cls: 'day', empty: ''})),
+      {k: 'none', title: 'Без срока', note: '', cls: 'day none', empty: 'Задач без срока нет. Сюда можно перетащить задачу, чтобы убрать у неё дату.'},
+    ].map(g => { const items = open.filter(it => groupOf(it.t) === g.k);
+      return `<section class="rblock bk ${g.cls}"><div class="rb-h"><h2>${g.title}</h2>${g.note ? `<span class="rcount">${g.note}</span>` : ''}</div>${list(items, g.k, g.empty)}</section>`; }).join('')}
+  `;
 }
 /* CRM tasks: the same board, sources are leads, filters are lead statuses */
 function crmSrcs(){
@@ -3218,7 +3174,7 @@ document.addEventListener('change', e => {
   const t = edTask(); if (!t) return;
   if (id === 'eText'){ const v = e.target.value.trim(); if (editT.draft){ edPatch({text: v}); return; } if (!v){ e.target.value = t.text; return; } edPatch({text: v}); }
   else if (id === 'eDue'){ const due = e.target.value || ''; edPatch({due, bucket: 'later'}); }
-  else if (id === 'eTime') edPatch({time: e.target.value || '', timeExplicit: !!e.target.value, dayPeriod: ''});
+  else if (id === 'eTime') edPatch({time: e.target.value || ''});
   else if (id === 'eRep'){ const repeat = e.target.value || ''; edPatch({repeat, due: t.due || (repeat ? today : '')}); }
   else if (id === 'eKey') edPatch({key: e.target.checked});
   else if (id === 'eDone') edPatch({done: e.target.checked, doneAt: e.target.checked ? Date.now() : null});
@@ -3253,12 +3209,6 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && editT.draft) saveDraft();
 });
 
-function periodPatch(t, period){
-  if (!['morning','afternoon','evening','none'].includes(period)) return {};
-  // Old drag operations stored a default hour without recording its origin.
-  const legacyDefault = !t.timeExplicit && ['09:00','12:00','18:00'].includes(t.time);
-  return {dayPeriod: period, ...(legacyDefault ? {time: ''} : {})};
-}
 /* drag to reorder inside and between «Сегодня» and «Потом» */
 let dragT = null;
 const clearDropMarks = () => document.querySelectorAll('.tboard .dropbefore, .tboard .dropafter, .tboard .dropzone').forEach(x => x.classList.remove('dropbefore', 'dropafter', 'dropzone'));
@@ -3287,7 +3237,7 @@ document.addEventListener('drop', e => {
   else if (li) { dragT = null; clearDropMarks(); return; }
   const prev = rows[idx - 1] ? +rows[idx - 1].dataset.ord : null, next = rows[idx] ? +rows[idx].dataset.ord : null;
   const ord = prev != null && next != null ? (prev + next) / 2 : prev != null ? prev + 1000 : next != null ? next - 1000 : Date.now();
-  { const t = tasksOf(dragT.pid).find(x => x.id === dragT.tid); if (t) patchTask(dragT.pid, dragT.tid, {ord, ...groupPatch(t, ul.dataset.bucket), ...periodPatch(t, ul.dataset.period)}); }
+  { const t = tasksOf(dragT.pid).find(x => x.id === dragT.tid); if (t) patchTask(dragT.pid, dragT.tid, {ord, ...groupPatch(t, ul.dataset.bucket)}); }
   dragT = null; renderProjectsView();
 });
 document.addEventListener('dragend', () => { dragT = null; clearDropMarks(); document.querySelectorAll('.tboard .dragging').forEach(x => x.classList.remove('dragging')); });
