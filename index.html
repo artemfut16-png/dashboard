@@ -2648,7 +2648,6 @@ let paySel = null, payR = {start: new Date(), n: 120};
 function payPlanHTML(srcs){
   const items = srcs.filter(x => projects.has(x.pid) && projects.get(x.pid).status !== 'trial').map(x => ({...x, p: projects.get(x.pid)}));
   const dated = items.filter(x => x.p.payDate);
-  const largestPayment = Math.max(1, ...dated.map(x => Number(x.p.check) || 0));
   const now = new Date(), t0 = dayStart(0);
   let start = new Date(now.getFullYear(), now.getMonth(), 1), end = new Date(now.getFullYear(), now.getMonth() + 4, 1);
   dated.forEach(x => {
@@ -2675,7 +2674,7 @@ function payPlanHTML(srcs){
       const when = days < 0 ? 'просрочено ' + (-days) + ' дн.' : days === 0 ? 'сегодня' : days === 1 ? 'завтра' : 'через ' + days + ' дн.';
       slot = `<button type="button" class="tl-slot${paySel === p.id ? ' sel' : ''}${days < 0 ? ' over' : ''}" data-payslot="${esc(p.id)}" style="left:${pct(frac(d))}" title="Перетащите, чтобы перенести дату. Нажмите, чтобы отметить оплату."><b>${p.check ? rub(p.check) : 'Оплата'}</b><span class="tl-d">${d.getDate()} ${MON_GEN[d.getMonth()]} · ${when}</span></button>`;
     }
-    return `<div class="tl-row" style="--pc:${x.color}"><div class="tl-col"><b title="${esc(p.name)}">${esc(p.name)}</b><span>${p.payDate ? dayTitle(p.payDate) : "Дата не назначена"} · ${p.check ? rub(p.check) : '—'}</span>${p.payDate && p.check > 0 ? `<meter class="payment-size" min="0" max="${largestPayment}" value="${Number(p.check)}" aria-label="Сумма оплаты относительно крупнейшей"></meter>` : ''}</div><div class="tl-track${p.payDate ? '' : ' empty'}" data-paytrack="${esc(p.id)}">${grid}${slot}</div></div>`;
+    return `<div class="tl-row" style="--pc:${x.color}"><div class="tl-col"><b title="${esc(p.name)}">${esc(p.name)}</b></div><div class="tl-track${p.payDate ? '' : ' empty'}" data-paytrack="${esc(p.id)}">${grid}${slot}</div></div>`;
   }).join('');
   const total = dated.reduce((a, x) => a + (x.p.check || 0), 0);
   const byMonth = {};
