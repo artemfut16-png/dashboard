@@ -1066,7 +1066,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
 <script src="./assets/overview.js"></script>
-<link rel="stylesheet" href="dashboard-theme.css?v=15">
+<link rel="stylesheet" href="dashboard-theme.css?v=16">
 <style>
 #listBody .board .col{padding:0;border:0!important;background:transparent!important;backdrop-filter:none!important}
 .board .col header{box-sizing:border-box;width:100%;padding:8px 12px;border:1px solid #393939;border-radius:10px;background:#191919}
@@ -1267,6 +1267,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
     </div>
     <div class="sh-foot">
       <button class="btn danger" id="tDelete" type="button">Удалить задачу</button>
+      <button class="btn danger" id="tComplete" type="button">Выполнена</button>
       <button class="btn" id="tCopy" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Копировать в…</button>
       <button class="btn" id="tLead" type="button" hidden>Карточка лида</button>
       <button class="btn" id="tCancel" type="button" hidden>Отмена</button>
@@ -1976,13 +1977,14 @@ function effMonths(){
 }
 function hasData(m){
   if (!m) return false;
-  return ['cold','auto','ref','base'].some(g => m[g] && Object.values(m[g]).some(v => v != null)) || m.fot != null || m.other != null;
+  return ['cold','auto','ref','base'].some(g => m[g] && Object.values(m[g]).some(v => v != null)) || m.fot != null || m.other != null || m.projectCosts != null || (Array.isArray(m.extraExpenses) && m.extraExpenses.some(e => e.amount != null));
 }
 function calc(m){
   const rev = CH.reduce((a, c) => a + (getp(m, c.k + '.rev') || 0), 0);
   const sales = CH.reduce((a, c) => a + (getp(m, c.k + '.sales') || 0), 0);
   const tax = Math.round(rev * TAX);
-  const exp = tax + (getp(m, 'fot') || 0) + (getp(m, 'other') || 0) + (getp(m, 'auto.budget') || 0);
+  const extra = (m && Array.isArray(m.extraExpenses) ? m.extraExpenses : []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+  const exp = tax + (getp(m, 'fot') || 0) + (getp(m, 'other') || 0) + (getp(m, 'projectCosts') || 0) + (getp(m, 'auto.budget') || 0) + extra;
   return {rev, sales, tax, exp, net: rev - exp, avg: sales ? rev / sales : null, margin: rev ? (rev - exp) / rev : null, has: hasData(m)};
 }
 function projStats(p){
@@ -2647,7 +2649,6 @@ let paySel = null, payR = {start: new Date(), n: 120};
 function payPlanHTML(srcs){
   const items = srcs.filter(x => projects.has(x.pid) && projects.get(x.pid).status !== 'trial').map(x => ({...x, p: projects.get(x.pid)}));
   const dated = items.filter(x => x.p.payDate);
-  const largestPayment = Math.max(1, ...dated.map(x => Number(x.p.check) || 0));
   const now = new Date(), t0 = dayStart(0);
   let start = new Date(now.getFullYear(), now.getMonth(), 1), end = new Date(now.getFullYear(), now.getMonth() + 4, 1);
   dated.forEach(x => {
@@ -2664,7 +2665,11 @@ function payPlanHTML(srcs){
   for (let m = new Date(start); m < end; m = new Date(m.getFullYear(), m.getMonth() + 1, 1)){
     axis += `<div class="tl-m" style="left:${pct(frac(m))}">${MON_FULL[m.getMonth()]}${m.getFullYear() !== now.getFullYear() ? ' ' + m.getFullYear() : ''}</div>`;
     grid += `<div class="tl-g" style="left:${pct(frac(m))}"></div>`;
-    for (const day of [8, 15, 22]){ const w = new Date(m.getFullYear(), m.getMonth(), day); if (w < end) grid += `<div class="tl-g w" style="left:${pct(frac(w))}"></div>`; }
+    const nextMonth = new Date(m.getFullYear(), m.getMonth() + 1, 1);
+    for (let part = 1; part < 4; part++){
+      const position = frac(m) + (frac(nextMonth) - frac(m)) * part / 4;
+      grid += `<div class="tl-g w" style="left:${pct(position)}"></div>`;
+    }
   }
   const rows = items.sort((a,b)=>(a.p.payDate || "9999").localeCompare(b.p.payDate || "9999")).map(x => {
     const p = x.p;
@@ -2674,7 +2679,7 @@ function payPlanHTML(srcs){
       const when = days < 0 ? 'просрочено ' + (-days) + ' дн.' : days === 0 ? 'сегодня' : days === 1 ? 'завтра' : 'через ' + days + ' дн.';
       slot = `<button type="button" class="tl-slot${paySel === p.id ? ' sel' : ''}${days < 0 ? ' over' : ''}" data-payslot="${esc(p.id)}" style="left:${pct(frac(d))}" title="Перетащите, чтобы перенести дату. Нажмите, чтобы отметить оплату."><b>${p.check ? rub(p.check) : 'Оплата'}</b><span class="tl-d">${d.getDate()} ${MON_GEN[d.getMonth()]} · ${when}</span></button>`;
     }
-    return `<div class="tl-row" style="--pc:${x.color}"><div class="tl-col"><b title="${esc(p.name)}">${esc(p.name)}</b><span>${p.payDate ? dayTitle(p.payDate) : "Дата не назначена"} · ${p.check ? rub(p.check) : '—'}</span>${p.payDate && p.check > 0 ? `<meter class="payment-size" min="0" max="${largestPayment}" value="${Number(p.check)}" aria-label="Сумма оплаты относительно крупнейшей"></meter>` : ''}</div><div class="tl-track${p.payDate ? '' : ' empty'}" data-paytrack="${esc(p.id)}">${grid}${slot}</div></div>`;
+    return `<div class="tl-row" style="--pc:${x.color}"><div class="tl-col"><b title="${esc(p.name)}">${esc(p.name)}</b></div><div class="tl-track${p.payDate ? '' : ' empty'}" data-paytrack="${esc(p.id)}">${grid}${slot}</div></div>`;
   }).join('');
   const total = dated.reduce((a, x) => a + (x.p.check || 0), 0);
   const byMonth = {};
@@ -3201,6 +3206,7 @@ function renderTaskEditor(force){
   gcLabel($('#eDateBtn'), t.due || '', t.time || '', 'Без даты');
   renderSubEditor(t);
   $('#eKey').checked = !!t.key; $('#eDone').checked = !!t.done;
+  $('#tComplete').hidden = isNew; $('#tComplete').textContent = t.done ? 'Вернуть в работу' : 'Выполнена';
 }
 document.addEventListener('change', e => {
   if (!editT || !$('#tdrawer').contains(e.target)) return;
@@ -3229,6 +3235,11 @@ document.addEventListener('click', e => {
   if (e.target.id === 'tOk' && editT && editT.draft){ saveDraft(); return; }
   if (e.target.id === 'tScrim' || e.target.id === 'tClose' || e.target.id === 'tOk' || e.target.id === 'tCancel'){ closeTask(); return; }
   if (e.target.id === 'tLead' && editT){ const pid = editT.pid; closeTask(); if (isLead(pid)) openLead(pid); return; }
+  if (e.target.id === 'tComplete' && editT && !editT.draft){
+    const checkbox = $('#eDone'); checkbox.checked = !checkbox.checked;
+    checkbox.dispatchEvent(new Event('change', {bubbles: true}));
+    return;
+  }
   if (e.target.id === 'tDelete' && editT && !editT.draft){
     const {pid, tid} = editT; closeTask();
     saveProjTasks(pid, ts => ts.filter(x => x.id !== tid)); if (inProj()) renderProjectsView(); toast('Задача удалена'); return;
@@ -3581,5 +3592,5 @@ $('#logoutBtn').addEventListener('click', async () => { await sb.auth.signOut();
 
 <script src="dashboard-calendar.js?v=3" defer></script>
 
-<script src="dashboard-overview.js?v=9" defer></script>
+<script src="dashboard-overview.js?v=10" defer></script>
 <script src="dashboard-dropdowns.js?v=1" defer></script>
