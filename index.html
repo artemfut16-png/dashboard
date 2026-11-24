@@ -1065,7 +1065,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
 <script src="./assets/overview.js"></script>
-<link rel="stylesheet" href="dashboard-theme.css?v=3">
+<link rel="stylesheet" href="dashboard-theme.css?v=4">
 </head>
 <body>
 <div id="login" hidden>
@@ -1742,7 +1742,7 @@ function renderView(){
   const sect = view === 'dash' ? 'an' : (view === 'tasks' || view === 'ptasks' || view === 'atasks' || view === 'alltasks') ? 'tasks' : view === 'projects' ? 'projects' : 'crm';
   document.querySelectorAll('.sbtn').forEach(b => b.toggleAttribute('aria-current', b.dataset.sect === sect));
   $('#crumbCur').textContent = {an: 'Аналитика', tasks: 'Задачи', projects: 'Проекты', crm: 'CRM'}[sect];
-  $('#pageTitle').innerHTML = {an: 'Аналитика <span class="dim">агентства</span>', tasks: 'Задачи <span class="dim">CRM, проекты, агентство</span>', projects: 'Проекты <span class="dim">в работе</span>', crm: 'CRM <span class="dim">лиды и сделки</span>'}[sect];
+  $('#pageTitle').innerHTML = {an: 'Аналитика <span class="dim">агентства</span>', tasks: 'Задачи', projects: 'Проекты <span class="dim">в работе</span>', crm: 'CRM <span class="dim">лиды и сделки</span>'}[sect];
   $('#app').classList.remove('mopen');
   $('#sub').textContent = view === 'dash' ? 'Доходы, расходы и проекты агентства' : ''; $('#sub').hidden = view !== 'dash';
 }
@@ -2533,6 +2533,8 @@ function renderCrmBoard(){
       STATUSES.filter(st => openBy(st.k)).map(st => `<button class="fchip" data-cfilter="${st.k}" aria-pressed="${cFilter === st.k}">${st.name}</button>`).join(''),
   });
 }
+let unifiedFilter = 'all';
+document.addEventListener('click',e=>{const b=e.target.closest('[data-unified-filter]');if(b){unifiedFilter=b.dataset.unifiedFilter;renderProjectsView();}});
 function renderProjectsView(){
   const el = $('#v-ptasks'), elP = $('#v-projects');
   if (!db){ el.innerHTML = '<div class="empty-state"><strong>База недоступна</strong>Обновите страницу и войдите заново.</div>'; elP.innerHTML = el.innerHTML; return; }
@@ -2540,7 +2542,10 @@ function renderProjectsView(){
   const srcs = sources().filter(x => x.pid !== AG);
   if (pFilter !== 'all' && !srcs.some(x => x.pid === pFilter)) pFilter = 'all';
   const allT = allTasks(), every = allT.filter(it => it.pid !== AG);
-  $('#v-alltasks').innerHTML = boardHTML({every: crmBoardTasks().concat(allT), pass: () => true, chips: ''});
+  const unified = crmBoardTasks().concat(allT);
+  const filterSources = [{pid:'all',name:'Все'}, {pid:'crm',name:'CRM'}, ...sources()];
+  const icon = pid => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">' + (pid==='all' ? '<path d="M8 6h13M8 12h13M8 18h13M3 6h1M3 12h1M3 18h1"/>' : pid==='crm' ? '<circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6M18 15a5 5 0 0 1 3 4v2"/>' : '<rect x="3" y="6" width="18" height="15" rx="2"/><path d="M8 6V3h8v3M3 12h18"/>') + '</svg>';
+  $('#v-alltasks').innerHTML = boardHTML({every: unified, pass: it => unifiedFilter==='all'||(unifiedFilter==='crm'?(isLead(it.pid)||it.pid===CRMG):it.pid===unifiedFilter), chips:filterSources.map(x=>`<button class="fchip" data-unified-filter="${esc(x.pid)}" aria-pressed="${unifiedFilter===x.pid}">${icon(x.pid)}${esc(x.name)}</button>`).join('')});
   $('#v-atasks').innerHTML = boardHTML({every: allT.filter(it => it.pid === AG), pass: () => true, srcLabel: 'К чему относится', options: '', chips: ''});
   el.innerHTML = boardHTML({
     every, pass: it => pFilter === 'all' || it.pid === pFilter, srcLabel: 'К чему относится',

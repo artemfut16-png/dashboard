@@ -158,3 +158,5 @@ body{background:#080808;background-image:none}
 .side,.card,.kpi,.btn,.fchip,.col,#login form{backdrop-filter:none!important;box-shadow:none!important}
 .rs .mc.over,.rs .mc.mdue.over,.rlist li.key .rs .mc.mdue.over{background:#333;border-color:#777;color:#fff}
 .gcal{background:#151515;backdrop-filter:none;border-radius:12px}
+
+#taskTabs .tabs{display:none}#taskTabs{justify-content:flex-end}.fchip svg{width:15px;height:15px;flex:none}
