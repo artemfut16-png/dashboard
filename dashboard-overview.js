@@ -13,15 +13,19 @@ function financeFields(raw){
 function monthlyFinanceHTML(){
  const raw=months(), m=raw[financeMonth] || {}, result=calc(effMonths()[financeMonth]);
  const fields=financeFields(raw);
- const revenueFields=[
-  {name:'Выручка от тест-драйвов',key:'revenueTrials'},
-  {name:'Выручка от новых проектов',key:'revenueNew'},
-  {name:'Выручка от проектов с базы',key:'revenueExisting'}
- ];
- const revenueRows=revenueFields.map(field=>{
-  const value=getp(m,field.key);
-  return `<tr><td>${field.name}</td><td class="finance-edit finance-amount" data-finance-field="${field.key}" data-value="${value==null?'':esc(String(value))}" tabindex="0" title="Изменить сумму">${value==null?'—':esc(nf.format(value))}</td></tr>`;
- }).join('');
+ const revenue={trial:0,newProjects:0,existing:0};
+ projects.forEach(project=>{
+  const payments=project.pay || [], amount=Number(payments[financeMonth]) || 0;
+  if(amount<=0)return;
+  if(project.status==='trial')revenue.trial+=amount;
+  else if(payments.slice(0,financeMonth).some(value=>Number(value)>0))revenue.existing+=amount;
+  else revenue.newProjects+=amount;
+ });
+ const revenueRows=[
+  ['Выручка от тест-драйвов',revenue.trial],
+  ['Выручка от новых проектов',revenue.newProjects],
+  ['Выручка от проектов с базы',revenue.existing]
+ ].map(([label,value])=>`<tr><td>${label}</td><td>${rub(value)}</td></tr>`).join('');
  const rows=fields.map(field=>{
    const value=field.key==='extra' ? (m.extraExpenses || []).find(item=>item.name===field.name)?.amount : getp(m,field.key);
    return `<tr><td class="finance-edit" data-finance-name="${esc(field.key)}" data-original-name="${esc(field.name)}" tabindex="0" title="Изменить название">${esc(field.name)}</td><td class="finance-edit finance-amount" data-finance-field="${esc(field.key)}" data-extra-name="${esc(field.name)}" data-value="${value==null?'':esc(String(value))}" tabindex="0" title="Изменить сумму">${value==null?'—':esc(nf.format(value))}</td></tr>`;
