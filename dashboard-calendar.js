@@ -21,7 +21,7 @@
     }).join('')}</div>`;
     const day=new Date(selected+'T12:00:00'), items=entries.filter(x=>x.t.due===selected).sort((a,b)=>(a.t.time||'99:99').localeCompare(b.t.time||'99:99'));
     agenda.hidden = document.getElementById('taskTabs').hidden;
-    agenda.innerHTML=`<header class="agenda-heading"><h2>План на день</h2><button type="button" class="btn" data-new>Добавить задачу</button></header><div class="agenda-layout"><div class="agenda-date"><strong>${day.getDate().toString().padStart(2,'0')}</strong><span>${esc(day.toLocaleDateString('ru-RU',{weekday:'long',month:'long'}))}</span></div><div class="agenda-events">${items.length?items.map(x=>`<button type="button" class="agenda-event" data-entry="${entries.indexOf(x)}"><time>${esc(x.t.time||'Без времени')}</time><span><b>${esc(x.t.text||'Задача')}</b><small>${esc(x.name)}</small></span><span aria-hidden="true">↗</span></button>`).join(''):'<div class="agenda-empty">На этот день задач нет<span>Выберите дату в календаре или добавьте задачу</span></div>'}</div></div>`;
+    agenda.innerHTML=`<header class="agenda-heading"><h2>План на день</h2></header><div class="agenda-layout"><div class="agenda-date"><strong>${day.getDate().toString().padStart(2,'0')}</strong><span>${esc(day.toLocaleDateString('ru-RU',{weekday:'long',month:'long'}))}</span></div><div class="agenda-events">${items.length?items.map(x=>`<button type="button" class="agenda-event" data-entry="${entries.indexOf(x)}"><time>${esc(x.t.time||'Без времени')}</time><span><b>${esc(x.t.text||'Задача')}</b><small>${esc(x.name)}</small></span><span aria-hidden="true">↗</span></button>`).join(''):'<div class="agenda-empty">На этот день задач нет<span>Выберите дату в календаре или добавьте задачу</span></div>'}</div></div>`;
   }
   host.addEventListener('click',e=>{
     const b=e.target.closest('button');if(!b)return;
@@ -32,7 +32,6 @@
   });
   agenda.addEventListener('click',e=>{
     const row=e.target.closest('[data-entry]');if(row){const x=entries[Number(row.dataset.entry)];openTask(x.pid,x.t.id);return;}
-    if(e.target.closest('[data-new]')){newTask(GEN);edPatch({due:selected});}
   });
   const refresh=()=>{
     const next=JSON.stringify([document.getElementById('taskTabs').hidden,read().map(x=>[x.pid,x.name,x.t])]);
