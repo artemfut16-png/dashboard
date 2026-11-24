@@ -291,3 +291,12 @@ body{background:#080808;background-image:none}
 .board .col header .pill{color:#f4f4f4!important;font-size:14px!important;font-weight:700!important}
 .board .col header .num{color:#dedede!important;font-weight:600}
 @media(max-width:700px){.monthly-finance .card-h{align-items:flex-start;gap:12px;flex-wrap:wrap}.finance-controls{width:100%}.finance-controls select{flex:1;min-width:0}}
+
+.monthly-finance .finance-table{min-width:0;width:100%;table-layout:fixed}
+.monthly-finance .finance-table th:first-child,.monthly-finance .finance-table td:first-child{width:65%}
+.monthly-finance .finance-table th:last-child,.monthly-finance .finance-table td:last-child{text-align:right}
+.monthly-finance .finance-edit{cursor:text;outline-offset:-2px}
+.monthly-finance .finance-edit:hover{background:#202020}
+.monthly-finance .finance-edit:focus-visible{outline:1px solid #999}
+.monthly-finance .finance-cell-input{box-sizing:border-box;width:100%;height:36px;padding:6px 8px;border:1px solid #ddd;border-radius:0;background:#111;color:#fff;font:inherit;text-align:inherit}
+@media(max-width:700px){.monthly-finance .finance-table{min-width:0}.monthly-finance .finance-table th,.monthly-finance .finance-table td{white-space:normal;overflow-wrap:anywhere}.monthly-finance .finance-table th:first-child,.monthly-finance .finance-table td:first-child{width:60%}}
