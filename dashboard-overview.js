@@ -49,7 +49,7 @@ function monthlyFinanceHTML(){
   if(row.id==='churn' && value!=null)value=Math.abs(value);
   return `${row.group?'<tr class="finance-divider" aria-hidden="true"><td colspan="2"></td></tr>':''}<tr class="${row.total?'tot':''}"><td><div class="finance-row-label"><span class="finance-edit" data-report-name="${esc(row.id)}" data-value="${esc(label)}" tabindex="0" title="Изменить название">${esc(label)}</span><button type="button" class="finance-remove" data-report-remove="${esc(row.id)}" aria-label="Удалить пункт ${esc(label)}">×</button></div></td><td class="finance-edit finance-amount" data-report-value="${esc(row.id)}" data-value="${value==null?'':esc(String(value))}" tabindex="0" title="Изменить значение">${value==null?'':esc(nf.format(value))}</td></tr>`;
  }).join('');
- return `<section class="card monthly-finance"><div class="card-h"><h2>Показатели за ${MON_FULL[financeMonth].toLowerCase()}</h2><div class="finance-controls"><div class="month-switch"><button type="button" data-finance-step="-1" aria-label="Предыдущий месяц" ${financeMonth===0?'disabled':''}>‹</button><select data-finance-month aria-label="Месяц">${MON_FULL.map((name,i)=>`<option value="${i}"${i===financeMonth?' selected':''}>${name} ${YEAR}</option>`).join('')}</select><button type="button" data-finance-step="1" aria-label="Следующий месяц" ${financeMonth===11?'disabled':''}>›</button></div></div></div><div class="scroll"><table class="dt finance-table"><thead><tr><th>Показатель</th><th>Значение</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+ return `<section class="card monthly-finance"><div class="card-h"><h2>Показатели за ${MON_FULL[financeMonth].toLowerCase()}</h2><div class="finance-controls"><div class="month-switch"><select data-finance-month aria-label="Месяц">${MON_FULL.map((name,i)=>`<option value="${i}"${i===financeMonth?' selected':''}>${name} ${YEAR}</option>`).join('')}</select></div></div></div><div class="scroll"><table class="dt finance-table"><thead><tr><th>Показатель</th><th>Значение</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
 function saveFinanceChanges(change){
  const next=JSON.parse(JSON.stringify(months()));
@@ -94,8 +94,6 @@ document.addEventListener('change',event=>{if(event.target.matches('[data-financ
 document.addEventListener('click',event=>{
  const remove=event.target.closest('[data-report-remove]');
  if(remove){const id=remove.dataset.reportRemove;saveFinanceChanges(next=>{next[0]=next[0] || {};next[0].reportHidden=next[0].reportHidden || [];if(!next[0].reportHidden.includes(id))next[0].reportHidden.push(id);});return;}
- const step=event.target.closest('[data-finance-step]');
- if(step){financeMonth=Math.max(0,Math.min(11,financeMonth+Number(step.dataset.financeStep)));renderDash();return;}
  const cell=event.target.closest('.finance-edit');
  if(cell && !event.target.closest('input'))editFinanceCell(cell);
 });
