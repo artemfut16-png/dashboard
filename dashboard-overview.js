@@ -116,7 +116,7 @@ function renderOverview(){
  const todayTasks=tasks.filter(x=>x.t.due ? x.t.due===todayISO() : x.t.bucket==='today');
 
  const max=Math.max(1,...months.map(x=>Math.abs(x.net))), total=months.reduce((a,c)=>a+c.net,0);
- const currentFinance=months()[now] || {};
+ const currentFinance=Array.isArray(fin) ? (fin[now] || {}) : {};
  const metricItems=[
   ['Рекламный бюджет',getp(currentFinance,'auto.budget'),true],
   ['Лиды',getp(currentFinance,'auto.leads'),false],
