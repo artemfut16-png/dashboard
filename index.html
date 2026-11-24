@@ -1066,7 +1066,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
 <script src="./assets/overview.js"></script>
-<link rel="stylesheet" href="dashboard-theme.css?v=16">
+<link rel="stylesheet" href="dashboard-theme.css?v=17">
 <style>
 #listBody .board .col{padding:0;border:0!important;background:transparent!important;backdrop-filter:none!important}
 .board .col header{box-sizing:border-box;width:100%;padding:8px 12px;border:1px solid #393939;border-radius:10px;background:#191919}
@@ -1696,7 +1696,7 @@ function renderStats(){
   const a = all();
   const nt = a.reduce((n, l) => n + (l.tasks || []).filter(t => !t.done).length, 0);
 
-  $('#sub').textContent = view === 'dash' ? 'Доходы, расходы и проекты агентства' : ''; $('#sub').hidden = view !== 'dash';
+  $('#sub').textContent = ''; $('#sub').hidden = true;
 }
 
 function emptyState(){
@@ -3592,5 +3592,5 @@ $('#logoutBtn').addEventListener('click', async () => { await sb.auth.signOut();
 
 <script src="dashboard-calendar.js?v=3" defer></script>
 
-<script src="dashboard-overview.js?v=10" defer></script>
+<script src="dashboard-overview.js?v=11" defer></script>
 <script src="dashboard-dropdowns.js?v=1" defer></script>
