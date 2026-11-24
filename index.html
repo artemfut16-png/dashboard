@@ -1066,7 +1066,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
 <script src="./assets/overview.js"></script>
-<link rel="stylesheet" href="dashboard-theme.css?v=15">
+<link rel="stylesheet" href="dashboard-theme.css?v=16">
 <style>
 #listBody .board .col{padding:0;border:0!important;background:transparent!important;backdrop-filter:none!important}
 .board .col header{box-sizing:border-box;width:100%;padding:8px 12px;border:1px solid #393939;border-radius:10px;background:#191919}
@@ -1976,13 +1976,14 @@ function effMonths(){
 }
 function hasData(m){
   if (!m) return false;
-  return ['cold','auto','ref','base'].some(g => m[g] && Object.values(m[g]).some(v => v != null)) || m.fot != null || m.other != null;
+  return ['cold','auto','ref','base'].some(g => m[g] && Object.values(m[g]).some(v => v != null)) || m.fot != null || m.other != null || (Array.isArray(m.extraExpenses) && m.extraExpenses.some(e => e.amount != null));
 }
 function calc(m){
   const rev = CH.reduce((a, c) => a + (getp(m, c.k + '.rev') || 0), 0);
   const sales = CH.reduce((a, c) => a + (getp(m, c.k + '.sales') || 0), 0);
   const tax = Math.round(rev * TAX);
-  const exp = tax + (getp(m, 'fot') || 0) + (getp(m, 'other') || 0) + (getp(m, 'auto.budget') || 0);
+  const extra = (m && Array.isArray(m.extraExpenses) ? m.extraExpenses : []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+  const exp = tax + (getp(m, 'fot') || 0) + (getp(m, 'other') || 0) + (getp(m, 'auto.budget') || 0) + extra;
   return {rev, sales, tax, exp, net: rev - exp, avg: sales ? rev / sales : null, margin: rev ? (rev - exp) / rev : null, has: hasData(m)};
 }
 function projStats(p){
@@ -3581,5 +3582,5 @@ $('#logoutBtn').addEventListener('click', async () => { await sb.auth.signOut();
 
 <script src="dashboard-calendar.js?v=3" defer></script>
 
-<script src="dashboard-overview.js?v=9" defer></script>
+<script src="dashboard-overview.js?v=10" defer></script>
 <script src="dashboard-dropdowns.js?v=1" defer></script>
