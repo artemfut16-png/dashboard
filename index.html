@@ -2665,7 +2665,11 @@ function payPlanHTML(srcs){
   for (let m = new Date(start); m < end; m = new Date(m.getFullYear(), m.getMonth() + 1, 1)){
     axis += `<div class="tl-m" style="left:${pct(frac(m))}">${MON_FULL[m.getMonth()]}${m.getFullYear() !== now.getFullYear() ? ' ' + m.getFullYear() : ''}</div>`;
     grid += `<div class="tl-g" style="left:${pct(frac(m))}"></div>`;
-    for (const day of [8, 15, 22]){ const w = new Date(m.getFullYear(), m.getMonth(), day); if (w < end) grid += `<div class="tl-g w" style="left:${pct(frac(w))}"></div>`; }
+    const nextMonth = new Date(m.getFullYear(), m.getMonth() + 1, 1);
+    for (let part = 1; part < 4; part++){
+      const position = frac(m) + (frac(nextMonth) - frac(m)) * part / 4;
+      grid += `<div class="tl-g w" style="left:${pct(position)}"></div>`;
+    }
   }
   const rows = items.sort((a,b)=>(a.p.payDate || "9999").localeCompare(b.p.payDate || "9999")).map(x => {
     const p = x.p;
