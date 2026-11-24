@@ -1977,14 +1977,14 @@ function effMonths(){
 }
 function hasData(m){
   if (!m) return false;
-  return ['cold','auto','ref','base'].some(g => m[g] && Object.values(m[g]).some(v => v != null)) || m.fot != null || m.other != null || (Array.isArray(m.extraExpenses) && m.extraExpenses.some(e => e.amount != null));
+  return ['cold','auto','ref','base'].some(g => m[g] && Object.values(m[g]).some(v => v != null)) || m.fot != null || m.other != null || m.projectCosts != null || (Array.isArray(m.extraExpenses) && m.extraExpenses.some(e => e.amount != null));
 }
 function calc(m){
   const rev = CH.reduce((a, c) => a + (getp(m, c.k + '.rev') || 0), 0);
   const sales = CH.reduce((a, c) => a + (getp(m, c.k + '.sales') || 0), 0);
   const tax = Math.round(rev * TAX);
   const extra = (m && Array.isArray(m.extraExpenses) ? m.extraExpenses : []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-  const exp = tax + (getp(m, 'fot') || 0) + (getp(m, 'other') || 0) + (getp(m, 'auto.budget') || 0) + extra;
+  const exp = tax + (getp(m, 'fot') || 0) + (getp(m, 'other') || 0) + (getp(m, 'projectCosts') || 0) + (getp(m, 'auto.budget') || 0) + extra;
   return {rev, sales, tax, exp, net: rev - exp, avg: sales ? rev / sales : null, margin: rev ? (rev - exp) / rev : null, has: hasData(m)};
 }
 function projStats(p){
