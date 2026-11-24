@@ -240,3 +240,10 @@ body{background:#080808;background-image:none}
 
 .tboard .rlist li[data-tid] > .rmove,.tboard .rlist li[data-tid] > .rcopy,.tboard .rlist li[data-tid] > .rflag,.tboard .rlist li[data-tid] > .tdel{display:none}
 .tboard > .rlist{background:transparent;border:0;padding:0;margin-top:20px}
+
+.tboard .rlist li[data-tid] .rs{gap:18px}
+.tboard .rlist li[data-tid] .rs .mc.msrc,.tboard .rlist li[data-tid] .rs .mc.mdue{font-size:14px;font-weight:600;line-height:1.35}
+.tboard .rlist li[data-tid] .rs .mc.msrc{color:#d4d4d4}
+.tboard .rlist li[data-tid] .rs .mc.mdue{color:#f2f2f2}
+.tboard .rlist li[data-tid] .rs .mc.mdue.over{color:#ed8a80}
+@media(max-width:700px){.tboard .rlist li[data-tid] .rs{gap:4px}.tboard .rlist li[data-tid] .rs .mc.msrc,.tboard .rlist li[data-tid] .rs .mc.mdue{font-size:13px}}
