@@ -1,0 +1,21 @@
+{
+  "name": "dashboard",
+  "version": "1.0.0",
+  "dependencies": {
+    "lucide-react": "^1.79.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "esbuild": "^0.28.2",
+    "tailwindcss": "^4.3.5",
+    "typescript": "^7.0.2"
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsc --noEmit && esbuild src/overview.tsx --bundle --minify --global-name=DashboardOverview --outfile=assets/overview.js && tailwindcss -i styles/globals.css -o assets/overview.css --minify"
+  }
+}
