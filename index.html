@@ -2570,8 +2570,8 @@ function renderProjectsView(){
       srcs.map(x => `<button class="fchip" style="--pc:${x.color}" data-pfilter="${esc(x.pid)}" aria-pressed="${pFilter === x.pid}"><i></i>${esc(x.name)}</button>`).join(''),
   });
   renderCrmBoard();
-  elP.innerHTML = `<section class="ov-panel project-group"><div class="psec" style="margin-top:0">Проекты в работе <span class="num">${srcs.filter(x => projects.has(x.pid)).length}</span></div>
-    <div class="pinfo">${srcs.filter(x => projects.has(x.pid)).map(x => { const p = projects.get(x.pid), st = projStats(p);
+  elP.innerHTML = `<section class="ov-panel project-group"><div class="psec" style="margin-top:0">Проекты в работе <span class="num">${srcs.filter(x => projects.has(x.pid) && projects.get(x.pid).status !== 'trial').length}</span></div>
+    <div class="pinfo">${srcs.filter(x => projects.has(x.pid) && projects.get(x.pid).status !== 'trial').map(x => { const p = projects.get(x.pid), st = projStats(p);
       return `<div class="pi" style="--pc:${x.color}"><div class="pi-h"><b title="${esc(p.name)}">${esc(p.name)}</b><button class="pill pst active" data-ptoggle="${esc(p.id)}" title="Перевести в «Ушёл»">В работе</button></div>
         <div class="pc-meta"><span>Чек <b>${p.check ? rub(p.check) : '—'}</b></span><span>Оплачено <b>${st.total ? rub(st.total) : '—'}</b></span><span>Срок <b>${st.life || '—'}</b> мес.</span>${p.payDate ? `<span>Оплата <b>${dueInfo(p.payDate).label}</b></span>` : ''}</div>${projLinksHTML(p)}</div>`; }).join('')}</div></section><section class="ov-panel project-group">${testDrivesHTML()}</section>`;
 }
@@ -2656,7 +2656,7 @@ const isoDate = v => { const [y, m, d] = v.split('-').map(Number); return new Da
 const dateISO = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 let paySel = null, payR = {start: new Date(), n: 120};
 function payPlanHTML(srcs){
-  const items = srcs.filter(x => projects.has(x.pid)).map(x => ({...x, p: projects.get(x.pid)}));
+  const items = srcs.filter(x => projects.has(x.pid) && projects.get(x.pid).status !== 'trial').map(x => ({...x, p: projects.get(x.pid)}));
   const dated = items.filter(x => x.p.payDate);
   const largestPayment = Math.max(1, ...dated.map(x => Number(x.p.check) || 0));
   const now = new Date(), t0 = dayStart(0);
@@ -2888,10 +2888,12 @@ document.addEventListener('click', e => {
 });
 /* leads at the «Тест-драйв продан» stage, shown under the projects */
 function testDrivesHTML(){
-  const list = all().filter(l => l.status === 'td').sort(sortNew);
-  const head = `<div class="psec">Тест-драйвы в работе <span class="num">${list.length}</span></div>`;
-  if (!list.length) return head + '<div class="empty-state">Пока нет лидов на стадии «Тест-драйв продан». Как только лид попадёт в эту колонку CRM, он появится здесь.</div>';
-  return head + `<div class="pinfo">${list.map(l => {
+  const trialProjects = projList().filter(p => p.status === 'trial');
+  const list = all().filter(l => l.status === 'td' && !trialProjects.some(p => p.name && (l.company || l.name || '').trim().toLowerCase() === p.name.trim().toLowerCase())).sort(sortNew);
+  const head = `<div class="psec">Тест-драйвы в работе <span class="num">${list.length + trialProjects.length}</span></div>`;
+  const projectCards = trialProjects.map(p => `<div class="pi tdl"><div class="pi-h"><b>${esc(p.name)}</b><span class="pill s-td">Тест-драйв</span></div>${projLinksHTML(p)}</div>`).join('');
+  if (!list.length && !trialProjects.length) return head + '<div class="empty-state">Пока нет лидов на стадии «Тест-драйв продан». Как только лид попадёт в эту колонку CRM, он появится здесь.</div>';
+  return head + `<div class="pinfo">${projectCards}${list.map(l => {
     const next = openTasks(l)[0];
     return `<div class="pi tdl" style="--pc:#F16001">
       <div class="pi-h"><b title="${esc(l.name || '')}">${esc(l.name || 'Без имени')}${l.company ? ' · ' + esc(l.company) : ''}</b><span class="pill s-td">Тест-драйв</span></div>
