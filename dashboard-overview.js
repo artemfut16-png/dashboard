@@ -102,6 +102,11 @@ document.addEventListener('click',event=>{
 document.addEventListener('keydown',event=>{if(event.key==='Enter' && event.target.matches('.finance-edit')){event.preventDefault();editFinanceCell(event.target);}});
 function projectRegister(){
  const projectsList = projList();
+ const normalize = value => String(value || '').trim().toLocaleLowerCase().replace(/ё/g,'е');
+ const virtualTrials = all().filter(lead => lead.status === 'td' && !projectsList.some(project =>
+   project.leadId === lead.id || (lead.company && normalize(project.name) === normalize(lead.company))
+ )).map(lead => ({id:lead.id, name:lead.company || lead.name || 'Без названия', status:'trial', pay:[], trialLeadId:lead.id}));
+ projectsList.push(...virtualTrials);
  const nowMonth = new Date().getFullYear() === YEAR ? new Date().getMonth() : 11;
  return `<div class="project-register"><div class="scroll">${projTable(projectsList, projectsList.map(projStats), nowMonth)}</div></div>`;
 }
