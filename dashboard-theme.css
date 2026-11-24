@@ -161,3 +161,5 @@ body{background:#080808;background-image:none}
 .gcal{background:#151515;backdrop-filter:none;border-radius:12px}
 
 #taskTabs .tabs{display:none}#taskTabs{justify-content:flex-end}.fchip svg{width:15px;height:15px;flex:none}
+
+.metric-card{position:relative;overflow:hidden;min-height:350px;display:flex;flex-direction:column;padding:0!important}.metric-graph{position:absolute;right:0;top:0;bottom:48px;width:65%;background:linear-gradient(270deg,#272727,transparent);mask-image:linear-gradient(90deg,transparent,#000 35%)}.metric-graph svg{width:100%;height:100%}.metric-content{position:relative;z-index:1;padding:26px 28px;flex:1;pointer-events:none}.metric-total{font-size:clamp(30px,4vw,54px);letter-spacing:-.04em;margin-top:36px}.metric-content small{color:#999}.metric-footer{position:relative;display:flex;flex-wrap:wrap;gap:16px;padding:15px 28px;border-top:1px solid #303030;color:#999;font-size:12px;background:#111}.metric-footer b{color:#eee;font-weight:500}@media(max-width:600px){.metric-graph{width:80%;opacity:.7}.metric-total{font-size:32px}}
