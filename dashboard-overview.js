@@ -1,7 +1,7 @@
 function projectRegister(){
- const rows = projList().map(p=>({name:p.name,status:p.status==='gone'?'Ушел':'В работе',amount:p.check,date:p.status==='gone'?'':p.payDate}))
-   .concat(all().filter(l=>l.status==='td').map(l=>({name:l.company||l.name,status:'Тест-драйв'})));
- return `<section class="ov-panel register"><h3>Проекты</h3><div class="scroll"><table><thead><tr><th>Проект</th><th>Статус</th><th>Чек</th><th>Следующая оплата</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.name||'Без названия')}</td><td>${r.status}</td><td>${r.amount?rub(r.amount):'—'}</td><td>${r.date?esc(dayTitle(r.date)):'—'}</td></tr>`).join('')||'<tr><td colspan="4">Пока нет проектов</td></tr>'}</tbody></table></div></section>`;
+ const projectsList = projList();
+ const nowMonth = new Date().getFullYear() === YEAR ? new Date().getMonth() : 11;
+ return `<section class="card"><div class="card-h"><h2>Проекты</h2><span class="hint">Нажмите на сумму, чтобы изменить оплату. Статус переключается по клику.</span></div><div class="scroll">${projTable(projectsList, projectsList.map(projStats), nowMonth)}</div><form class="addp" id="addProj"><input id="npName" placeholder="Название нового проекта" aria-label="Название проекта" required><input id="npCheck" placeholder="Чек, ₽" aria-label="Чек" inputmode="numeric"><button class="btn primary" type="submit">Добавить проект</button></form></section>`;
 }
 function renderOverview(){
  const el=document.getElementById('v-dash');
