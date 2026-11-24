@@ -1267,6 +1267,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
     </div>
     <div class="sh-foot">
       <button class="btn danger" id="tDelete" type="button">Удалить задачу</button>
+      <button class="btn danger" id="tComplete" type="button">Выполнена</button>
       <button class="btn" id="tCopy" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Копировать в…</button>
       <button class="btn" id="tLead" type="button" hidden>Карточка лида</button>
       <button class="btn" id="tCancel" type="button" hidden>Отмена</button>
@@ -3201,6 +3202,7 @@ function renderTaskEditor(force){
   gcLabel($('#eDateBtn'), t.due || '', t.time || '', 'Без даты');
   renderSubEditor(t);
   $('#eKey').checked = !!t.key; $('#eDone').checked = !!t.done;
+  $('#tComplete').hidden = isNew; $('#tComplete').textContent = t.done ? 'Вернуть в работу' : 'Выполнена';
 }
 document.addEventListener('change', e => {
   if (!editT || !$('#tdrawer').contains(e.target)) return;
@@ -3229,6 +3231,11 @@ document.addEventListener('click', e => {
   if (e.target.id === 'tOk' && editT && editT.draft){ saveDraft(); return; }
   if (e.target.id === 'tScrim' || e.target.id === 'tClose' || e.target.id === 'tOk' || e.target.id === 'tCancel'){ closeTask(); return; }
   if (e.target.id === 'tLead' && editT){ const pid = editT.pid; closeTask(); if (isLead(pid)) openLead(pid); return; }
+  if (e.target.id === 'tComplete' && editT && !editT.draft){
+    const checkbox = $('#eDone'); checkbox.checked = !checkbox.checked;
+    checkbox.dispatchEvent(new Event('change', {bubbles: true}));
+    return;
+  }
   if (e.target.id === 'tDelete' && editT && !editT.draft){
     const {pid, tid} = editT; closeTask();
     saveProjTasks(pid, ts => ts.filter(x => x.id !== tid)); if (inProj()) renderProjectsView(); toast('Задача удалена'); return;
