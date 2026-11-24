@@ -355,3 +355,18 @@ body:has(#v-projects:not([hidden])) #pageTitle .dim{
 .trial-heading,body:has(#v-projects:not([hidden])) #pageTitle{font-size:40px;font-weight:600;letter-spacing:-.035em;line-height:1.05}
 .trial-heading .dim,body:has(#v-projects:not([hidden])) #pageTitle .dim{color:#a3a3a3;background:none;-webkit-text-fill-color:currentColor}
 @media(max-width:640px){.trial-heading,body:has(#v-projects:not([hidden])) #pageTitle{font-size:26px}.month-switch{max-width:100%}.finance-controls .month-switch select{min-width:0}}
+
+.overview{padding:0;background:transparent}
+.monthly-finance .finance-row-label{display:flex;align-items:center;gap:8px;min-width:0}
+.monthly-finance .finance-row-label .finance-edit{flex:1;min-width:0;padding:0}
+.monthly-finance .finance-remove{appearance:none;border:0!important;border-radius:4px;background:transparent!important;box-shadow:none;color:#999;font:inherit;font-size:16px;line-height:1;width:28px;height:28px;padding:0;opacity:0;cursor:pointer}
+.monthly-finance tr:hover .finance-remove,.monthly-finance tr:focus-within .finance-remove,.monthly-finance .finance-remove:focus-visible{opacity:1}
+.monthly-finance .month-switch{display:flex;align-items:center;gap:2px;background:#1d1d1d;border:1px solid #3a3a3a;border-radius:10px;padding:3px}
+.monthly-finance .month-switch button{appearance:none;width:32px;height:32px;padding:0;border:0!important;border-radius:7px;background:transparent!important;box-shadow:none;color:#ccc;font-size:20px;line-height:1}
+.monthly-finance .month-switch button:hover{background:#333!important}
+.monthly-finance .month-switch button:disabled{opacity:.35}
+.monthly-finance .month-switch select{border:0!important;background:transparent!important;box-shadow:none;min-height:32px;color:#eee}
+.trial-heading,body:has(#v-projects:not([hidden])) #pageTitle{font-size:40px;font-weight:600;letter-spacing:-.035em;line-height:1.05}
+.trial-heading .dim,body:has(#v-projects:not([hidden])) #pageTitle .dim{color:#a3a3a3;background:none;-webkit-text-fill-color:currentColor}
+@media(max-width:700px){.overview{padding:0}}
+@media(max-width:640px){.trial-heading,body:has(#v-projects:not([hidden])) #pageTitle{font-size:26px}}
