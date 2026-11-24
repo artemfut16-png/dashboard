@@ -1117,10 +1117,6 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
     <section id="v-list">
       <div class="filters">
         <label class="searchbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="search" id="q" placeholder="Поиск по имени, телефону, региону, заметкам" aria-label="Поиск"></label>
-        <select id="fSort" aria-label="Сортировка">
-          <option value="new">Сначала новые</option>
-          <option value="upd">Недавно изменённые</option>
-        </select>
         <button class="btn primary" id="importOpen" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Добавить лид</button>
       </div>
       <div id="importBox" hidden style="margin-bottom:14px">
@@ -1713,9 +1709,7 @@ function filtered(){
     const hay = [l.name, l.company, l.product, l.region, ...(l.tasks||[]).map(t => t.text), ...(l.history||[]).map(h => h.text || '')].join(' ').toLowerCase();
     return hay.includes(q);
   });
-  if (filt.sort === 'next') arr.sort((a,b) => (a.nextCall || Infinity) - (b.nextCall || Infinity) || sortNew(a,b));
-  else if (filt.sort === 'upd') arr.sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
-  else arr.sort(sortNew);
+  arr.sort(sortNew);
   return arr;
 }
 function renderList(){
@@ -1901,7 +1895,6 @@ document.addEventListener('change', e => {
   if (sel){ setStatus(sel.dataset.statusFor, sel.value); return; }
   if (['fName','fCompany','fPhone','fLeadSource','fProduct','fRegion','fSales','fAvito','fRes'].includes(e.target.id) && openId){ saveClient(openId, e.target.id); return; }
   if (e.target.id === 'dNextInput'){ const v = e.target.value; setNext(openId, v ? new Date(v).getTime() : null); e.target.blur(); return; }
-  if (e.target.id === 'fSort'){ filt.sort = e.target.value; renderList(); return; }
   if (e.target.id === 'importFile'){
     const f = e.target.files[0]; if (!f) return;
     const rd = new FileReader(); rd.onload = () => { $('#importText').value = rd.result; renderImport(); }; rd.readAsText(f, 'utf-8');
