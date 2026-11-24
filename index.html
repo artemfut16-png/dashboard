@@ -1066,7 +1066,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
 <script src="./assets/overview.js"></script>
-<link rel="stylesheet" href="dashboard-theme.css?v=19">
+<link rel="stylesheet" href="dashboard-theme.css?v=20">
 <style>
 #listBody .board .col{padding:0;border:0!important;background:transparent!important;backdrop-filter:none!important}
 .board .col header{box-sizing:border-box;width:100%;padding:8px 12px;border:1px solid #393939;border-radius:10px;background:#191919}
@@ -1087,6 +1087,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 </div>
 <div class="app" id="app">
   <aside class="side" aria-label="Навигация">
+    <button class="iconbtn" id="sideToggle" type="button" aria-label="Свернуть или развернуть меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg></button>
     <button class="sbtn" data-sect="an" aria-current="page" title="Аналитика"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span class="lbl">Аналитика</span></button>
     <button class="sbtn" data-sect="tasks" title="Задачи"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="lbl">Задачи</span></button>
     <button class="sbtn" data-sect="projects" title="Проекты"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg><span class="lbl">Проекты</span></button>
@@ -1100,11 +1101,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
   </aside>
   <div class="sidescrim" id="sideScrim"></div>
   <div class="mainw">
-  <header class="topbar">
-    <button class="iconbtn" id="sideToggle" type="button" aria-label="Свернуть или развернуть меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg></button>
-    <span class="vsep"></span>
-    <nav class="crumbs" aria-label="Путь"><span>Дашборд</span><span>/</span><b id="crumbCur">CRM</b></nav>
-  </header>
+<span id="crumbCur" hidden></span>
+  <button class="iconbtn mobile-menu-toggle" id="mobileMenuToggle" type="button" aria-label="Открыть меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg></button>
   <div class="content">
   <header class="top">
     <div>
@@ -1970,14 +1968,14 @@ function effMonths(){
 }
 function hasData(m){
   if (!m) return false;
-  return ['cold','auto','ref','base'].some(g => m[g] && Object.values(m[g]).some(v => v != null)) || m.fot != null || m.other != null || m.projectCosts != null || m.taxOverride != null || (Array.isArray(m.extraExpenses) && m.extraExpenses.some(e => e.amount != null));
+  return ['cold','auto','ref','base'].some(g => m[g] && Object.values(m[g]).some(v => v != null)) || m.fot != null || m.other != null || m.projectCosts != null || m.autoloadCosts != null || m.aiCosts != null || m.taxOverride != null || (Array.isArray(m.extraExpenses) && m.extraExpenses.some(e => e.amount != null));
 }
 function calc(m){
   const rev = CH.reduce((a, c) => a + (getp(m, c.k + '.rev') || 0), 0);
   const sales = CH.reduce((a, c) => a + (getp(m, c.k + '.sales') || 0), 0);
   const tax = m && m.taxOverride != null ? Number(m.taxOverride) : Math.round(rev * TAX);
   const extra = (m && Array.isArray(m.extraExpenses) ? m.extraExpenses : []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-  const exp = tax + (getp(m, 'fot') || 0) + (getp(m, 'other') || 0) + (getp(m, 'projectCosts') || 0) + (getp(m, 'auto.budget') || 0) + extra;
+  const exp = tax + (getp(m, 'fot') || 0) + (getp(m, 'other') || 0) + (getp(m, 'projectCosts') || 0) + (getp(m, 'autoloadCosts') || 0) + (getp(m, 'aiCosts') || 0) + (getp(m, 'auto.budget') || 0) + extra;
   return {rev, sales, tax, exp, net: rev - exp, avg: sales ? rev / sales : null, margin: rev ? (rev - exp) / rev : null, has: hasData(m)};
 }
 function projStats(p){
@@ -2391,6 +2389,7 @@ $('#sideToggle').addEventListener('click', () => {
   try { localStorage.setItem('sideCollapsed', app.classList.contains('collapsed') ? '1' : '0'); } catch {}
 });
 $('#sideScrim').addEventListener('click', () => $('#app').classList.remove('mopen'));
+$('#mobileMenuToggle').addEventListener('click', () => $('#app').classList.toggle('mopen'));
 
 /* ---------- projects section ---------- */
 const GEN = '__general', AG = '__agency', TD = '__td', CRMG = '__crm';
@@ -3585,5 +3584,5 @@ $('#logoutBtn').addEventListener('click', async () => { await sb.auth.signOut();
 
 <script src="dashboard-calendar.js?v=3" defer></script>
 
-<script src="dashboard-overview.js?v=14" defer></script>
+<script src="dashboard-overview.js?v=15" defer></script>
 <script src="dashboard-dropdowns.js?v=1" defer></script>

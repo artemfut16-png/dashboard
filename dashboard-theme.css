@@ -329,3 +329,16 @@ body:has(#v-projects:not([hidden])) #pageTitle .dim{
 .overview .combined-payments .payplan{margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
 .combined-payments .project-register{margin-top:22px}
 .combined-payments .project-register .scroll{margin-top:0}
+
+.monthly-finance .finance-table th,.monthly-finance .finance-table td{padding:5px 10px;line-height:1.35}
+.monthly-finance .finance-table .finance-divider td{height:10px;padding:0;border:0}
+.monthly-finance .finance-table .finance-divider+tr td{border-top:1px solid #555}
+.monthly-finance .finance-table .finance-cell-input{height:29px}
+.mobile-menu-toggle{display:none}
+.side #sideToggle{margin:0 0 8px 8px;flex:none}
+.app.collapsed .side #sideToggle{margin-left:auto;margin-right:auto}
+@media(max-width:860px){
+ .mobile-menu-toggle{display:inline-grid;place-items:center;position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:12px;z-index:30;background:#151515;border:1px solid #333;border-radius:8px}
+ .content>.top{padding-left:46px}
+ .side #sideToggle{display:none}
+}
