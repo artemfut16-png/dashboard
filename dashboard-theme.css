@@ -300,3 +300,27 @@ body{background:#080808;background-image:none}
 .monthly-finance .finance-edit:focus-visible{outline:1px solid #999}
 .monthly-finance .finance-cell-input{box-sizing:border-box;width:100%;height:36px;padding:6px 8px;border:1px solid #ddd;border-radius:0;background:#111;color:#fff;font:inherit;text-align:inherit}
 @media(max-width:700px){.monthly-finance .finance-table{min-width:0}.monthly-finance .finance-table th,.monthly-finance .finance-table td{white-space:normal;overflow-wrap:anywhere}.monthly-finance .finance-table th:first-child,.monthly-finance .finance-table td:first-child{width:60%}}
+
+.overview .ov-metric > span,
+.overview .ov-panel-head h3,
+.overview .monthly-finance .card-h h2,
+.overview .card-h h2,
+.trial-heading,
+body:has(#v-projects:not([hidden])) #pageTitle{
+  font-size:22px;
+  font-weight:600;
+  letter-spacing:-.02em;
+  line-height:1.15;
+  color:var(--ink);
+}
+.trial-heading .dim,
+body:has(#v-projects:not([hidden])) #pageTitle .dim{
+  color:inherit;
+  background:none;
+  -webkit-text-fill-color:currentColor;
+}
+@media(max-width:700px){
+  .overview .ov-metric > span,.overview .ov-panel-head h3,
+  .overview .card-h h2,.trial-heading,
+  body:has(#v-projects:not([hidden])) #pageTitle{font-size:20px}
+}
