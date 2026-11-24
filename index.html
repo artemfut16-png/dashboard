@@ -3386,21 +3386,20 @@ function placeCal(){
   el.style.top = top + 'px';
   el.style.left = Math.max(12, Math.min(r.right - w, innerWidth - w - 12)) + 'px';
 }
-function renderCal(scrollTo){
-  const m = gc.month, y = m.getFullYear(), mo = m.getMonth(), n = new Date(y, mo + 1, 0).getDate(), t = todayISO();
-  $('#gcMonth').innerHTML = MON_NOM[mo] + (y !== new Date().getFullYear() ? '<small>' + y + '</small>' : '');
-  let s = '';
-  for (let d = 1; d <= n; d++){
-    const dt = new Date(y, mo, d), iso = y + '-' + pad(mo + 1) + '-' + pad(d), wd = dt.getDay();
-    s += `<div class="gc-day${wd === 0 || wd === 6 ? ' we' : ''}"><span>${WD1[wd]}</span><button type="button" data-gc-day="${iso}" class="${iso === gc.date ? 'sel' : ''}${iso === t ? ' today' : ''}">${d}</button></div>`;
-  }
-  const strip = $('#gcStrip');
-  strip.innerHTML = s;
-  document.querySelectorAll('[data-gc-q]').forEach(b => b.classList.toggle('on', !!gc.date && gc.date === ({today: t, tomorrow: isoPlus(1), week: isoPlus(7)})[b.dataset.gcQ]));
-  if (scrollTo){
-    const target = strip.querySelector('.sel') || strip.querySelector('.today') || strip.firstElementChild;
-    if (target){ const c = target.closest('.gc-day'); strip.style.scrollBehavior = 'auto'; strip.scrollLeft = Math.max(0, c.offsetLeft - strip.clientWidth / 2 + c.offsetWidth / 2); strip.style.scrollBehavior = ''; }
-  }
+function renderCal(){
+  const month = gc.month, year = month.getFullYear(), monthIndex = month.getMonth();
+  const today = todayISO();
+  $('#gcMonth').innerHTML = MON_NOM[monthIndex] + '<small>' + year + '</small>';
+  const first = new Date(year, monthIndex, 1);
+  first.setDate(1 - (first.getDay() + 6) % 7);
+  const weekdays = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  const headers = weekdays.map(day => `<span class="gc-weekday">${day}</span>`).join('');
+  const days = Array.from({length: 42}, (_, i) => {
+    const date = new Date(first.getFullYear(), first.getMonth(), first.getDate() + i);
+    const iso = date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+    return `<button type="button" data-gc-day="${iso}" class="gc-date${date.getMonth() !== monthIndex ? ' outside' : ''}${iso === gc.date ? ' sel' : ''}${iso === today ? ' today' : ''}" aria-label="${esc(dayTitle(iso))}">${date.getDate()}</button>`;
+  }).join('');
+  $('#gcStrip').innerHTML = headers + days;
 }
 document.addEventListener('click', e => {
   const fb = e.target.closest && e.target.closest('[data-gc-form]');
@@ -3432,7 +3431,7 @@ document.addEventListener('click', e => {
   const cal = $('#gcal');
   if (!cal.contains(e.target)){ closeCal(); return; }
   const day = e.target.closest('[data-gc-day]');
-  if (day){ gc.date = gc.date === day.dataset.gcDay ? '' : day.dataset.gcDay; renderCal(false); return; }
+  if (day){ gc.date = gc.date === day.dataset.gcDay ? '' : day.dataset.gcDay; const d = isoDate(day.dataset.gcDay); gc.month = new Date(d.getFullYear(), d.getMonth(), 1); renderCal(); return; }
   const q = e.target.closest('[data-gc-q]');
   if (q){ const iso = ({today: todayISO(), tomorrow: isoPlus(1), week: isoPlus(7)})[q.dataset.gcQ]; gc.date = iso; const d = isoDate(iso); gc.month = new Date(d.getFullYear(), d.getMonth(), 1); renderCal(true); return; }
   const nav = e.target.closest('[data-gc-nav]');
