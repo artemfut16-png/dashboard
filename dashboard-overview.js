@@ -26,11 +26,27 @@ function monthlyFinanceHTML(){
   ['Выручка от новых проектов',revenue.newProjects],
   ['Выручка от проектов с базы',revenue.existing]
  ].map(([label,value])=>`<tr><td>${label}</td><td>${rub(value)}</td></tr>`).join('');
+ const budget=getp(m,'auto.budget'), leads=getp(m,'auto.leads'), trials=getp(m,'auto.td'), deals=getp(m,'auto.sales'), cycle=getp(m,'auto.cycleDays');
+ const editMetric=(label,key,value)=>`<tr><td>${label}</td><td class="finance-edit finance-amount" data-finance-field="${key}" data-value="${value==null?'':esc(String(value))}" tabindex="0" title="Изменить значение">${value==null?'—':esc(nf.format(value))}</td></tr>`;
+ const metricValue=(label,value)=>`<tr><td>${label}</td><td>${value}</td></tr>`;
+ const metricRows=[
+  editMetric('Рекламный бюджет','auto.budget',budget),
+  editMetric('Лиды','auto.leads',leads),
+  metricValue('Стоимость лида',budget!=null && leads>0 ? rub(budget/leads) : '—'),
+  metricValue('Конверсия (лид → тест-драйв)',leads>0 && trials!=null ? pct(trials/leads) : '—'),
+  editMetric('Тест-драйвы','auto.td',trials),
+  metricValue('Стоимость тест-драйва',budget!=null && trials>0 ? rub(budget/trials) : '—'),
+  metricValue('Конверсия (тест-драйв → сделка)',trials>0 && deals!=null ? pct(deals/trials) : '—'),
+  editMetric('Сделки (новые клиенты)','auto.sales',deals),
+  metricValue('Стоимость сделки (CAC)',budget!=null && deals>0 ? rub(budget/deals) : '—'),
+  metricValue('Конверсия (лид → сделка)',leads>0 && deals!=null ? pct(deals/leads) : '—'),
+  editMetric('Средний цикл (лид → сделка), дней','auto.cycleDays',cycle)
+ ].join('');
  const rows=fields.map(field=>{
    const value=field.key==='extra' ? (m.extraExpenses || []).find(item=>item.name===field.name)?.amount : getp(m,field.key);
    return `<tr><td class="finance-edit" data-finance-name="${esc(field.key)}" data-original-name="${esc(field.name)}" tabindex="0" title="Изменить название">${esc(field.name)}</td><td class="finance-edit finance-amount" data-finance-field="${esc(field.key)}" data-extra-name="${esc(field.name)}" data-value="${value==null?'':esc(String(value))}" tabindex="0" title="Изменить сумму">${value==null?'—':esc(nf.format(value))}</td></tr>`;
  }).join('');
- return `<section class="card monthly-finance"><div class="card-h"><h2>Финансы по месяцам</h2><div class="finance-controls"><select data-finance-month aria-label="Месяц">${MON_FULL.map((name,i)=>`<option value="${i}"${i===financeMonth?' selected':''}>${name} ${YEAR}</option>`).join('')}</select><button class="btn" type="button" data-finance-add>Добавить статью</button></div></div><div class="scroll"><table class="dt finance-table"><thead><tr><th>Статья</th><th>Сумма, ₽</th></tr></thead><tbody><tr><td>Налог</td><td class="finance-edit finance-amount" data-finance-field="taxOverride" data-value="${m.taxOverride == null ? '' : esc(String(m.taxOverride))}" tabindex="0" title="Изменить сумму налога">${rub(result.tax)}</td></tr>${rows}<tr class="tot"><td>Итого расходов</td><td>${rub(result.exp)} · ${result.rev ? pct(result.exp/result.rev) : '—'}</td></tr>${revenueRows}<tr><td>Выручка</td><td>${rub(result.rev)}</td></tr><tr class="tot"><td>Чистая прибыль</td><td>${rub(result.net)}</td></tr></tbody></table></div></section>`;
+ return `<section class="card monthly-finance"><div class="card-h"><h2>Финансы по месяцам</h2><div class="finance-controls"><select data-finance-month aria-label="Месяц">${MON_FULL.map((name,i)=>`<option value="${i}"${i===financeMonth?' selected':''}>${name} ${YEAR}</option>`).join('')}</select><button class="btn" type="button" data-finance-add>Добавить статью</button></div></div><div class="scroll"><table class="dt finance-table"><thead><tr><th>Статья</th><th>Сумма, ₽</th></tr></thead><tbody><tr><td>Налог</td><td class="finance-edit finance-amount" data-finance-field="taxOverride" data-value="${m.taxOverride == null ? '' : esc(String(m.taxOverride))}" tabindex="0" title="Изменить сумму налога">${rub(result.tax)}</td></tr>${rows}<tr class="tot"><td>Итого расходов</td><td>${rub(result.exp)} · ${result.rev ? pct(result.exp/result.rev) : '—'}</td></tr>${revenueRows}<tr><td>Выручка</td><td>${rub(result.rev)}</td></tr><tr class="tot"><td>Чистая прибыль</td><td>${rub(result.net)}</td></tr>${metricRows}</tbody></table></div></section>`;
 }
 function saveFinanceChanges(change){
  const next=JSON.parse(JSON.stringify(months()));
@@ -75,7 +91,7 @@ function editFinanceCell(cell){
      const existing=items.find(item=>item.name===cell.dataset.extraName);
      if(existing)existing.amount=value;else items.push({name:cell.dataset.extraName,amount:value});
      month.extraExpenses=items;
-    }else if(field==='auto.budget'){month.auto=month.auto || {};month.auto.budget=value;}
+    }else if(field.startsWith('auto.')){month.auto=month.auto || {};month.auto[field.slice(5)]=value;}
     else month[field]=value;
    });
   }
