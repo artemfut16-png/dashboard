@@ -186,3 +186,5 @@ body{background:#080808;background-image:none}
 .dash-dropdown-option:hover,.dash-dropdown-option:focus-visible{background:#343434;outline:none}
 .dash-dropdown-option[aria-selected="true"]{background:#303030;color:#fff}
 .dash-dropdown-option:disabled{opacity:.4;cursor:default}
+
+.metric-content{order:0}.metric-months{order:1}
