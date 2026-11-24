@@ -48,7 +48,8 @@ body{font-size:14px;letter-spacing:0;background:var(--bg)}
 @media(max-width:860px){.app.collapsed .workspace-calendar{display:block}}
 @media(max-width:640px){.calendar-agenda{padding:16px}.agenda-layout{grid-template-columns:1fr;gap:18px}.agenda-date{display:flex;align-items:center;gap:20px}.agenda-date strong{font-size:64px}.agenda-event{grid-template-columns:70px minmax(0,1fr) 16px;gap:10px}.agenda-heading .btn{font-size:11px;padding-inline:12px}}
 ::selection{background:#dedede;color:#111}
-*{scrollbar-width:thin;scrollbar-color:#464646 #111}
+*{scrollbar-width:none}
+*::-webkit-scrollbar{display:none;width:0;height:0}
 input,textarea{caret-color:var(--ink)}
 .app{--sbw:228px}
 .side{background:#0c0c0c;padding:20px 12px;gap:5px;border-right-color:#222;overflow-y:auto}
