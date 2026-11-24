@@ -237,3 +237,6 @@ body{background:#080808;background-image:none}
 .tboard .rlist li[data-tid] .rt{font-size:16px;font-weight:400}
 .tboard .rlist li[data-tid] .rs{margin-left:auto;color:#999}
 .tboard .rlist li.empty{border:0;padding-left:40px}
+
+.tboard .rlist li[data-tid] > .rmove,.tboard .rlist li[data-tid] > .rcopy,.tboard .rlist li[data-tid] > .rflag,.tboard .rlist li[data-tid] > .tdel{display:none}
+.tboard > .rlist{background:transparent;border:0;padding:0;margin-top:20px}
