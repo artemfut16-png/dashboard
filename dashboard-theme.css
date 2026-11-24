@@ -389,3 +389,11 @@ body:has(#v-projects:not([hidden])) #pageTitle .dim{
 .overview .ov-grid .finance-table th:first-child,.overview .ov-grid .finance-table td:first-child{width:70%}
 .overview .ov-grid .finance-table th,.overview .ov-grid .finance-table td{white-space:normal;overflow-wrap:anywhere}
 @media(max-width:700px){.overview .ov-grid .monthly-finance{max-height:380px}.overview .ov-grid .finance-controls{width:auto}}
+
+.funnel-summary{margin:0 0 18px}
+.funnel-summary-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.funnel-summary-item{min-width:0;display:flex;flex-direction:column;gap:12px;background:#151515;border-radius:12px;padding:18px 20px}
+.funnel-summary-item span{font-size:14px;font-weight:600;color:#ededed;line-height:1.25}
+.funnel-summary-item strong{font-size:25px;line-height:1.1;font-weight:600;overflow-wrap:anywhere}
+@media(max-width:1100px){.funnel-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.funnel-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.funnel-summary-item{padding:14px}.funnel-summary-item span{font-size:13px}.funnel-summary-item strong{font-size:22px}}
