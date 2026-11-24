@@ -321,6 +321,6 @@ body:has(#v-projects:not([hidden])) #pageTitle .dim{
 }
 @media(max-width:700px){
   .overview .ov-metric > span,.overview .ov-panel-head h3,
-  .overview .card-h h2,.trial-heading,
+  .overview .card-h h2,.overview .payplan .rb-h h2,.trial-heading,
   body:has(#v-projects:not([hidden])) #pageTitle{font-size:20px}
 }
