@@ -167,3 +167,5 @@ body{background:#080808;background-image:none}
 .overview .ov-metrics{grid-template-columns:repeat(3,minmax(0,1fr))!important}.metric-graph{bottom:0}.pst[data-project-status]{cursor:pointer;border:0;max-width:140px} @media(max-width:700px){.overview .ov-metrics{grid-template-columns:1fr!important}}
 
 .gc-seg,.gc-time{display:none!important}.gc-top{justify-content:flex-end}.gc-foot{justify-content:flex-end}select{color-scheme:dark}select option{background:#1b1b1b;color:#f1f1f1}.side svg,.btn svg,.pfilter svg{stroke:currentColor;stroke-width:1.7}
+
+.project-group .psec{font-size:22px;font-weight:700;letter-spacing:-.025em;color:#f4f4f4;margin-bottom:18px}.project-group .psec .num{font-size:15px;color:#a8a8a8;margin-left:6px}
