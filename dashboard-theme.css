@@ -278,3 +278,16 @@ body{background:#080808;background-image:none}
   .profit-point:focus .profit-tooltip{display:block}
   .profit-month-labels{font-size:9px}
 }
+
+#tdrawer label.tcheck:has(#eDone){display:none!important}
+.monthly-finance{margin-top:18px}
+.finance-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.finance-controls select{min-height:40px;max-width:200px}
+.monthly-finance .scroll{margin-top:14px}
+.monthly-finance .dt{min-width:1000px}
+.monthly-finance .dt th,.monthly-finance .dt td{text-align:left;white-space:nowrap;padding:12px}
+.finance-input{box-sizing:border-box;width:120px;min-height:38px;padding:8px 10px;border:1px solid #3b3b3b;border-radius:8px;background:#1b1b1b;color:#eee;font:inherit}
+.board .col header{background:#242424!important;border-color:#555!important}
+.board .col header .pill{color:#f4f4f4!important;font-size:14px!important;font-weight:700!important}
+.board .col header .num{color:#dedede!important;font-weight:600}
+@media(max-width:700px){.monthly-finance .card-h{align-items:flex-start;gap:12px;flex-wrap:wrap}.finance-controls{width:100%}.finance-controls select{flex:1;min-width:0}}
