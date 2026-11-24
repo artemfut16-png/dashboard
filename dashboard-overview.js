@@ -80,7 +80,7 @@ function editFinanceCell(cell){
   if(event.key==='Escape'){cancelled=true;input.blur();}
  });
  input.addEventListener('blur',()=>{
-  if(cancelled){renderDash();return;}
+  if(cancelled || input.value === (initial || '')){renderDash();return;}
   if(isName){
    const label=input.value.trim(), old=cell.dataset.originalName, key=cell.dataset.financeName;
    if(!label || label===old){renderDash();return;}
