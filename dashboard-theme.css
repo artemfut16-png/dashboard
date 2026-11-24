@@ -227,3 +227,13 @@ body{background:#080808;background-image:none}
 #gcal .gc-date.outside{color:#555}
 #gcal .gc-date.sel{background:#eee;color:#111}
 #gcal .gc-foot{margin-top:16px}
+
+.tboard .rblock.bk,.tboard .rblock.bk.day,.tboard .rblock.bk.today{background:transparent;border:0;border-radius:0;box-shadow:none;padding:18px 0;margin:0 0 16px}
+.tboard .rblock.bk.today .rb-h h2,.tboard .rblock.bk.day .rb-h h2{color:#f2f2f2}
+.tboard .rlist li[data-tid]{position:relative;border:0;align-items:center;gap:16px;padding:13px 0}
+.tboard .rlist li[data-tid] .grip{position:absolute;left:-12px}
+.tboard .rlist li[data-tid] input.rc{appearance:none;-webkit-appearance:none;border:1.5px solid #e5e5e5;border-radius:50%;width:24px;height:24px;min-width:24px;background:transparent;padding:0}
+.tboard .rlist li[data-tid] input.rc:checked{background:#eee}
+.tboard .rlist li[data-tid] .rt{font-size:16px;font-weight:400}
+.tboard .rlist li[data-tid] .rs{margin-left:auto;color:#999}
+.tboard .rlist li.empty{border:0;padding-left:40px}
