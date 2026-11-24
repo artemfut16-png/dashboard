@@ -324,3 +324,8 @@ body:has(#v-projects:not([hidden])) #pageTitle .dim{
   .overview .card-h h2,.overview .payplan .rb-h h2,.trial-heading,
   body:has(#v-projects:not([hidden])) #pageTitle{font-size:20px}
 }
+
+.combined-payments{margin-top:18px}
+.overview .combined-payments .payplan{margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.combined-payments .project-register{margin-top:22px}
+.combined-payments .project-register .scroll{margin-top:0}
