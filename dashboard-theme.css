@@ -381,3 +381,11 @@ body:has(#v-projects:not([hidden])) #pageTitle .dim{
 
 .monthly-finance .finance-table tr.tot td{border-top:0}
 .monthly-finance .finance-table .finance-divider+tr td{border-top:1px solid #3b3b3b}
+
+.overview .ov-grid{align-items:stretch}
+.overview .ov-grid .monthly-finance{margin:0;min-width:0;max-height:390px;display:flex;flex-direction:column}
+.overview .ov-grid .monthly-finance .card-h{align-items:center;gap:10px;margin-bottom:8px}
+.overview .ov-grid .monthly-finance .scroll{overflow:auto;overscroll-behavior:contain;min-height:0;flex:1;-webkit-overflow-scrolling:touch}
+.overview .ov-grid .finance-table th:first-child,.overview .ov-grid .finance-table td:first-child{width:70%}
+.overview .ov-grid .finance-table th,.overview .ov-grid .finance-table td{white-space:normal;overflow-wrap:anywhere}
+@media(max-width:700px){.overview .ov-grid .monthly-finance{max-height:380px}.overview .ov-grid .finance-controls{width:auto}}
