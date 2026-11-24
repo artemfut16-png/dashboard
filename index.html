@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/glass-32.png">
-<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/glass-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/bars-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/bars-180.png">
 <link rel="manifest" href="dashboard.webmanifest">
 <meta name="theme-color" content="#000000">
 <title>Дашборд</title>
@@ -760,6 +760,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .tl-row:last-of-type{border-bottom:0}
 .tl-col{flex:none;width:var(--col);position:sticky;left:0;z-index:6;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;justify-content:center;gap:2px;padding:0 14px;min-width:0}
 .tl-head .tl-col{font-size:12.5px;font-weight:600;color:var(--muted)}
+.payment-size{display:block;width:100%;height:5px;appearance:none;border:none;border-radius:4px;background:#343434}.payment-size::-webkit-meter-bar{background:#343434;border:0;border-radius:4px}.payment-size::-webkit-meter-optimum-value{background:var(--pc);border-radius:4px}.payment-size::-moz-meter-bar{background:var(--pc)}
 .tl-col b{font-size:14px;font-weight:600;color:var(--pc);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tl-col span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .tl-axis,.tl-track{position:relative;flex:1;min-width:0}
@@ -1086,7 +1087,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 </div>
 <div class="app" id="app">
   <aside class="side" aria-label="Навигация">
-    <div class="brand"><svg width="38" height="34" viewBox="10 12 44 40" aria-label="Логотип" role="img"><defs><clipPath id="logo-bars"><rect x="10.5" y="33" width="13.5" height="18" rx="3"/><rect x="25" y="23" width="13.4" height="28" rx="3"/><rect x="39.6" y="13" width="13.6" height="38" rx="3"/></clipPath></defs><image href="assets/icons/glass-64.png" width="64" height="64" clip-path="url(#logo-bars)"/></svg></div>
+    <div class="brand"><img src="assets/icons/bars-64.png" width="38" height="38" alt="Логотип"></div>
     <div class="navlbl">Разделы</div>
     <button class="sbtn" data-sect="an" aria-current="page" title="Аналитика"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span class="lbl">Аналитика</span></button>
     <button class="sbtn" data-sect="tasks" title="Задачи"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="lbl">Задачи</span></button>
@@ -2650,6 +2651,7 @@ let paySel = null, payR = {start: new Date(), n: 120};
 function payPlanHTML(srcs){
   const items = srcs.filter(x => projects.has(x.pid)).map(x => ({...x, p: projects.get(x.pid)}));
   const dated = items.filter(x => x.p.payDate);
+  const largestPayment = Math.max(1, ...dated.map(x => Number(x.p.check) || 0));
   const now = new Date(), t0 = dayStart(0);
   let start = new Date(now.getFullYear(), now.getMonth(), 1), end = new Date(now.getFullYear(), now.getMonth() + 4, 1);
   dated.forEach(x => {
@@ -2676,7 +2678,7 @@ function payPlanHTML(srcs){
       const when = days < 0 ? 'просрочено ' + (-days) + ' дн.' : days === 0 ? 'сегодня' : days === 1 ? 'завтра' : 'через ' + days + ' дн.';
       slot = `<button type="button" class="tl-slot${paySel === p.id ? ' sel' : ''}${days < 0 ? ' over' : ''}" data-payslot="${esc(p.id)}" style="left:${pct(frac(d))}" title="Перетащите, чтобы перенести дату. Нажмите, чтобы отметить оплату."><b>${p.check ? rub(p.check) : 'Оплата'}</b><span class="tl-d">${d.getDate()} ${MON_GEN[d.getMonth()]} · ${when}</span></button>`;
     }
-    return `<div class="tl-row" style="--pc:${x.color}"><div class="tl-col"><b title="${esc(p.name)}">${esc(p.name)}</b><span>${p.payDate ? dayTitle(p.payDate) : "Дата не назначена"} · ${p.check ? rub(p.check) : '—'}</span></div><div class="tl-track${p.payDate ? '' : ' empty'}" data-paytrack="${esc(p.id)}">${grid}${slot}</div></div>`;
+    return `<div class="tl-row" style="--pc:${x.color}"><div class="tl-col"><b title="${esc(p.name)}">${esc(p.name)}</b><span>${p.payDate ? dayTitle(p.payDate) : "Дата не назначена"} · ${p.check ? rub(p.check) : '—'}</span>${p.payDate && p.check > 0 ? `<meter class="payment-size" min="0" max="${largestPayment}" value="${Number(p.check)}" aria-label="Сумма оплаты относительно крупнейшей"></meter>` : ''}</div><div class="tl-track${p.payDate ? '' : ' empty'}" data-paytrack="${esc(p.id)}">${grid}${slot}</div></div>`;
   }).join('');
   const total = dated.reduce((a, x) => a + (x.p.check || 0), 0);
   const byMonth = {};

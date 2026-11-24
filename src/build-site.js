@@ -145,8 +145,8 @@ const out = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/glass-32.png">
-<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/glass-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/bars-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/bars-180.png">
 <link rel="manifest" href="dashboard.webmanifest">
 <meta name="theme-color" content="#000000">
 <title>Дашборд</title>
