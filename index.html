@@ -1066,7 +1066,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
 <script src="./assets/overview.js"></script>
-<link rel="stylesheet" href="dashboard-theme.css?v=7">
+<link rel="stylesheet" href="dashboard-theme.css?v=8">
 <style>
 #listBody .board .col{padding:0;border:0!important;background:transparent!important;backdrop-filter:none!important}
 .board .col header{box-sizing:border-box;width:100%;padding:8px 12px;border:1px solid #393939;border-radius:10px;background:#191919}
@@ -2570,7 +2570,7 @@ function renderProjectsView(){
       srcs.map(x => `<button class="fchip" style="--pc:${x.color}" data-pfilter="${esc(x.pid)}" aria-pressed="${pFilter === x.pid}"><i></i>${esc(x.name)}</button>`).join(''),
   });
   renderCrmBoard();
-  elP.innerHTML = `<section class="ov-panel project-group"><div class="psec" style="margin-top:0">Проекты в работе <span class="num">${srcs.filter(x => projects.has(x.pid) && projects.get(x.pid).status !== 'trial').length}</span></div>
+  elP.innerHTML = `<section class="ov-panel project-group">
     <div class="pinfo">${srcs.filter(x => projects.has(x.pid) && projects.get(x.pid).status !== 'trial').map(x => { const p = projects.get(x.pid), st = projStats(p);
       return `<div class="pi" style="--pc:${x.color}"><div class="pi-h"><b title="${esc(p.name)}">${esc(p.name)}</b><button class="pill pst active" data-ptoggle="${esc(p.id)}" title="Перевести в «Ушёл»">В работе</button></div>
         <div class="pc-meta"><span>Чек <b>${p.check ? rub(p.check) : '—'}</b></span><span>Оплачено <b>${st.total ? rub(st.total) : '—'}</b></span><span>Срок <b>${st.life || '—'}</b> мес.</span>${p.payDate ? `<span>Оплата <b>${dueInfo(p.payDate).label}</b></span>` : ''}</div>${projLinksHTML(p)}</div>`; }).join('')}</div></section><section class="ov-panel project-group">${testDrivesHTML()}</section>`;
@@ -2890,7 +2890,7 @@ document.addEventListener('click', e => {
 function testDrivesHTML(){
   const trialProjects = projList().filter(p => p.status === 'trial');
   const list = all().filter(l => l.status === 'td' && !trialProjects.some(p => p.name && (l.company || l.name || '').trim().toLowerCase() === p.name.trim().toLowerCase())).sort(sortNew);
-  const head = `<div class="psec">Тест-драйвы в работе <span class="num">${list.length + trialProjects.length}</span></div>`;
+  const head = `<h1 class="trial-heading">Тест-драйвы <span class="dim">в работе</span></h1>`;
   const projectCards = trialProjects.map(p => `<div class="pi tdl"><div class="pi-h"><b>${esc(p.name)}</b><span class="pill s-td">Тест-драйв</span></div>${projLinksHTML(p)}</div>`).join('');
   if (!list.length && !trialProjects.length) return head + '<div class="empty-state">Пока нет лидов на стадии «Тест-драйв продан». Как только лид попадёт в эту колонку CRM, он появится здесь.</div>';
   return head + `<div class="pinfo">${projectCards}${list.map(l => {
