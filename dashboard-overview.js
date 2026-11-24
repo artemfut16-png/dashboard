@@ -1,121 +1,105 @@
 let financeMonth = new Date().getFullYear() === YEAR ? new Date().getMonth() : 11;
-const financeDefaults = [
- {name:'Расходы на автозагрузку',key:'autoloadCosts'},
- {name:'Расходы на нейросети',key:'aiCosts'},
- {name:'Зарплата тех специалистов',key:'fot'}
+const financeRows = [
+ {id:'budgetFunnel',label:'Рекламный бюджет',source:'auto.budget'},
+ {id:'leads',label:'Лиды',source:'auto.leads'},
+ {id:'leadCost',label:'Стоимость лида'},
+ {id:'leadTrialRate',label:'Конверсия (лид → тест-драйв)'},
+ {id:'trials',label:'Тест-драйвы',source:'auto.td'},
+ {id:'trialCost',label:'Стоимость тест-драйва'},
+ {id:'trialDealRate',label:'Конверсия (тест-драйв → сделка)'},
+ {id:'deals',label:'Сделки',source:'auto.sales'},
+ {id:'cac',label:'Стоимость сделки (CAC)'},
+ {id:'leadDealRate',label:'Конверсия (лид → сделка)'},
+ {id:'cycle',label:'Средний цикл (лид → сделка), дней',source:'auto.cycleDays'},
+ {id:'trialRevenue',label:'Выручка от тест-драйвов'},
+ {id:'newRevenue',label:'Выручка от новых проектов'},
+ {id:'renewals',label:'Продление проектов по базе',group:true},
+ {id:'churn',label:'Отток проектов по базе',source:'base.churn'},
+ {id:'baseRevenue',label:'Выручка по проектам с базы'},
+ {id:'tax',label:'Налог',source:'taxOverride',group:true},
+ {id:'autoload',label:'Расходы на автозагрузку',source:'autoloadCosts',expense:true},
+ {id:'ai',label:'Расходы на нейросети',source:'aiCosts',expense:true},
+ {id:'salary',label:'Зарплата тех специалистов',source:'fot',expense:true},
+ {id:'projectCosts',label:'Расходы на проект',source:'projectCosts',legacy:true,expense:true},
+ {id:'other',label:'Прочие расходы',source:'other',legacy:true,expense:true},
+ {id:'budgetExpense',label:'Рекламный бюджет',source:'auto.budget',expense:true},
+ {id:'totalExpenses',label:'Итого расходов',total:true},
+ {id:'totalRevenue',label:'Итого выручка',group:true},
+ {id:'netProfit',label:'Чистая прибыль',total:true}
 ];
-const legacyExpenseFields = [
- {name:'Расходы на проект',key:'projectCosts'},
- {name:'Прочие расходы',key:'other'}
-];
-function financeFields(raw){
+function getFinanceRows(raw){
  const labels=(raw[0] && raw[0].financeLabels) || {};
- const legacy=legacyExpenseFields.filter(field=>labels[field.key] || raw.some(month=>getp(month,field.key)!=null));
- const extras=[...new Set(raw.flatMap(month=>(month && Array.isArray(month.extraExpenses) ? month.extraExpenses : []).map(item=>item.name)))];
- return financeDefaults.concat(legacy).map(field=>({...field,name:labels[field.key] || field.name})).concat(extras.map(name=>({name,key:'extra'})));
+ const rows=financeRows.filter(row=>!row.legacy || labels[row.source] || raw.some(month=>getp(month,row.source)!=null));
+ const extraNames=[...new Set(raw.flatMap(month=>(month && Array.isArray(month.extraExpenses)?month.extraExpenses:[]).map(item=>item.name)))];
+ const existing=new Set(rows.map(row=>(labels[row.source] || row.label).trim().toLocaleLowerCase()));
+ const extraRows=extraNames.filter(name=>!existing.has(name.trim().toLocaleLowerCase()) || raw.some(month=>(month?.extraExpenses || []).some(item=>item.name===name && item.amount!=null))).map(name=>({id:'extra:'+name,label:name,extra:name,expense:true}));
+ const at=rows.findIndex(row=>row.id==='budgetExpense');
+ rows.splice(at,0,...extraRows);
+ return rows;
 }
 function monthlyFinanceHTML(){
- const raw=months(), m=raw[financeMonth] || {}, result=calc(effMonths()[financeMonth]);
- const budget=getp(m,'auto.budget'), leads=getp(m,'auto.leads'), trials=getp(m,'auto.td'), deals=getp(m,'auto.sales'), cycle=getp(m,'auto.cycleDays');
- const editable=(label,key,value,extra='')=>`<tr><td>${esc(label)}</td><td class="finance-edit finance-amount" data-finance-field="${esc(key)}" data-extra-name="${esc(extra)}" data-value="${value==null?'':esc(String(value))}" tabindex="0" title="Изменить значение">${value==null?'—':esc(nf.format(value))}</td></tr>`;
- const readonly=(label,value)=>`<tr><td>${esc(label)}</td><td>${value}</td></tr>`;
- const divider=()=>'<tr class="finance-divider" aria-hidden="true"><td colspan="2"></td></tr>';
- const revenue={trial:0,newProjects:0,existing:0,renewals:0};
- projects.forEach(project=>{
-  const payments=project.pay || [], amount=Number(payments[financeMonth]) || 0;
-  if(amount<=0)return;
-  if(project.status==='trial')revenue.trial+=amount;
-  else if(payments.slice(0,financeMonth).some(value=>Number(value)>0)){revenue.existing+=amount;revenue.renewals++;}
-  else revenue.newProjects+=amount;
- });
- const funnel=[
-  editable('Рекламный бюджет','auto.budget',budget),
-  editable('Лиды','auto.leads',leads),
-  readonly('Стоимость лида',budget!=null && leads>0 ? rub(budget/leads) : '—'),
-  readonly('Конверсия (лид → тест-драйв)',leads>0 && trials!=null ? pct(trials/leads) : '—'),
-  editable('Тест-драйвы','auto.td',trials),
-  readonly('Стоимость тест-драйва',budget!=null && trials>0 ? rub(budget/trials) : '—'),
-  readonly('Конверсия (тест-драйв → сделка)',trials>0 && deals!=null ? pct(deals/trials) : '—'),
-  editable('Сделки','auto.sales',deals),
-  readonly('Стоимость сделки (CAC)',budget!=null && deals>0 ? rub(budget/deals) : '—'),
-  readonly('Конверсия (лид → сделка)',leads>0 && deals!=null ? pct(deals/leads) : '—'),
-  editable('Средний цикл (лид → сделка), дней','auto.cycleDays',cycle),
-  readonly('Выручка от тест-драйвов',rub(revenue.trial)),
-  readonly('Выручка от новых проектов',rub(revenue.newProjects))
- ].join('');
- const churn=getp(m,'base.churn');
- const baseRows=[
-  readonly('Продление проектов по базе',String(revenue.renewals)),
-  editable('Отток проектов по базе','base.churn',churn==null ? null : Math.abs(churn)),
-  readonly('Выручка по проектам с базы',rub(revenue.existing))
- ].join('');
- const expenseRows=financeFields(raw).map(field=>{
-  const value=field.key==='extra' ? (m.extraExpenses || []).find(item=>item.name===field.name)?.amount : getp(m,field.key);
-  return `<tr><td class="finance-edit" data-finance-name="${esc(field.key)}" data-original-name="${esc(field.name)}" tabindex="0" title="Изменить название">${esc(field.name)}</td><td class="finance-edit finance-amount" data-finance-field="${esc(field.key)}" data-extra-name="${esc(field.name)}" data-value="${value==null?'':esc(String(value))}" tabindex="0" title="Изменить сумму">${value==null?'—':esc(nf.format(value))}</td></tr>`;
+ const raw=months(), month=raw[financeMonth] || {}, meta=raw[0] || {};
+ const labels=meta.reportLabels || {}, hidden=meta.reportHidden || [], legacyLabels=meta.financeLabels || {};
+ const rows=getFinanceRows(raw).filter(row=>!hidden.includes(row.id)).map(row=>{
+  const label=labels[row.id] || (row.source && legacyLabels[row.source]) || row.label;
+  let value;
+  if(row.extra)value=(month.extraExpenses || []).find(item=>item.name===row.extra)?.amount;
+  else if(row.source)value=getp(month,row.source);
+  else value=(month.manualFinance || {})[row.id];
+  if(row.id==='churn' && value!=null)value=Math.abs(value);
+  return `${row.group?'<tr class="finance-divider" aria-hidden="true"><td colspan="2"></td></tr>':''}<tr class="${row.total?'tot':''}"><td><div class="finance-row-label"><span class="finance-edit" data-report-name="${esc(row.id)}" data-value="${esc(label)}" tabindex="0" title="Изменить название">${esc(label)}</span><button type="button" class="finance-remove" data-report-remove="${esc(row.id)}" aria-label="Удалить пункт ${esc(label)}">×</button></div></td><td class="finance-edit finance-amount" data-report-value="${esc(row.id)}" data-value="${value==null?'':esc(String(value))}" tabindex="0" title="Изменить значение">${value==null?'':esc(nf.format(value))}</td></tr>`;
  }).join('');
- const tax=editable('Налог','taxOverride',m.taxOverride==null?result.tax:m.taxOverride);
- return `<section class="card monthly-finance"><div class="card-h"><h2>Финансы по месяцам</h2><div class="finance-controls"><select data-finance-month aria-label="Месяц">${MON_FULL.map((name,i)=>`<option value="${i}"${i===financeMonth?' selected':''}>${name} ${YEAR}</option>`).join('')}</select></div></div><div class="scroll"><table class="dt finance-table"><thead><tr><th>Статья</th><th>Значение</th></tr></thead><tbody>${funnel}${divider()}${baseRows}${divider()}${tax}${expenseRows}${editable('Рекламный бюджет','auto.budget',budget)}<tr class="tot"><td>Итого расходов</td><td>${rub(result.exp)} · ${result.rev ? pct(result.exp/result.rev) : '—'}</td></tr>${divider()}<tr><td>Итого выручка</td><td>${rub(result.rev)}</td></tr><tr class="tot"><td>Чистая прибыль</td><td>${rub(result.net)}</td></tr></tbody></table></div></section>`;
+ return `<section class="card monthly-finance"><div class="card-h"><h2>Показатели за ${MON_FULL[financeMonth].toLowerCase()}</h2><div class="finance-controls"><div class="month-switch"><button type="button" data-finance-step="-1" aria-label="Предыдущий месяц" ${financeMonth===0?'disabled':''}>‹</button><select data-finance-month aria-label="Месяц">${MON_FULL.map((name,i)=>`<option value="${i}"${i===financeMonth?' selected':''}>${name} ${YEAR}</option>`).join('')}</select><button type="button" data-finance-step="1" aria-label="Следующий месяц" ${financeMonth===11?'disabled':''}>›</button></div></div></div><div class="scroll"><table class="dt finance-table"><thead><tr><th>Показатель</th><th>Значение</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
 function saveFinanceChanges(change){
  const next=JSON.parse(JSON.stringify(months()));
- change(next);
- fin=next;
+ change(next);fin=next;
  write('__fin',()=>db.doc('dash/y'+YEAR).set({year:YEAR,months:next}));
  renderDash();
 }
 function editFinanceCell(cell){
  if(cell.querySelector('input'))return;
- const isName=cell.hasAttribute('data-finance-name');
- const initial=isName ? cell.dataset.originalName : cell.dataset.value;
+ const isName=cell.hasAttribute('data-report-name'), id=isName?cell.dataset.reportName:cell.dataset.reportValue, initial=cell.dataset.value || '';
  const input=document.createElement('input');
- input.className='finance-cell-input';
- input.type='text';
- input.value=initial || '';
- input.setAttribute('aria-label',isName?'Название статьи':'Сумма расхода');
+ input.className='finance-cell-input';input.type='text';input.value=initial;
+ input.setAttribute('aria-label',isName?'Название показателя':'Значение');
  if(!isName)input.inputMode='decimal';
  cell.replaceChildren(input);input.focus();input.select();
  let cancelled=false;
- input.addEventListener('keydown',event=>{
-  if(event.key==='Enter'){event.preventDefault();input.blur();}
-  if(event.key==='Escape'){cancelled=true;input.blur();}
- });
+ input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();input.blur();}if(event.key==='Escape'){cancelled=true;input.blur();}});
  input.addEventListener('blur',()=>{
-  if(cancelled || input.value === (initial || '')){renderDash();return;}
+  if(cancelled || input.value===initial){renderDash();return;}
+  const row=getFinanceRows(months()).find(item=>item.id===id);
+  if(!row){renderDash();return;}
   if(isName){
-   const label=input.value.trim(), old=cell.dataset.originalName, key=cell.dataset.financeName;
-   if(!label || label===old){renderDash();return;}
-   if(financeFields(months()).some(field=>field.name.toLocaleLowerCase()===label.toLocaleLowerCase())){toast('Такая статья уже есть',true);renderDash();return;}
-   saveFinanceChanges(next=>{
-    if(key==='extra'){next.forEach(month=>{if(month && Array.isArray(month.extraExpenses))month.extraExpenses.forEach(item=>{if(item.name===old)item.name=label;});});}
-    else{next[0]=next[0] || {};next[0].financeLabels=next[0].financeLabels || {};next[0].financeLabels[key]=label;}
-   });
+   const label=input.value.trim();if(!label){renderDash();return;}
+   saveFinanceChanges(next=>{next[0]=next[0] || {};next[0].reportLabels=next[0].reportLabels || {};next[0].reportLabels[id]=label;});
   }else{
    const value=parseNum(input.value);
-   if(value===undefined || (value!=null && value<0)){toast('Введите неотрицательную сумму',true);renderDash();return;}
+   if(value===undefined){toast('Введите число',true);renderDash();return;}
    saveFinanceChanges(next=>{
-    const month=next[financeMonth]=next[financeMonth] || {}, field=cell.dataset.financeField;
-    if(field==='extra'){
-     const items=Array.isArray(month.extraExpenses)?month.extraExpenses:[];
-     const existing=items.find(item=>item.name===cell.dataset.extraName);
-     if(existing)existing.amount=value;else items.push({name:cell.dataset.extraName,amount:value});
-     month.extraExpenses=items;
-    }else if(field.startsWith('auto.') || field.startsWith('base.')){const [group,key]=field.split('.');month[group]=month[group] || {};month[group][key]=value;}
-    else month[field]=value;
+    const month=next[financeMonth]=next[financeMonth] || {};
+    if(row.extra){
+     const items=Array.isArray(month.extraExpenses)?month.extraExpenses:[], item=items.find(entry=>entry.name===row.extra);
+     if(item)item.amount=value;else items.push({name:row.extra,amount:value});month.extraExpenses=items;
+    }else if(row.source && row.source.includes('.')){
+     const [group,key]=row.source.split('.');month[group]=month[group] || {};month[group][key]=value;
+    }else if(row.source)month[row.source]=value;
+    else{month.manualFinance=month.manualFinance || {};month.manualFinance[id]=value;}
    });
   }
  },{once:true});
 }
-document.addEventListener('change',e=>{
- if(e.target.matches('[data-finance-month]')){financeMonth=Number(e.target.value);renderDash();}
+document.addEventListener('change',event=>{if(event.target.matches('[data-finance-month]')){financeMonth=Number(event.target.value);renderDash();}});
+document.addEventListener('click',event=>{
+ const remove=event.target.closest('[data-report-remove]');
+ if(remove){const id=remove.dataset.reportRemove;saveFinanceChanges(next=>{next[0]=next[0] || {};next[0].reportHidden=next[0].reportHidden || [];if(!next[0].reportHidden.includes(id))next[0].reportHidden.push(id);});return;}
+ const step=event.target.closest('[data-finance-step]');
+ if(step){financeMonth=Math.max(0,Math.min(11,financeMonth+Number(step.dataset.financeStep)));renderDash();return;}
+ const cell=event.target.closest('.finance-edit');
+ if(cell && !event.target.closest('input'))editFinanceCell(cell);
 });
-document.addEventListener('click',e=>{
- const cell=e.target.closest('.finance-edit');
- if(cell && !e.target.closest('input')){editFinanceCell(cell);return;}
-
-});
-document.addEventListener('keydown',e=>{
- if(e.key==='Enter' && e.target.matches('.finance-edit')){e.preventDefault();editFinanceCell(e.target);}
-});
+document.addEventListener('keydown',event=>{if(event.key==='Enter' && event.target.matches('.finance-edit')){event.preventDefault();editFinanceCell(event.target);}});
 function projectRegister(){
  const projectsList = projList();
  const nowMonth = new Date().getFullYear() === YEAR ? new Date().getMonth() : 11;

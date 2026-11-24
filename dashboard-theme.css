@@ -342,3 +342,16 @@ body:has(#v-projects:not([hidden])) #pageTitle .dim{
  .content>.top{padding-left:46px}
  .side #sideToggle{display:none}
 }
+
+.finance-row-label{display:flex;align-items:center;gap:8px;min-width:0}
+.finance-row-label .finance-edit{flex:1;min-width:0;padding:3px;cursor:text}
+.finance-remove{flex:none;border:0;background:transparent;color:#777;font-size:18px;line-height:1;padding:3px 7px;cursor:pointer;opacity:.7}
+.finance-remove:hover,.finance-remove:focus-visible{color:#fff;opacity:1}
+.month-switch{display:flex;align-items:center;gap:3px;background:#202020;border:1px solid #3a3a3;border-radius:11px;padding:3px}
+.month-switch button{width:34px;height:34px;border:0;border-radius:7px;background:transparent;color:#eee;font-size:22px;cursor:pointer}
+.month-switch button:hover{background:#343434}
+.month-switch button:disabled{opacity:.3;cursor:default}
+.finance-controls .month-switch select{min-height:34px;max-width:170px;background:transparent;border:0;border-radius:7px;color:#eee}
+.trial-heading,body:has(#v-projects:not([hidden])) #pageTitle{font-size:40px;font-weight:600;letter-spacing:-.035em;line-height:1.05}
+.trial-heading .dim,body:has(#v-projects:not([hidden])) #pageTitle .dim{color:#a3a3a3;background:none;-webkit-text-fill-color:currentColor}
+@media(max-width:640px){.trial-heading,body:has(#v-projects:not([hidden])) #pageTitle{font-size:26px}.month-switch{max-width:100%}.finance-controls .month-switch select{min-width:0}}
