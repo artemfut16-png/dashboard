@@ -23,8 +23,8 @@ const financeRows = [
  {id:'projectCosts',label:'Расходы на проект',source:'projectCosts',legacy:true,expense:true},
  {id:'other',label:'Прочие расходы',source:'other',legacy:true,expense:true},
  {id:'budgetExpense',label:'Рекламный бюджет',source:'auto.budget',expense:true},
- {id:'totalExpenses',label:'Итого расходов',total:true},
- {id:'totalRevenue',label:'Итого выручка',group:true},
+ {id:'totalExpenses',label:'Итого расходов',total:true,group:true},
+ {id:'totalRevenue',label:'Итого выручка'},
  {id:'netProfit',label:'Чистая прибыль',total:true}
 ];
 function getFinanceRows(raw){
