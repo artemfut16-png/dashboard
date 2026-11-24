@@ -26,11 +26,27 @@ function monthlyFinanceHTML(){
   ['Выручка от новых проектов',revenue.newProjects],
   ['Выручка от проектов с базы',revenue.existing]
  ].map(([label,value])=>`<tr><td>${label}</td><td>${rub(value)}</td></tr>`).join('');
+ const budget=getp(m,'auto.budget'), leads=getp(m,'auto.leads'), trials=getp(m,'auto.td'), deals=getp(m,'auto.sales'), cycle=getp(m,'auto.cycleDays');
+ const editMetric=(label,key,value)=>`<tr><td>${label}</td><td class="finance-edit finance-amount" data-finance-field="${key}" data-value="${value==null?'':esc(String(value))}" tabindex="0" title="Изменить значение">${value==null?'—':esc(nf.format(value))}</td></tr>`;
+ const metricValue=(label,value)=>`<tr><td>${label}</td><td>${value}</td></tr>`;
+ const metricRows=[
+  editMetric('Рекламный бюджет','auto.budget',budget),
+  editMetric('Лиды','auto.leads',leads),
+  metricValue('Стоимость лида',budget!=null && leads>0 ? rub(budget/leads) : '—'),
+  metricValue('Конверсия (лид → тест-драйв)',leads>0 && trials!=null ? pct(trials/leads) : '—'),
+  editMetric('Тест-драйвы','auto.td',trials),
+  metricValue('Стоимость тест-драйва',budget!=null && trials>0 ? rub(budget/trials) : '—'),
+  metricValue('Конверсия (тест-драйв → сделка)',trials>0 && deals!=null ? pct(deals/trials) : '—'),
+  editMetric('Сделки (новые клиенты)','auto.sales',deals),
+  metricValue('Стоимость сделки (CAC)',budget!=null && deals>0 ? rub(budget/deals) : '—'),
+  metricValue('Конверсия (лид → сделка)',leads>0 && deals!=null ? pct(deals/leads) : '—'),
+  editMetric('Средний цикл (лид → сделка), дней','auto.cycleDays',cycle)
+ ].join('');
  const rows=fields.map(field=>{
    const value=field.key==='extra' ? (m.extraExpenses || []).find(item=>item.name===field.name)?.amount : getp(m,field.key);
    return `<tr><td class="finance-edit" data-finance-name="${esc(field.key)}" data-original-name="${esc(field.name)}" tabindex="0" title="Изменить название">${esc(field.name)}</td><td class="finance-edit finance-amount" data-finance-field="${esc(field.key)}" data-extra-name="${esc(field.name)}" data-value="${value==null?'':esc(String(value))}" tabindex="0" title="Изменить сумму">${value==null?'—':esc(nf.format(value))}</td></tr>`;
  }).join('');
- return `<section class="card monthly-finance"><div class="card-h"><h2>Финансы по месяцам</h2><div class="finance-controls"><select data-finance-month aria-label="Месяц">${MON_FULL.map((name,i)=>`<option value="${i}"${i===financeMonth?' selected':''}>${name} ${YEAR}</option>`).join('')}</select><button class="btn" type="button" data-finance-add>Добавить статью</button></div></div><div class="scroll"><table class="dt finance-table"><thead><tr><th>Статья</th><th>Сумма, ₽</th></tr></thead><tbody><tr><td>Налог</td><td class="finance-edit finance-amount" data-finance-field="taxOverride" data-value="${m.taxOverride == null ? '' : esc(String(m.taxOverride))}" tabindex="0" title="Изменить сумму налога">${rub(result.tax)}</td></tr>${rows}<tr class="tot"><td>Итого расходов</td><td>${rub(result.exp)} · ${result.rev ? pct(result.exp/result.rev) : '—'}</td></tr>${revenueRows}<tr><td>Выручка</td><td>${rub(result.rev)}</td></tr><tr class="tot"><td>Чистая прибыль</td><td>${rub(result.net)}</td></tr></tbody></table></div></section>`;
+ return `<section class="card monthly-finance"><div class="card-h"><h2>Финансы по месяцам</h2><div class="finance-controls"><select data-finance-month aria-label="Месяц">${MON_FULL.map((name,i)=>`<option value="${i}"${i===financeMonth?' selected':''}>${name} ${YEAR}</option>`).join('')}</select><button class="btn" type="button" data-finance-add>Добавить статью</button></div></div><div class="scroll"><table class="dt finance-table"><thead><tr><th>Статья</th><th>Сумма, ₽</th></tr></thead><tbody><tr><td>Налог</td><td class="finance-edit finance-amount" data-finance-field="taxOverride" data-value="${m.taxOverride == null ? '' : esc(String(m.taxOverride))}" tabindex="0" title="Изменить сумму налога">${rub(result.tax)}</td></tr>${rows}<tr class="tot"><td>Итого расходов</td><td>${rub(result.exp)} · ${result.rev ? pct(result.exp/result.rev) : '—'}</td></tr>${revenueRows}<tr><td>Выручка</td><td>${rub(result.rev)}</td></tr><tr class="tot"><td>Чистая прибыль</td><td>${rub(result.net)}</td></tr>${metricRows}</tbody></table></div></section>`;
 }
 function saveFinanceChanges(change){
  const next=JSON.parse(JSON.stringify(months()));
@@ -75,7 +91,7 @@ function editFinanceCell(cell){
      const existing=items.find(item=>item.name===cell.dataset.extraName);
      if(existing)existing.amount=value;else items.push({name:cell.dataset.extraName,amount:value});
      month.extraExpenses=items;
-    }else if(field==='auto.budget'){month.auto=month.auto || {};month.auto.budget=value;}
+    }else if(field.startsWith('auto.')){month.auto=month.auto || {};month.auto[field.slice(5)]=value;}
     else month[field]=value;
    });
   }
@@ -100,7 +116,7 @@ document.addEventListener('keydown',e=>{
 function projectRegister(){
  const projectsList = projList();
  const nowMonth = new Date().getFullYear() === YEAR ? new Date().getMonth() : 11;
- return `<section class="card"><div class="card-h"><h2>Проекты</h2><span class="hint">Нажмите на сумму, чтобы изменить оплату. Статус переключается по клику.</span></div><div class="scroll">${projTable(projectsList, projectsList.map(projStats), nowMonth)}</div></section>`;
+ return `<section class="card"><div class="card-h"><h2>Проекты</h2></div><div class="scroll">${projTable(projectsList, projectsList.map(projStats), nowMonth)}</div></section>`;
 }
 function renderOverview(){
  const el=document.getElementById('v-dash');
@@ -110,7 +126,7 @@ function renderOverview(){
  const todayTasks=tasks.filter(x=>groupOf(x.t)==='today');
  const max=Math.max(1,...months.map(x=>Math.abs(x.net))), total=months.reduce((a,c)=>a+c.net,0);
  const metric=(label,value,sub,cls='')=>`<div class="ov-metric ${cls}"><span>${label}</span><strong>${value}</strong><small>${sub}</small></div>`;
- el.innerHTML=`<div class="overview"><div class="ov-metrics">${metric('Чистая прибыль за ' + MON_FULL[now].toLowerCase(),current.has?rub(current.net):'—','','ov-profit')}${metric('Проекты в работе',projList().filter(p=>p.status !== 'gone' && p.status !== 'trial').length,'')}${metric('Тест-драйвы в работе',projList().filter(p=>p.status === 'trial').length + all().filter(l=>l.status === 'td' && !projList().some(p=>p.status === 'trial' && p.name && (l.company||l.name||'').trim().toLowerCase() === p.name.trim().toLowerCase())).length,'')}</div><div class="ov-grid"><section class="ov-panel profit-chart"><div class="ov-panel-head"><h3>Чистая прибыль</h3><span>${YEAR}</span></div>${(()=>{const valid=months.map((month,i)=>({month,i})).filter(x=>x.month.has);if(!valid.length)return '<p class="ov-note">Нет данных</p>';const lo=Math.min(0,...valid.map(x=>x.month.net)),hi=Math.max(1,...valid.map(x=>x.month.net)),y=v=>88-(v-lo)/(hi-lo)*70,points=valid.map(x=>[4+x.i*8.35,y(x.month.net)]),path=smoothPath(points);return `<div class="profit-plot"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${path}" fill="none" stroke="#e0e0e0" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>${valid.map(x=>`<button type="button" class="profit-point" style="left:${4+x.i*8.35}%;top:${y(x.month.net)}%" aria-label="${MON_FULL[x.i]}: ${rub(x.month.net)}"><span class="profit-tooltip"><span>${MON_FULL[x.i]}</span><b>${rub(x.month.net)}</b></span></button>`).join('')}</div><div class="profit-month-labels">${MON.map(m=>`<span>${m}</span>`).join('')}</div>`;})()}</section><section class="ov-panel"><div class="ov-panel-head"><h3>Задачи на сегодня · ${todayTasks.length}</h3><button class="btn" data-overview-tasks>Все задачи</button></div><div class="ov-task-list">${todayTasks.map((x,i)=>`<button class="ov-task" data-overview-task="${i}"><span><b>${esc(x.t.text||'Задача')}</b><small>${esc(x.name)}</small></span><time>${esc(x.t.due?dayTitle(x.t.due):'Без срока')}${x.t.time?' · '+esc(x.t.time):''}</time></button>`).join('')||'<p class="ov-note">На сегодня задач нет</p>'}</div></section></div>${payPlanHTML(sources())}${projectRegister()}${monthlyFinanceHTML()}</div>`;
+ el.innerHTML=`<div class="overview"><div class="ov-metrics">${metric('Чистая прибыль за ' + MON_FULL[now].toLowerCase(),current.has?rub(current.net):'—','','ov-profit')}${metric('Проекты в работе',projList().filter(p=>p.status !== 'gone' && p.status !== 'trial').length,'')}${metric('Тест-драйвы в работе',projList().filter(p=>p.status === 'trial').length + all().filter(l=>l.status === 'td' && !projList().some(p=>p.status === 'trial' && p.name && (l.company||l.name||'').trim().toLowerCase() === p.name.trim().toLowerCase())).length,'')}</div><div class="ov-grid"><section class="ov-panel profit-chart"><div class="ov-panel-head"><h3>Доход по месяцам ${YEAR}</h3></div>${(()=>{const valid=months.map((month,i)=>({month,i})).filter(x=>x.month.has);if(!valid.length)return '<p class="ov-note">Нет данных</p>';const lo=Math.min(0,...valid.map(x=>x.month.net)),hi=Math.max(1,...valid.map(x=>x.month.net)),y=v=>88-(v-lo)/(hi-lo)*70,points=valid.map(x=>[4+x.i*8.35,y(x.month.net)]),path=smoothPath(points);return `<div class="profit-plot"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${path}" fill="none" stroke="#e0e0e0" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>${valid.map(x=>`<button type="button" class="profit-point" style="left:${4+x.i*8.35}%;top:${y(x.month.net)}%" aria-label="${MON_FULL[x.i]}: ${rub(x.month.net)}"><span class="profit-tooltip"><span>${MON_FULL[x.i]}</span><b>${rub(x.month.net)}</b></span></button>`).join('')}</div><div class="profit-month-labels">${MON.map(m=>`<span>${m}</span>`).join('')}</div>`;})()}</section><section class="ov-panel"><div class="ov-panel-head"><h3>Задачи на сегодня · ${todayTasks.length}</h3><button class="btn" data-overview-tasks>Все задачи</button></div><div class="ov-task-list">${todayTasks.map((x,i)=>`<button class="ov-task" data-overview-task="${i}"><span><b>${esc(x.t.text||'Задача')}</b><small>${esc(x.name)}</small></span><time>${esc(x.t.due?dayTitle(x.t.due):'Без срока')}${x.t.time?' · '+esc(x.t.time):''}</time></button>`).join('')||'<p class="ov-note">На сегодня задач нет</p>'}</div></section></div>${payPlanHTML(sources())}${projectRegister()}${monthlyFinanceHTML()}</div>`;
  el.querySelector('[data-overview-tasks]').onclick=()=>document.querySelector('[data-sect="tasks"]').click();
  el.querySelectorAll('[data-overview-task]').forEach(b=>b.onclick=()=>{const x=todayTasks[Number(b.dataset.overviewTask)];openTask(x.pid,x.t.id);});
 }
