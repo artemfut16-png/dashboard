@@ -370,3 +370,8 @@ body:has(#v-projects:not([hidden])) #pageTitle .dim{
 .trial-heading .dim,body:has(#v-projects:not([hidden])) #pageTitle .dim{color:#a3a3a3;background:none;-webkit-text-fill-color:currentColor}
 @media(max-width:700px){.overview{padding:0}}
 @media(max-width:640px){.trial-heading,body:has(#v-projects:not([hidden])) #pageTitle{font-size:26px}}
+
+.monthly-finance .finance-table tbody td{border-bottom:0}
+.monthly-finance .finance-table .finance-divider td{border:0;height:12px}
+.monthly-finance .finance-table .finance-divider+tr td{border-top:1px solid #3b3b3b;padding-top:10px}
+.monthly-finance .month-switch{padding:3px 8px}
