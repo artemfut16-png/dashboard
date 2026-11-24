@@ -145,8 +145,9 @@ const out = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="apple-touch-icon" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/glass-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/glass-180.png">
+<link rel="manifest" href="dashboard.webmanifest">
 <meta name="theme-color" content="#000000">
 <title>Дашборд</title>
 <style>:root{color-scheme:dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
@@ -159,6 +160,10 @@ ${body.slice(styleEnd).trim()}
 </html>
 `;
 fs.mkdirSync("site", {recursive: true});
-fs.writeFileSync("site/index.html", out);
+const path = require("path");
+const root = path.resolve(__dirname, "..");
+fs.cpSync(path.join(root, "assets/icons"), "site/assets/icons", {recursive:true});
+fs.copyFileSync(path.join(root, "dashboard.webmanifest"), "site/dashboard.webmanifest");
+fs.writeFileSync("site/index.html", out.replaceAll("../assets/icons/", "assets/icons/"));
 new Function(out.split("<script>")[1].split("</script>")[0]);
 console.log("built site/index.html", out.length, "bytes");

@@ -370,7 +370,7 @@ body{padding:0}
 .side{position:sticky;top:0;height:100vh;background:var(--bg);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:2px;padding:12px 10px;overflow:hidden}
 .brand{display:flex;align-items:center;gap:10px;padding:6px 6px 10px;min-width:0}
 .brand .logo{flex:none;width:30px;height:30px;border-radius:8px;background:var(--primary);color:var(--primary-ink);display:grid;place-items:center}
-.brand .logo svg{width:16px;height:16px}
+
 .brand .bt{min-width:0;line-height:1.25}
 .brand .bt b{display:block;font-size:14px;font-weight:600}
 .brand .bt span{display:block;font-size:12px;color:var(--muted)}
@@ -1044,7 +1044,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 
 <div class="app" id="app">
   <aside class="side" aria-label="Навигация">
-    <div class="brand"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="bt"><b>Дашборд</b><span>Агентство</span></span></div>
+    <div class="brand"><img class="logo" src="../assets/icons/glass-64.png" width="30" height="30" alt=""><span class="bt"><b>Дашборд</b><span>Агентство</span></span></div>
     <div class="navlbl">Разделы</div>
     <button class="sbtn" data-sect="an" aria-current="page" title="Аналитика"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span class="lbl">Аналитика</span></button>
     <button class="sbtn" data-sect="tasks" title="Задачи"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="lbl">Задачи</span></button>
