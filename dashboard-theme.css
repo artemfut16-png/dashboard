@@ -342,3 +342,6 @@ body:has(#v-projects:not([hidden])) #pageTitle .dim{
  .content>.top{padding-left:46px}
  .side #sideToggle{display:none}
 }
+
+.overview{padding:0;background:transparent}
+@media(max-width:700px){.overview{padding:0}}
