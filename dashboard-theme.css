@@ -466,3 +466,6 @@ body,.side{background:#000000;color:#f9f9f9}
 .tboard .rlist li[data-tid] input.rc:checked{background:#e85002;border-color:#e85002}
 .monthly-finance .finance-edit:focus-visible,:focus-visible{outline-color:#e85002}
 ::selection{background:#e85002;color:#000000}
+
+:root:root:root{--c1:#f9f9f9;--c2:#a7a7a7;--c3:#e85002;--c4:#f16001;--heat:#a7a7a7;--bad:#f16001}
+.pc-status.active,.pc-status.td{background:#333333;color:#f9f9f9}
