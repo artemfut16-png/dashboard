@@ -1066,7 +1066,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
 <script src="./assets/overview.js"></script>
-<link rel="stylesheet" href="dashboard-theme.css?v=28">
+<link rel="stylesheet" href="dashboard-theme.css?v=29">
 <style>
 #listBody .board .col{padding:0;border:0!important;background:transparent!important;backdrop-filter:none!important}
 .board .col header{box-sizing:border-box;width:100%;padding:8px 12px;border:1px solid #393939;border-radius:10px;background:#191919}
@@ -1976,17 +1976,32 @@ function hasData(m){
   if (!m) return false;
   return ['cold','auto','ref','base'].some(g => m[g] && Object.values(m[g]).some(v => v != null)) || m.fot != null || m.other != null || m.projectCosts != null || m.autoloadCosts != null || m.aiCosts != null || m.taxOverride != null || (m.manualFinance && Object.values(m.manualFinance).some(v => v != null)) || (Array.isArray(m.extraExpenses) && m.extraExpenses.some(e => e.amount != null));
 }
-function calc(m){
+function financeCalculated(m){
   const manual = m && m.manualFinance || {};
-  const computedRev = CH.reduce((a, c) => a + (getp(m, c.k + '.rev') || 0), 0);
-  const rev = manual.totalRevenue != null ? Number(manual.totalRevenue) : computedRev;
-  const sales = CH.reduce((a, c) => a + (getp(m, c.k + '.sales') || 0), 0);
-  const tax = m && m.taxOverride != null ? Number(m.taxOverride) : Math.round(rev * TAX);
-  const extra = (m && Array.isArray(m.extraExpenses) ? m.extraExpenses : []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-  const computedExp = tax + (getp(m, 'fot') || 0) + (getp(m, 'other') || 0) + (getp(m, 'projectCosts') || 0) + (getp(m, 'autoloadCosts') || 0) + (getp(m, 'aiCosts') || 0) + (getp(m, 'auto.budget') || 0) + extra;
-  const exp = manual.totalExpenses != null ? Number(manual.totalExpenses) : computedExp;
-  const net = manual.netProfit != null ? Number(manual.netProfit) : rev - exp;
-  return {rev, sales, tax, exp, net, avg: sales ? rev / sales : null, margin: rev ? net / rev : null, has: hasData(m)};
+  const budget = getp(m,'auto.budget'), leads = getp(m,'auto.leads');
+  const trials = getp(m,'auto.td'), deals = getp(m,'auto.sales');
+  const ratio = (numerator, denominator) => numerator != null && denominator > 0 ? Number(numerator) / Number(denominator) : null;
+  const sumIfPresent = values => values.some(value => value != null) ? values.reduce((sum,value)=>sum + (Number(value) || 0),0) : null;
+  const revenue = sumIfPresent([manual.trialRevenue,manual.newRevenue,manual.baseRevenue]);
+  const extras = m && Array.isArray(m.extraExpenses) ? m.extraExpenses.map(item=>item.amount) : [];
+  const expenses = sumIfPresent([m && m.taxOverride,getp(m,'autoloadCosts'),getp(m,'aiCosts'),getp(m,'fot'),getp(m,'projectCosts'),getp(m,'other'),budget,...extras]);
+  return {
+    leadCost:ratio(budget,leads), leadTrialRate:ratio(trials,leads),
+    trialCost:ratio(budget,trials), trialDealRate:ratio(deals,trials),
+    cac:ratio(budget,deals), leadDealRate:ratio(deals,leads),
+    totalExpenses:expenses, totalRevenue:revenue,
+    netProfit:revenue != null && expenses != null ? revenue-expenses : null
+  };
+}
+function calc(m){
+  const manual = m && m.manualFinance || {}, calculated = financeCalculated(m);
+  const computedRev = CH.reduce((a,c)=>a+(getp(m,c.k+'.rev')||0),0);
+  const rev = calculated.totalRevenue != null ? calculated.totalRevenue : (manual.totalRevenue != null ? Number(manual.totalRevenue) : computedRev);
+  const sales = CH.reduce((a,c)=>a+(getp(m,c.k+'.sales')||0),0);
+  const tax = m && m.taxOverride != null ? Number(m.taxOverride) : Math.round(rev*TAX);
+  const exp = calculated.totalExpenses != null ? calculated.totalExpenses : (manual.totalExpenses != null ? Number(manual.totalExpenses) : tax);
+  const net = calculated.netProfit != null ? calculated.netProfit : (manual.netProfit != null ? Number(manual.netProfit) : rev-exp);
+  return {rev,sales,tax,exp,net,avg:sales ? rev/sales : null,margin:rev ? net/rev : null,has:hasData(m)};
 }
 function projStats(p){
   const pay = p.pay || [];
@@ -3610,5 +3625,5 @@ $('#logoutBtn').addEventListener('click', async () => { await sb.auth.signOut();
 
 <script src="dashboard-calendar.js?v=3" defer></script>
 
-<script src="dashboard-overview.js?v=23" defer></script>
+<script src="dashboard-overview.js?v=24" defer></script>
 <script src="dashboard-dropdowns.js?v=1" defer></script>
