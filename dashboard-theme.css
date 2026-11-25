@@ -410,3 +410,28 @@ body:has(#v-projects:not([hidden])) #pageTitle .dim{
 .overview-top .funnel-summary-item strong{font-size:15px;font-weight:600;text-align:right;white-space:nowrap}
 @media(max-width:1000px){.overview-top{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:700px){.overview .overview-top .ov-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px}.overview-top .ov-profit{grid-column:1/-1}.overview-top .ov-metric{padding:14px}.overview-top .ov-metric>span{font-size:16px}.overview-top .ov-metric strong{font-size:23px}.overview-top .funnel-summary{padding:10px 14px}}
+
+/* Цветовые акценты */
+:root:root:root{--chart-profit:#78dba0;--ok:#78dba0;--warn:#ffad70}
+::selection{background:#a65d28;color:#fff}
+.side .sbtn[aria-current]{background:#39271c;color:#ffd1a8}
+.side .sbtn[aria-current] svg{color:#ffae73}
+.side .sbtn[aria-current]:hover{background:#473021}
+.btn.primary,.btn.primary:hover{background:#f29a57;border-color:#f29a57;color:#21150d}
+.btn.primary:hover{background:#ffb77d;border-color:#ffb77d}
+.fchip[aria-pressed="true"]{background:#39271c;border-color:#b77745;color:#ffd1a8}
+.tab[aria-selected="true"],.subtabs .tab[aria-selected="true"]{background:#39271c;color:#ffd1a8}
+.cal-grid button.selected,#gcal .gc-date.sel{background:#f29a57;color:#21150d}
+.cal-grid button.today{border-color:#b77745}
+.overview .ov-profit{background:#15291e;color:#e7f5ea}
+.overview .ov-profit strong{color:#8de0ac}
+.overview .ov-profit.profit-negative{background:#2c211c;color:#f6e7dd}
+.overview .ov-profit.profit-negative strong{color:#ffb187}
+.profit-point::after{background:#78dba0}
+.profit-point:hover::after,.profit-point:focus-visible::after{box-shadow:0 0 0 4px #78dba040}
+.board .col[data-col="qual"] header .pill,.board .col[data-col="lead"] header .pill{color:#a1e7ba!important}
+.board .col[data-col="td"] header .pill,.board .col[data-col="tdok"] header .pill{color:#ffc18f!important}
+.s-qual,.s-lead{background:#20372a;color:#a1e7ba}
+.s-td,.s-tdok{background:#39291e;color:#ffc18f}
+.tboard .rlist li[data-tid] input.rc:checked{background:#78dba0;border-color:#78dba0}
+:focus-visible{outline-color:#ffad70}
