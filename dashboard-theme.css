@@ -437,3 +437,8 @@ body:has(#v-projects:not([hidden])) #pageTitle .dim{
 .rs .mc.over,.rs .mc.mdue.over,.tl-slot.over span{color:#bcbcbc;background:transparent;border-color:#646464}
 ::selection{background:#dedede;color:#111}
 :focus-visible{outline-color:#ddd}
+
+:root:root:root{--grad:linear-gradient(100deg,#dedede,#929292,#333333,#000000);--red:#a3a3a3}
+.pi.tdl{--pc:#f2f2f2!important}
+.rlist li.key .rs .mc.mdue.over{color:#ddd;background:#333;border-color:#646464}
+.gc-day button.sel{background:#eee;box-shadow:none}
