@@ -40,14 +40,18 @@ function getFinanceRows(raw){
 function monthlyFinanceHTML(){
  const raw=months(), month=raw[financeMonth] || {}, meta=raw[0] || {};
  const labels=meta.reportLabels || {}, hidden=meta.reportHidden || [], legacyLabels=meta.financeLabels || {};
+ const calculated=financeCalculated(month);
+ const percentRows=new Set(['leadTrialRate','trialDealRate','leadDealRate']);
  const rows=getFinanceRows(raw).filter(row=>!hidden.includes(row.id)).map(row=>{
   const label=labels[row.id] || (row.source && legacyLabels[row.source]) || row.label;
   let value;
-  if(row.extra)value=(month.extraExpenses || []).find(item=>item.name===row.extra)?.amount;
+  const computed=Object.prototype.hasOwnProperty.call(calculated,row.id);
+  if(computed)value=calculated[row.id];
+  else if(row.extra)value=(month.extraExpenses || []).find(item=>item.name===row.extra)?.amount;
   else if(row.source)value=getp(month,row.source);
   else value=(month.manualFinance || {})[row.id];
   if(row.id==='churn' && value!=null)value=Math.abs(value);
-  return `${row.group?'<tr class="finance-divider" aria-hidden="true"><td colspan="2"></td></tr>':''}<tr class="${row.total?'tot':''}"><td><div class="finance-row-label"><span class="finance-edit" data-report-name="${esc(row.id)}" data-value="${esc(label)}" tabindex="0" title="Изменить название">${esc(label)}</span><button type="button" class="finance-remove" data-report-remove="${esc(row.id)}" aria-label="Удалить пункт ${esc(label)}">×</button></div></td><td class="finance-edit finance-amount" data-report-value="${esc(row.id)}" data-value="${value==null?'':esc(String(value))}" tabindex="0" title="Изменить значение">${value==null?'':esc(nf.format(value))}</td></tr>`;
+  return `${row.group?'<tr class="finance-divider" aria-hidden="true"><td colspan="2"></td></tr>':''}<tr class="${row.total?'tot':''}"><td><div class="finance-row-label"><span class="finance-edit" data-report-name="${esc(row.id)}" data-value="${esc(label)}" tabindex="0" title="Изменить название">${esc(label)}</span><button type="button" class="finance-remove" data-report-remove="${esc(row.id)}" aria-label="Удалить пункт ${esc(label)}">×</button></div></td><td class="${computed ? 'finance-calculated' : 'finance-edit finance-amount'}" ${computed ? 'title="Рассчитывается автоматически"' : `data-report-value="${esc(row.id)}" data-value="${value==null?'':esc(String(value))}" tabindex="0" title="Изменить значение"`}>${value==null?'':percentRows.has(row.id)?esc(new Intl.NumberFormat('ru-RU',{maximumFractionDigits:1}).format(value*100))+'%':esc(nf.format(Math.round(value)))}</td></tr>`;
  }).join('');
  return `<section class="card monthly-finance"><div class="card-h"><h2>Показатели за ${MON_FULL[financeMonth].toLowerCase()}</h2><div class="finance-controls"><div class="month-switch"><select data-finance-month aria-label="Месяц">${MON_FULL.map((name,i)=>`<option value="${i}"${i===financeMonth?' selected':''}>${name} ${YEAR}</option>`).join('')}</select></div></div></div><div class="scroll"><table class="dt finance-table"><thead><tr><th>Показатель</th><th>Значение</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
@@ -122,7 +126,7 @@ function renderOverview(){
   ['Лиды',getp(currentFinance,'auto.leads'),false],
   ['Тест-драйвы',getp(currentFinance,'auto.td'),false],
   ['Сделки',getp(currentFinance,'auto.sales'),false],
-  ['Стоимость сделки',(currentFinance.manualFinance || {}).cac,true]
+  ['Стоимость сделки',financeCalculated(currentFinance).cac,true]
  ];
  const summary=`<section class="funnel-summary" aria-label="Ключевые показатели за ${MON_FULL[now].toLowerCase()}"><div class="funnel-summary-grid">${metricItems.map(([name,value,money])=>`<div class="funnel-summary-item"><span>${esc(name)}</span><strong>${value==null?'—':money?rub(value):nf.format(value)}</strong></div>`).join('')}</div></section>`;
  const metric=(label,value,sub,cls='')=>`<div class="ov-metric ${cls}"><span>${label}</span><strong>${value}</strong><small>${sub}</small></div>`;
