@@ -397,3 +397,16 @@ body:has(#v-projects:not([hidden])) #pageTitle .dim{
 .funnel-summary-item strong{font-size:25px;line-height:1.1;font-weight:600;overflow-wrap:anywhere}
 @media(max-width:1100px){.funnel-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){.funnel-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.funnel-summary-item{padding:14px}.funnel-summary-item span{font-size:13px}.funnel-summary-item strong{font-size:22px}}
+
+.overview-top{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(260px,1fr);gap:14px;align-items:stretch;margin-bottom:18px}
+.overview .overview-top .ov-metrics{margin:0;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px}
+.overview-top .ov-metric{padding:18px;gap:14px;justify-content:flex-start}
+.overview-top .ov-metric>span{font-size:18px;line-height:1.25}
+.overview-top .ov-metric strong{font-size:26px}
+.overview-top .funnel-summary{margin:0;padding:12px 18px;background:#151515;border-radius:12px;min-width:0}
+.overview-top .funnel-summary-grid{display:flex;flex-direction:column;gap:0}
+.overview-top .funnel-summary-item{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;background:transparent;border-radius:0}
+.overview-top .funnel-summary-item span{font-size:14px;font-weight:500;color:#bbb}
+.overview-top .funnel-summary-item strong{font-size:15px;font-weight:600;text-align:right;white-space:nowrap}
+@media(max-width:1000px){.overview-top{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:700px){.overview .overview-top .ov-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px}.overview-top .ov-profit{grid-column:1/-1}.overview-top .ov-metric{padding:14px}.overview-top .ov-metric>span{font-size:16px}.overview-top .ov-metric strong{font-size:23px}.overview-top .funnel-summary{padding:10px 14px}}
