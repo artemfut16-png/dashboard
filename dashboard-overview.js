@@ -82,15 +82,22 @@ function channelReportHTML(raw){
  });
  const body=rows.filter(row=>!meta.reportHidden?.includes(row.id)).map(row=>{
   const label=meta.reportLabels?.[row.id] || meta.financeLabels?.[row.source] || row.label;
-  if(['totalExpenses','totalRevenue','netProfit'].includes(row.id)){
-   const sum = key => {
-    const amounts=columns.map(column=>column.calculated[key]).filter(value=>value!=null);
-    return amounts.length ? amounts.reduce((a,b)=>a+b,0) : null;
-   };
-   const expenses=sum('totalExpenses'), revenue=sum('totalRevenue');
-   const value=row.id==='totalExpenses'?expenses:row.id==='totalRevenue'?revenue:
-    revenue!=null && expenses!=null ? revenue-expenses : null;
-   return `${row.group?'<tr class="finance-divider"><td colspan="4"></td></tr>':''}<tr class="tot"><td>${esc(label)}</td><td colspan="3" class="finance-calculated">${esc(financeDisplay(row,value))}</td></tr>`;
+  const sharedRows=rows.filter(item=>item.id==='tax' || (item.expense && item.id!=='budgetExpense'));
+  const sharedValue=item=>{
+   const saved=localStorage.getItem(previewKey('shared',item.id));
+   if(saved!==null)return JSON.parse(saved);
+   if(item.extra)return (month.extraExpenses || []).find(entry=>entry.name===item.extra)?.amount ?? null;
+   return item.source ? getp(month,item.source) : null;
+  };
+  const sum=values=>values.some(value=>value!=null)?values.reduce((a,b)=>a+(Number(b)||0),0):null;
+  const budget=sum(columns.map(column=>column.values.budgetFunnel));
+  const revenue=sum(columns.map(column=>column.calculated.totalRevenue));
+  const expenses=sum([...sharedRows.map(sharedValue),budget]);
+  if(sharedRows.includes(row) || ['budgetExpense','totalExpenses','totalRevenue','netProfit'].includes(row.id)){
+   const editable=sharedRows.includes(row);
+   const value=editable?sharedValue(row):row.id==='budgetExpense'?budget:row.id==='totalExpenses'?expenses:row.id==='totalRevenue'?revenue:revenue!=null && expenses!=null?revenue-expenses:null;
+   const attrs=editable?`class="finance-edit finance-amount" data-preview-channel="shared" data-report-value="${esc(row.id)}" data-value="${esc(String(value??''))}" tabindex="0"`:'class="finance-calculated"';
+   return `${row.group?'<tr class="finance-divider"><td colspan="4"></td></tr>':''}<tr><td>${esc(label)}</td><td colspan="3" ${attrs}>${esc(financeDisplay(row,value))}</td></tr>`;
   }
   const cells=columns.map(({channel,values,calculated})=>{
    const computed=Object.hasOwn(calculated,row.id);
