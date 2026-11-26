@@ -82,6 +82,16 @@ function channelReportHTML(raw){
  });
  const body=rows.filter(row=>!meta.reportHidden?.includes(row.id)).map(row=>{
   const label=meta.reportLabels?.[row.id] || meta.financeLabels?.[row.source] || row.label;
+  if(['totalExpenses','totalRevenue','netProfit'].includes(row.id)){
+   const sum = key => {
+    const amounts=columns.map(column=>column.calculated[key]).filter(value=>value!=null);
+    return amounts.length ? amounts.reduce((a,b)=>a+b,0) : null;
+   };
+   const expenses=sum('totalExpenses'), revenue=sum('totalRevenue');
+   const value=row.id==='totalExpenses'?expenses:row.id==='totalRevenue'?revenue:
+    revenue!=null && expenses!=null ? revenue-expenses : null;
+   return `${row.group?'<tr class="finance-divider"><td colspan="4"></td></tr>':''}<tr class="tot"><td>${esc(label)}</td><td colspan="3" class="finance-calculated">${esc(financeDisplay(row,value))}</td></tr>`;
+  }
   const cells=columns.map(({channel,values,calculated})=>{
    const computed=Object.hasOwn(calculated,row.id);
    const value=computed?calculated[row.id]:values[row.id];
