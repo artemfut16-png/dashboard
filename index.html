@@ -2732,8 +2732,8 @@ function payPlanHTML(srcs){
       <button class="btn primary" type="button" data-paid-yes="${esc(p.id)}">Оплачено</button>
       <button class="btn" type="button" data-payclear="${esc(p.id)}">Убрать дату</button></div>`; })() : '';
   return `<section class="payplan">
-    <div class="rb-h"><h2>График оплат</h2><span class="rcount">${dated.length ? 'ожидается ' + rub(total) : 'даты не назначены'}</span></div>
-    ${chips ? `<div class="pp-chips">${chips}</div>` : '<p class="rb-sub">Назначьте дату следующей оплаты по каждому проекту.</p>'}
+    <div class="rb-h"><h2>График оплат</h2></div>
+    ${dated.length ? '' : '<p class="rb-sub">Назначьте дату следующей оплаты по каждому проекту.</p>'}
     <div class="tl" style="--n:${n}"><div class="tl-in">
       <div class="tl-head"><div class="tl-col">Проекты</div><div class="tl-axis">${axis}</div></div>
       ${rows || '<div class="tl-row"><div class="tl-col"><span>Нет проектов в работе</span></div><div class="tl-track"></div></div>'}
@@ -3632,5 +3632,5 @@ $('#logoutBtn').addEventListener('click', async () => { await sb.auth.signOut();
 
 <script src="dashboard-calendar.js?v=4" defer></script>
 
-<script src="dashboard-overview.js?v=29" defer></script>
+<script src="dashboard-overview.js?v=30" defer></script>
 <script src="dashboard-dropdowns.js?v=1" defer></script>
