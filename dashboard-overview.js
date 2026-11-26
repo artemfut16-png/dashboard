@@ -52,7 +52,49 @@ function financeDisplay(row,value){
  const amount=['leadCost','trialCost','cac'].includes(row.id)?Math.round(value):value;
  return financeMoney.format(amount)+' ₽';
 }
+const channelPreview = new URLSearchParams(location.search).get('analytics') === 'channels';
+const reportChannels = [['auto','Автообзвон'],['ref','Рекомендации'],['base','База']];
+function previewKey(channel,id){
+ return JSON.stringify(['finance-preview',YEAR,financeMonth,channel,id]);
+}
+function channelReportHTML(raw){
+ const month=raw[financeMonth] || {}, meta=raw[0] || {};
+ const rows=getFinanceRows(raw);
+ const columns=reportChannels.map(([channel])=>{
+  const draft={auto:{...month[channel]},manualFinance:{},extraExpenses:[]};
+  const values={};
+  for(const row of rows){
+   const key=row.source?.split('.')[1];
+   let value=row.source?.startsWith('auto.')?draft.auto[key]:null;
+   if(channel==='base'){
+    if(row.id==='churn')value=getp(month,'base.churn');
+    if(['renewals','baseRevenue'].includes(row.id))value=month.manualFinance?.[row.id];
+   }
+   const stored=localStorage.getItem(previewKey(channel,row.id==='budgetExpense'?'budgetFunnel':row.id));
+   if(stored!==null)value=JSON.parse(stored);
+   values[row.id]=value;
+   if(row.source?.startsWith('auto.'))draft.auto[key]=value;
+   else if(row.extra)draft.extraExpenses.push({amount:value});
+   else if(row.source && !row.source.includes('.'))draft[row.source]=value;
+   else draft.manualFinance[row.id]=value;
+  }
+  return {channel,values,calculated:financeCalculated(draft)};
+ });
+ const body=rows.filter(row=>!meta.reportHidden?.includes(row.id)).map(row=>{
+  const label=meta.reportLabels?.[row.id] || meta.financeLabels?.[row.source] || row.label;
+  const cells=columns.map(({channel,values,calculated})=>{
+   const computed=Object.hasOwn(calculated,row.id);
+   const value=computed?calculated[row.id]:values[row.id];
+   const attributes=computed?'class="finance-calculated"':`class="finance-edit finance-amount" data-preview-channel="${channel}" data-report-value="${esc(row.id)}" data-value="${esc(String(value??''))}" tabindex="0"`;
+   return `<td ${attributes}>${esc(financeDisplay(row,row.id==='churn' && value!=null?Math.abs(value):value))}</td>`;
+  }).join('');
+  return `${row.group?'<tr class="finance-divider"><td colspan="4"></td></tr>':''}<tr><td style="width:auto">${esc(label)}</td>${cells}</tr>`;
+ }).join('');
+ const options=MON_FULL.map((name,i)=>`<option value="${i}" ${i===financeMonth?'selected':''}>${name} ${YEAR}</option>`).join('');
+ return `<section class="card monthly-finance"><div class="card-h"><h2>Показатели за ${MON_FULL[financeMonth].toLowerCase()}</h2><select data-finance-month aria-label="Месяц">${options}</select></div><div class="scroll"><table class="dt finance-table" style="min-width:580px"><colgroup><col style="width:40%"><col span="3" style="width:20%"></colgroup><thead><tr><th style="width:auto">Показатель</th>${reportChannels.map(([,label])=>`<th style="text-align:right">${label}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div></section>`;
+}
 function monthlyFinanceHTML(){
+ if(channelPreview)return channelReportHTML(months());
  const raw=months(), month=raw[financeMonth] || {}, meta=raw[0] || {};
  const labels=meta.reportLabels || {}, hidden=meta.reportHidden || [], legacyLabels=meta.financeLabels || {};
  const calculated=financeCalculated(month);
@@ -95,6 +137,10 @@ function editFinanceCell(cell){
   }else{
    const value=parseNum(input.value);
    if(value===undefined){toast('Введите число',true);renderDash();return;}
+   if(cell.dataset.previewChannel){
+    localStorage.setItem(previewKey(cell.dataset.previewChannel,id==='budgetExpense'?'budgetFunnel':id),JSON.stringify(value));
+    renderDash();return;
+   }
    saveFinanceChanges(next=>{
     const month=next[financeMonth]=next[financeMonth] || {};
     if(row.extra){
