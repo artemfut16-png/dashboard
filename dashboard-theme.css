@@ -445,3 +445,5 @@ body:has(#v-projects:not([hidden])) #pageTitle .dim{
 
 .overview .payplan .rb-h{margin-bottom:16px}
 
+
+.pc-month-stats{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0;color:var(--muted);font-size:14px}.pc-month-stats span:first-child{width:100%}.pc-month-stats b{color:var(--ink)}

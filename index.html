@@ -1066,7 +1066,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
 <script src="./assets/overview.js"></script>
-<link rel="stylesheet" href="dashboard-theme.css?v=32">
+<link rel="stylesheet" href="dashboard-theme.css?v=33">
 <style>
 #listBody .board .col{padding:0;border:0!important;background:transparent!important;backdrop-filter:none!important}
 .board .col header{box-sizing:border-box;width:100%;padding:8px 12px;border:1px solid #393939;border-radius:10px;background:#191919}
@@ -2604,7 +2604,7 @@ function renderProjectsView(){
   elP.innerHTML = `<section class="ov-panel project-group">
     <div class="pinfo">${srcs.filter(x => projects.has(x.pid) && projects.get(x.pid).status !== 'trial').map(x => { const p = projects.get(x.pid), st = projStats(p);
       return `<div class="pi" style="--pc:${x.color}"><div class="pi-h"><b title="${esc(p.name)}">${esc(p.name)}</b><button class="pill pst active" data-ptoggle="${esc(p.id)}" title="Перевести в «Ушёл»">В работе</button></div>
-        <div class="pc-meta"><span>Чек <b>${p.check ? rub(p.check) : '—'}</b></span><span>Оплачено <b>${st.total ? rub(st.total) : '—'}</b></span><span>Срок <b>${st.life || '—'}</b> мес.</span>${p.payDate ? `<span>Оплата <b>${dueInfo(p.payDate).label}</b></span>` : ''}</div>${projLinksHTML(p)}</div>`; }).join('')}</div></section><section class="ov-panel project-group">${testDrivesHTML()}</section>`;
+        <div class="pc-meta"><span>Чек <b>${p.check ? rub(p.check) : '—'}</b></span><span>Оплачено <b>${st.total ? rub(st.total) : '—'}</b></span><span>Срок <b>${st.life || '—'}</b> мес.</span>${p.payDate ? `<span>Оплата <b>${dueInfo(p.payDate).label}</b></span>` : ''}</div>${projectMonthStatsHTML(p)}${projLinksHTML(p)}</div>`; }).join('')}</div></section><section class="ov-panel project-group">${testDrivesHTML()}</section>`;
 }
 let pLinksEdit = null;
 const ICON_FUNNEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/></svg>';
@@ -2636,18 +2636,28 @@ function funnelFromCsv(text){
   const pick = c => ({budget: col('budget', c), contacts: col('contacts', c), kev: col('kev', c), deals: col('deals', c), rev: col('rev', c)});
   let last = null;
   for (let m = 0; m < 12; m++) for (let w = 0; w < 4; w++){ const c = 4 + 5 * m + w; if (col('budget', c) > 0 || col('contacts', c) > 0) last = {m, w, c}; }
-  return {total: pick(2), month: last ? pick(3 + 5 * last.m) : null, week: last ? pick(last.c) : null, last};
+  return {total: pick(2), months: Array.from({length:12}, (_, m) => { const c = 3 + 5 * m; return [by.budget[c], by.contacts[c]].some(v => String(v ?? '').trim() !== '') ? pick(c) : null; }), month: last ? pick(3 + 5 * last.m) : null, week: last ? pick(last.c) : null, last};
 }
 function loadFunnel(p, force){
   const url = p.funnelUrl || '', m = url.match(/spreadsheets\/d\/([\w-]+)/); if (!m) return;
   const cur = funnelStats.get(p.id); if (cur && cur.url === url && !force) return;
   funnelStats.set(p.id, {url, state: 'loading'});
-  const gid = (url.match(/[#?&]gid=(\d+)/) || [])[1];
-  const src = 'https://docs.google.com/spreadsheets/d/' + m[1] + '/gviz/tq?tqx=out:csv&headers=0&' + (gid ? 'gid=' + gid : 'sheet=' + encodeURIComponent('ИТОГО'));
+  const src = 'https://docs.google.com/spreadsheets/d/' + m[1] + '/gviz/tq?tqx=out:csv&headers=0&sheet=' + encodeURIComponent('ИТОГО');
   fetch(src).then(r => { if (!r.ok) throw new Error('http'); return r.text(); })
     .then(t => { if (/^\s*</.test(t)) throw new Error('html'); funnelStats.set(p.id, {url, state: 'ok', d: funnelFromCsv(t), at: Date.now()}); })
     .catch(() => funnelStats.set(p.id, {url, state: 'err'}))
     .finally(() => dashRefresh());
+}
+function projectMonthStatsHTML(p){
+  const month = new Date().getMonth(), label = MON_FULL[month].toLowerCase();
+  if (!/spreadsheets\/d\//.test(p.funnelUrl || '')) return `<div class="pc-month-stats">Дашборд за ${label} не подключен</div>`;
+  loadFunnel(p);
+  const state = funnelStats.get(p.id);
+  if (!state || state.state === 'loading') return `<div class="pc-month-stats">Загружаем данные за ${label}…</div>`;
+  if (state.state !== 'ok') return `<div class="pc-month-stats">Данные дашборда недоступны</div>`;
+  const m = state.d.months[month];
+  if (!m) return `<div class="pc-month-stats">Нет данных за ${label}</div>`;
+  return `<div class="pc-month-stats"><span>За ${label}</span><span>Контакты <b>${nf.format(m.contacts)}</b></span><span>Стоимость контакта <b>${m.contacts ? rub(m.budget / m.contacts) : '—'}</b></span><span>Бюджет <b>${rub(m.budget)}</b></span></div>`;
 }
 const F_WEEKS = ['01–07', '08–14', '15–21', '22–30'];
 function funnelHTML(p){
