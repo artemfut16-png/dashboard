@@ -91,7 +91,7 @@ function channelReportHTML(raw){
   return `${row.group?'<tr class="finance-divider"><td colspan="4"></td></tr>':''}<tr><td style="width:auto">${esc(label)}</td>${cells}</tr>`;
  }).join('');
  const options=MON_FULL.map((name,i)=>`<option value="${i}" ${i===financeMonth?'selected':''}>${name} ${YEAR}</option>`).join('');
- return `<section class="card monthly-finance"><div class="card-h"><h2>Показатели за ${MON_FULL[financeMonth].toLowerCase()}</h2><select data-finance-month aria-label="Месяц">${options}</select></div><div class="scroll"><table class="dt finance-table" style="min-width:580px"><colgroup><col style="width:40%"><col span="3" style="width:20%"></colgroup><thead><tr><th style="width:auto">Показатель</th>${reportChannels.map(([,label])=>`<th style="text-align:right">${label}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div></section>`;
+ return `<section class="card monthly-finance"><div class="card-h"><h2>Показатели за ${MON_FULL[financeMonth].toLowerCase()}</h2><div class="finance-controls"><div class="month-switch"><select data-finance-month aria-label="Месяц">${options}</select></div></div></div><div class="scroll"><table class="dt finance-table channel-table" style="min-width:580px"><colgroup><col style="width:40%"><col span="3" style="width:20%"></colgroup><thead><tr><th aria-label="Название показателя"></th>${reportChannels.map(([,label])=>`<th>${label}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div></section>`;
 }
 function monthlyFinanceHTML(){
  if(channelPreview)return channelReportHTML(months());
