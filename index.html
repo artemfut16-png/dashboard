@@ -1109,9 +1109,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 <span id="crumbCur" hidden></span>
   <button class="iconbtn mobile-menu-toggle" id="mobileMenuToggle" type="button" aria-label="Открыть меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg></button>
   <div class="content">
-  <header class="top">
+  <header class="top" style="padding:0">
     <div>
-      <h1 id="pageTitle">CRM</h1>
+      <h1 id="pageTitle" hidden>CRM</h1>
       <div class="sub" id="sub">Подключаемся к базе…</div>
     </div>
   </header>
@@ -2934,7 +2934,7 @@ document.addEventListener('click', e => {
 function testDrivesHTML(){
   const trialProjects = projList().filter(p => p.status === 'trial');
   const list = all().filter(l => l.status === 'td' && !trialProjects.some(p => p.name && (l.company || l.name || '').trim().toLowerCase() === p.name.trim().toLowerCase())).sort(sortNew);
-  const head = `<h1 class="trial-heading">Тест-драйвы <span class="dim">в работе</span></h1>`;
+  const head = '';
   const projectCards = trialProjects.map(p => `<div class="pi tdl"><div class="pi-h"><b>${esc(p.name)}</b><span class="pill s-td">Тест-драйв</span></div>${projLinksHTML(p)}</div>`).join('');
   if (!list.length && !trialProjects.length) return head + '<div class="empty-state">Пока нет лидов на стадии «Тест-драйв продан». Как только лид попадёт в эту колонку CRM, он появится здесь.</div>';
   return head + `<div class="pinfo">${projectCards}${list.map(l => {
