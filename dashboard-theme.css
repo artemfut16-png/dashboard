@@ -449,3 +449,5 @@ body:has(#v-projects:not([hidden])) #pageTitle .dim{
 .pc-month-stats{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0;color:var(--muted);font-size:14px}.pc-month-stats span:first-child{width:100%}.pc-month-stats b{color:var(--ink)}
 
 .pc-month-stats{flex-direction:column;align-items:flex-start}
+
+.pc-month-stats{background:#1d1d1d;border:1px solid #303030;border-radius:10px;padding:12px 14px;gap:8px}.pc-month-stats span:first-child{font-size:12px;color:#aaa;margin-bottom:2px}
