@@ -2366,6 +2366,7 @@ function nextDue(due, rep){
 }
 function sources(){
   return [{pid: GEN, name: 'Общие задачи по проектам', color: '#F9F9F9'}, {pid: AG, name: 'Агентство', color: '#F9F9F9'}, {pid: TD, name: 'Тест-драйвы', color: '#F9F9F9'}].concat(
+    all().filter(l => l.status === 'td').map(l => ({pid:l.id, name:l.company || l.name || 'Тест-драйв', color:'#F9F9F9'})),
     projList().filter(p => p.status !== 'gone').map((p, i) => ({pid: p.id, name: p.name, color: PCOLORS[i % PCOLORS.length]})));
 }
 // a task sits in "today" or "later"; a later task with a due date comes up by itself when the day arrives
