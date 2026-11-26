@@ -1073,6 +1073,11 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 .board .col header .pill{border:0!important;background:transparent!important;padding:0}
 .overview .ov-metrics{grid-template-columns:1fr}.overview .payplan,.overview .register,.project-group+.project-group{margin-top:18px}
 .ov-task-list{max-height:350px;overflow:auto}.register table{width:100%;border-collapse:collapse}.register td,.register th{text-align:left;padding:10px;border-bottom:1px solid #303030}.project-group .psec{margin-top:0}
+</style><style>
+.monthly-finance .channel-table th:first-child,.monthly-finance .channel-table td:first-child,
+.overview .ov-grid .channel-table th:first-child,.overview .ov-grid .channel-table td:first-child{width:40%}
+.monthly-finance .channel-table th:not(:first-child),.monthly-finance .channel-table td:not(:first-child){width:20%;text-align:center;border-left:1px solid #3b3b3b}
+.monthly-finance .channel-table .finance-divider td{border-left:0}
 </style></head>
 <body>
 <div id="login" hidden>
@@ -3625,5 +3630,5 @@ $('#logoutBtn').addEventListener('click', async () => { await sb.auth.signOut();
 
 <script src="dashboard-calendar.js?v=4" defer></script>
 
-<script src="dashboard-overview.js?v=25" defer></script>
+<script src="dashboard-overview.js?v=26" defer></script>
 <script src="dashboard-dropdowns.js?v=1" defer></script>
