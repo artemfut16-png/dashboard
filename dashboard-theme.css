@@ -455,3 +455,5 @@ body:has(#v-projects:not([hidden])) #pageTitle .dim{
 .overview-top .ov-revenue{gap:12px}.ov-revenue-row{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 10px}.ov-revenue-row span{color:var(--muted);font-size:14px}.overview-top .ov-revenue-row strong{font-size:14px}
 
 .overview-top .ov-metric>span:first-child{min-height:2.5em}
+
+.overview-top .ov-revenue{gap:14px}.overview-top .ov-revenue-row:first-of-type{min-height:31px;align-items:center}
