@@ -52,7 +52,7 @@ function financeDisplay(row,value){
  const amount=['leadCost','trialCost','cac'].includes(row.id)?Math.round(value):value;
  return financeMoney.format(amount)+' ₽';
 }
-const channelPreview = new URLSearchParams(location.search).get('analytics') === 'channels';
+const channelPreview = new URLSearchParams(location.search).get('analytics') !== 'classic';
 const reportChannels = [['auto','Автообзвон'],['ref','Рекомендации'],['base','База']];
 function previewKey(channel,id){
  return JSON.stringify(['finance-preview',YEAR,financeMonth,channel,id]);
