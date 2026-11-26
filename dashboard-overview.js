@@ -50,7 +50,7 @@ function financeDisplay(row,value){
   return nf.format(value)+' '+word;
  }
  const amount=['leadCost','trialCost','cac'].includes(row.id)?Math.round(value):value;
- return financeMoney.format(amount)+' руб.';
+ return financeMoney.format(amount)+' ₽';
 }
 function monthlyFinanceHTML(){
  const raw=months(), month=raw[financeMonth] || {}, meta=raw[0] || {};
