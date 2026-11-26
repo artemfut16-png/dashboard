@@ -82,19 +82,26 @@ function channelReportHTML(raw){
  });
  const body=rows.filter(row=>!meta.reportHidden?.includes(row.id)).map(row=>{
   const label=meta.reportLabels?.[row.id] || meta.financeLabels?.[row.source] || row.label;
+  const baseRows=rows.filter(item=>['renewals','churn','baseRevenue'].includes(item.id));
   const sharedRows=rows.filter(item=>item.id==='tax' || (item.expense && item.id!=='budgetExpense'));
   const sharedValue=item=>{
    const saved=localStorage.getItem(previewKey('shared',item.id));
    if(saved!==null)return JSON.parse(saved);
+   if(['renewals','churn','baseRevenue'].includes(item.id)){
+    const baseSaved=localStorage.getItem(previewKey('base',item.id));
+    if(baseSaved!==null)return JSON.parse(baseSaved);
+    if(item.id==='churn')return getp(month,'base.churn');
+    return month.manualFinance?.[item.id] ?? null;
+   }
    if(item.extra)return (month.extraExpenses || []).find(entry=>entry.name===item.extra)?.amount ?? null;
    return item.source ? getp(month,item.source) : null;
   };
   const sum=values=>values.some(value=>value!=null)?values.reduce((a,b)=>a+(Number(b)||0),0):null;
   const budget=sum(columns.map(column=>column.values.budgetFunnel));
-  const revenue=sum(columns.map(column=>column.calculated.totalRevenue));
+  const revenue=sum([...columns.flatMap(column=>[column.values.trialRevenue,column.values.newRevenue]),sharedValue({id:'baseRevenue'})]);
   const expenses=sum([...sharedRows.map(sharedValue),budget]);
-  if(sharedRows.includes(row) || ['budgetExpense','totalExpenses','totalRevenue','netProfit'].includes(row.id)){
-   const editable=sharedRows.includes(row);
+  if(baseRows.includes(row) || sharedRows.includes(row) || ['budgetExpense','totalExpenses','totalRevenue','netProfit'].includes(row.id)){
+   const editable=baseRows.includes(row) || sharedRows.includes(row);
    const value=editable?sharedValue(row):row.id==='budgetExpense'?budget:row.id==='totalExpenses'?expenses:row.id==='totalRevenue'?revenue:revenue!=null && expenses!=null?revenue-expenses:null;
    const attrs=editable?`class="finance-edit finance-amount" data-preview-channel="shared" data-report-value="${esc(row.id)}" data-value="${esc(String(value??''))}" tabindex="0"`:'class="finance-calculated"';
    return `${row.group?'<tr class="finance-divider"><td colspan="4"></td></tr>':''}<tr><td>${esc(label)}</td><td colspan="3" ${attrs}>${esc(financeDisplay(row,value))}</td></tr>`;
