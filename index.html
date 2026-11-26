@@ -1066,7 +1066,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
 <script src="./assets/overview.js"></script>
-<link rel="stylesheet" href="dashboard-theme.css?v=33">
+<link rel="stylesheet" href="dashboard-theme.css?v=34">
 <style>
 #listBody .board .col{padding:0;border:0!important;background:transparent!important;backdrop-filter:none!important}
 .board .col header{box-sizing:border-box;width:100%;padding:8px 12px;border:1px solid #393939;border-radius:10px;background:#191919}
@@ -2657,7 +2657,7 @@ function projectMonthStatsHTML(p){
   if (state.state !== 'ok') return `<div class="pc-month-stats">Данные дашборда недоступны</div>`;
   const m = state.d.months[month];
   if (!m) return `<div class="pc-month-stats">Нет данных за ${label}</div>`;
-  return `<div class="pc-month-stats"><span>За ${label}</span><span>Контакты <b>${nf.format(m.contacts)}</b></span><span>Стоимость контакта <b>${m.contacts ? rub(m.budget / m.contacts) : '—'}</b></span><span>Бюджет <b>${rub(m.budget)}</b></span></div>`;
+  return `<div class="pc-month-stats"><span>За ${label}</span><span>Бюджет <b>${rub(m.budget)}</b></span><span>Контакты <b>${nf.format(m.contacts)}</b></span><span>Стоимость контакта <b>${m.contacts ? rub(m.budget / m.contacts) : '—'}</b></span></div>`;
 }
 const F_WEEKS = ['01–07', '08–14', '15–21', '22–30'];
 function funnelHTML(p){
