@@ -1,20 +1,20 @@
 let financeMonth = new Date().getFullYear() === YEAR ? new Date().getMonth() : 11;
 const financeRows = [
  {id:'budgetFunnel',label:'Рекламный бюджет',source:'auto.budget'},
- {id:'leads',label:'Лиды',source:'auto.leads'},
+ {id:'leads',unit:'count',label:'Лиды',source:'auto.leads'},
  {id:'leadCost',label:'Стоимость лида'},
- {id:'leadTrialRate',label:'Конверсия (лид → тест-драйв)'},
- {id:'trials',label:'Тест-драйвы',source:'auto.td'},
+ {id:'leadTrialRate',unit:'percent',label:'Конверсия (лид → тест-драйв)'},
+ {id:'trials',unit:'count',label:'Тест-драйвы',source:'auto.td'},
  {id:'trialCost',label:'Стоимость тест-драйва'},
- {id:'trialDealRate',label:'Конверсия (тест-драйв → сделка)'},
- {id:'deals',label:'Сделки',source:'auto.sales'},
+ {id:'trialDealRate',unit:'percent',label:'Конверсия (тест-драйв → сделка)'},
+ {id:'deals',unit:'count',label:'Сделки',source:'auto.sales'},
  {id:'cac',label:'Стоимость сделки (CAC)'},
- {id:'leadDealRate',label:'Конверсия (лид → сделка)'},
- {id:'cycle',label:'Средний цикл (лид → сделка), дней',source:'auto.cycleDays'},
+ {id:'leadDealRate',unit:'percent',label:'Конверсия (лид → сделка)'},
+ {id:'cycle',unit:'days',label:'Средний цикл (лид → сделка)',source:'auto.cycleDays'},
  {id:'trialRevenue',label:'Выручка от тест-драйвов'},
  {id:'newRevenue',label:'Выручка от новых проектов'},
- {id:'renewals',label:'Продление проектов по базе',group:true},
- {id:'churn',label:'Отток проектов по базе',source:'base.churn'},
+ {id:'renewals',unit:'count',label:'Продление проектов по базе',group:true},
+ {id:'churn',unit:'count',label:'Отток проектов по базе',source:'base.churn'},
  {id:'baseRevenue',label:'Выручка по проектам с базы'},
  {id:'tax',label:'Налог',source:'taxOverride',group:true},
  {id:'autoload',label:'Расходы на автозагрузку',source:'autoloadCosts',expense:true},
@@ -37,11 +37,25 @@ function getFinanceRows(raw){
  rows.splice(at,0,...extraRows);
  return rows;
 }
+const financePercent = new Intl.NumberFormat('ru-RU',{maximumFractionDigits:1});
+const financeMoney = new Intl.NumberFormat('ru-RU',{maximumFractionDigits:2});
+const financeDayForm = new Intl.PluralRules('ru-RU');
+function financeDisplay(row,value){
+ if(value==null || value==='')return '';
+ if(row.unit==='percent')return financePercent.format(value*100)+'%';
+ if(row.unit==='count')return nf.format(value);
+ if(row.unit==='days'){
+  const form=financeDayForm.select(value);
+  const word={one:'день',few:'дня',many:'дней',other:'дня'}[form];
+  return nf.format(value)+' '+word;
+ }
+ const amount=['leadCost','trialCost','cac'].includes(row.id)?Math.round(value):value;
+ return financeMoney.format(amount)+' руб.';
+}
 function monthlyFinanceHTML(){
  const raw=months(), month=raw[financeMonth] || {}, meta=raw[0] || {};
  const labels=meta.reportLabels || {}, hidden=meta.reportHidden || [], legacyLabels=meta.financeLabels || {};
  const calculated=financeCalculated(month);
- const percentRows=new Set(['leadTrialRate','trialDealRate','leadDealRate']);
  const rows=getFinanceRows(raw).filter(row=>!hidden.includes(row.id)).map(row=>{
   const label=labels[row.id] || (row.source && legacyLabels[row.source]) || row.label;
   let value;
@@ -51,7 +65,7 @@ function monthlyFinanceHTML(){
   else if(row.source)value=getp(month,row.source);
   else value=(month.manualFinance || {})[row.id];
   if(row.id==='churn' && value!=null)value=Math.abs(value);
-  return `${row.group?'<tr class="finance-divider" aria-hidden="true"><td colspan="2"></td></tr>':''}<tr class="${row.total?'tot':''}"><td><div class="finance-row-label"><span class="finance-edit" data-report-name="${esc(row.id)}" data-value="${esc(label)}" tabindex="0" title="Изменить название">${esc(label)}</span><button type="button" class="finance-remove" data-report-remove="${esc(row.id)}" aria-label="Удалить пункт ${esc(label)}">×</button></div></td><td class="${computed ? 'finance-calculated' : 'finance-edit finance-amount'}" ${computed ? 'title="Рассчитывается автоматически"' : `data-report-value="${esc(row.id)}" data-value="${value==null?'':esc(String(value))}" tabindex="0" title="Изменить значение"`}>${value==null?'':percentRows.has(row.id)?esc(new Intl.NumberFormat('ru-RU',{maximumFractionDigits:1}).format(value*100))+'%':esc(nf.format(Math.round(value)))}</td></tr>`;
+  return `${row.group?'<tr class="finance-divider" aria-hidden="true"><td colspan="2"></td></tr>':''}<tr class="${row.total?'tot':''}"><td><div class="finance-row-label"><span class="finance-edit" data-report-name="${esc(row.id)}" data-value="${esc(label)}" tabindex="0" title="Изменить название">${esc(label)}</span><button type="button" class="finance-remove" data-report-remove="${esc(row.id)}" aria-label="Удалить пункт ${esc(label)}">×</button></div></td><td class="${computed ? 'finance-calculated' : 'finance-edit finance-amount'}" ${computed ? 'title="Рассчитывается автоматически"' : `data-report-value="${esc(row.id)}" data-value="${value==null?'':esc(String(value))}" tabindex="0" title="Изменить значение"`}>${esc(financeDisplay(row,value))}</td></tr>`;
  }).join('');
  return `<section class="card monthly-finance"><div class="card-h"><h2>Показатели за ${MON_FULL[financeMonth].toLowerCase()}</h2><div class="finance-controls"><div class="month-switch"><select data-finance-month aria-label="Месяц">${MON_FULL.map((name,i)=>`<option value="${i}"${i===financeMonth?' selected':''}>${name} ${YEAR}</option>`).join('')}</select></div></div></div><div class="scroll"><table class="dt finance-table"><thead><tr><th>Показатель</th><th>Значение</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
