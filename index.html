@@ -2548,7 +2548,7 @@ let cFilter = 'all';
 function boardHTML(o){
   const open = o.every.filter(o.pass).filter(it => !it.t.done).sort((a, b) => {
     if (!o.sortByDate) return ordOf(a.t) - ordOf(b.t);
-    const date = t => t.due || (t.bucket === 'today' ? todayISO() : '9999-12-31');
+    const date = t => t.due || '9999-12-31';
     return date(a.t).localeCompare(date(b.t)) || (a.t.time || '99:99').localeCompare(b.t.time || '99:99') || ordOf(a.t) - ordOf(b.t);
   });
   return `<div class="pfilter">${o.chips}</div><ul class="rlist" data-bucket="all">${open.length ? open.map(it => taskRow(it, 'all')).join('') : '<li class="empty">Задач пока нет</li>'}</ul>`;
@@ -2592,7 +2592,7 @@ function renderProjectsView(){
   const filterSources = [{pid:'all',name:'Все'}, {pid:'crm',name:'CRM'}, ...sources().filter(x => x.pid !== TD)];
   if (!filterSources.some(x => x.pid === unifiedFilter)) unifiedFilter = 'all';
   const icon = pid => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">' + (pid==='all' ? '<path d="M8 6h13M8 12h13M8 18h13M3 6h1M3 12h1M3 18h1"/>' : pid==='crm' ? '<circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6M18 15a5 5 0 0 1 3 4v2"/>' : '<rect x="3" y="6" width="18" height="15" rx="2"/><path d="M8 6V3h8v3M3 12h18"/>') + '</svg>';
-  $('#v-alltasks').innerHTML = boardHTML({every: unified, sortByDate: true, pass: it => unifiedFilter==='all' ? (it.t.due ? it.t.due===todayISO() : it.t.bucket==='today') : (unifiedFilter==='crm'?((isLead(it.pid)&&leads.get(it.pid).status!=='td')||it.pid===CRMG):it.pid===unifiedFilter), chips:filterSources.map(x=>`<button class="fchip" data-unified-filter="${esc(x.pid)}" aria-pressed="${unifiedFilter===x.pid}">${icon(x.pid)}${esc(x.name)}</button>`).join('')});
+  $('#v-alltasks').innerHTML = boardHTML({every: unified, sortByDate: true, pass: it => unifiedFilter==='all' || (unifiedFilter==='crm'?((isLead(it.pid)&&leads.get(it.pid).status!=='td')||it.pid===CRMG):it.pid===unifiedFilter), chips:filterSources.map(x=>`<button class="fchip" data-unified-filter="${esc(x.pid)}" aria-pressed="${unifiedFilter===x.pid}">${icon(x.pid)}${esc(x.name)}</button>`).join('')});
   $('#v-atasks').innerHTML = boardHTML({every: allT.filter(it => it.pid === AG), pass: () => true, srcLabel: 'К чему относится', options: '', chips: ''});
   el.innerHTML = boardHTML({
     every, pass: it => pFilter === 'all' || it.pid === pFilter, srcLabel: 'К чему относится',
