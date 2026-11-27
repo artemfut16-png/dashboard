@@ -213,8 +213,7 @@ function renderOverview(){
   return getp(currentFinance,source);
  };
  const summarySum=(id,source)=>{
-  const values=(channelPreview?reportChannels.map(([channel])=>summaryValue(channel,id,source)):[getp(currentFinance,source)]);
-  return values.some(v=>v!=null)?values.reduce((sum,v)=>sum+(Number(v)||0),0):null;
+  return channelPreview ? summaryValue('auto',id,source) : getp(currentFinance,source);
  };
  const budget=summarySum('budgetFunnel','auto.budget'), leadsTotal=summarySum('leads','auto.leads'), trialsTotal=summarySum('trials','auto.td'), dealsTotal=summarySum('deals','auto.sales');
  const metricItems=[
@@ -222,7 +221,7 @@ function renderOverview(){
   ['Лиды',leadsTotal,false],
   ['Тест-драйвы',trialsTotal,false],
   ['Сделки',dealsTotal,false],
-  ['Стоимость сделки',dealsTotal ? budget / dealsTotal : null,true]
+  ['Стоимость сделки',dealsTotal && budget != null ? budget / dealsTotal : null,true]
  ];
  const summary=`<section class="funnel-summary" aria-label="Ключевые показатели за ${MON_FULL[now].toLowerCase()}"><div class="funnel-summary-grid">${metricItems.map(([name,value,money])=>`<div class="funnel-summary-item"><span>${esc(name)}</span><strong>${value==null?'—':money?rub(value):nf.format(value)}</strong></div>`).join('')}</div></section>`;
  const metric=(label,value,sub,cls='')=>`<div class="ov-metric ${cls}"><span>${label}</span><strong>${value}</strong><small>${sub}</small></div>`;
