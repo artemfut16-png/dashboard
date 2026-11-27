@@ -54,8 +54,8 @@ function financeDisplay(row,value){
 }
 const channelPreview = new URLSearchParams(location.search).get('analytics') !== 'classic';
 const reportChannels = [['auto','Автообзвон'],['ref','Рекомендации'],['base','База']];
-function previewKey(channel,id){
- return JSON.stringify(['finance-preview',YEAR,financeMonth,channel,id]);
+function previewKey(channel,id,month=financeMonth){
+ return JSON.stringify(['finance-preview',YEAR,month,channel,id]);
 }
 function channelReportHTML(raw){
  const month=raw[financeMonth] || {}, meta=raw[0] || {};
@@ -208,12 +208,21 @@ function renderOverview(){
 
  const max=Math.max(1,...months.map(x=>Math.abs(x.net))), total=months.reduce((a,c)=>a+c.net,0);
  const currentFinance=Array.isArray(fin) ? (fin[now] || {}) : {};
+ const summaryValue=(channel,id,source)=>{
+  if(channelPreview){const saved=localStorage.getItem(previewKey(channel,id,now));if(saved!==null)return JSON.parse(saved);}
+  return getp(currentFinance,source);
+ };
+ const summarySum=(id,source)=>{
+  const values=(channelPreview?reportChannels.map(([channel])=>summaryValue(channel,id,source)):[getp(currentFinance,source)]);
+  return values.some(v=>v!=null)?values.reduce((sum,v)=>sum+(Number(v)||0),0):null;
+ };
+ const budget=summarySum('budgetFunnel','auto.budget'), leadsTotal=summarySum('leads','auto.leads'), trialsTotal=summarySum('trials','auto.td'), dealsTotal=summarySum('deals','auto.sales');
  const metricItems=[
-  ['Рекламный бюджет',getp(currentFinance,'auto.budget'),true],
-  ['Лиды',getp(currentFinance,'auto.leads'),false],
-  ['Тест-драйвы',getp(currentFinance,'auto.td'),false],
-  ['Сделки',getp(currentFinance,'auto.sales'),false],
-  ['Стоимость сделки',financeCalculated(currentFinance).cac,true]
+  ['Рекламный бюджет',budget,true],
+  ['Лиды',leadsTotal,false],
+  ['Тест-драйвы',trialsTotal,false],
+  ['Сделки',dealsTotal,false],
+  ['Стоимость сделки',dealsTotal ? budget / dealsTotal : null,true]
  ];
  const summary=`<section class="funnel-summary" aria-label="Ключевые показатели за ${MON_FULL[now].toLowerCase()}"><div class="funnel-summary-grid">${metricItems.map(([name,value,money])=>`<div class="funnel-summary-item"><span>${esc(name)}</span><strong>${value==null?'—':money?rub(value):nf.format(value)}</strong></div>`).join('')}</div></section>`;
  const metric=(label,value,sub,cls='')=>`<div class="ov-metric ${cls}"><span>${label}</span><strong>${value}</strong><small>${sub}</small></div>`;
